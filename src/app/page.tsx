@@ -1,101 +1,162 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import StepOnePaste from "@/components/StepOnePaste";
+import StepTwoForm from "@/components/StepTwoForm";
+import ReportOutput from "@/components/ReportOutput";
+import parseJiraContent, { ParsedData } from "@/utils/parseJiraContent";
+import formatReport from "@/utils/formatReport";
+
+interface BatteryTest {
+  id: string;
+  description: string;
+  steps: string;
+  expectedResult: string;
+  obtainedResult: string;
+  testStatus: string;
+}
+
+interface Incidence {
+  id: string;
+  description: string;
+  impact: string;
+  status: string;
+}
+
+interface Summary {
+  totalTests: string;
+  successfulTests: string;
+  failedTests: string;
+  observations: string;
+}
+
+interface FormData {
+  date: string;
+  tester: string;
+  testStatus: string;
+  versions: Array<{ appName: string; appVersion: string }>;
+  serverPruebas: string;
+  ipMaquina: string;
+  usuario: string;
+  contrasena: string;
+  navegador: string;
+  baseDatos: string;
+  maquetaUtilizada: string;
+  ambiente: string;
+  batteryTests: BatteryTest[];
+  summary: Summary;
+  incidences: Incidence[];
+  hasIncidences: boolean;
+  conclusion: string;
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [step, setStep] = useState(1);
+  const [jiraContent, setJiraContent] = useState("");
+  const [parsedData, setParsedData] = useState<ParsedData | null>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+  // formData con fecha vacía por defecto
+  const [formData, setFormData] = useState<FormData>({
+    date: "",
+    tester: "",
+    testStatus: "",
+    versions: [],
+    serverPruebas: "",
+    ipMaquina: "",
+    usuario: "",
+    contrasena: "",
+    navegador: "",
+    baseDatos: "",
+    maquetaUtilizada: "",
+    ambiente: "",
+    batteryTests: [],
+    summary: {
+      totalTests: "",
+      successfulTests: "",
+      failedTests: "",
+      observations: "",
+    },
+    incidences: [],
+    hasIncidences: false,
+    conclusion: "",
+  });
+
+  const [report, setReport] = useState("");
+
+  const handleParseJira = () => {
+    const result = parseJiraContent(jiraContent);
+    setParsedData(result);
+    setStep(2);
+  };
+
+  const handleGenerateReport = () => {
+    if (!parsedData) return;
+    const finalReport = formatReport(parsedData, formData);
+    setReport(finalReport);
+    setStep(3);
+  };
+
+  const handleReset = () => {
+    setJiraContent("");
+    setParsedData(null);
+    setFormData({
+      date: "",
+      tester: "",
+      testStatus: "",
+      versions: [],
+      serverPruebas: "",
+      ipMaquina: "",
+      usuario: "",
+      contrasena: "",
+      navegador: "",
+      baseDatos: "",
+      maquetaUtilizada: "",
+      ambiente: "",
+      batteryTests: [],
+      summary: {
+        totalTests: "",
+        successfulTests: "",
+        failedTests: "",
+        observations: "",
+      },
+      incidences: [],
+      hasIncidences: false,
+      conclusion: "",
+    });
+    setReport("");
+    setStep(1);
+  };
+
+  const goBackToStep1 = () => setStep(1);
+  const goBackToStep2 = () => setStep(2);
+
+  return (
+    <main className="p-8 min-h-screen bg-gray-50">
+      {step === 1 && (
+        <StepOnePaste
+          jiraContent={jiraContent}
+          setJiraContent={setJiraContent}
+          onParse={handleParseJira}
+        />
+      )}
+      {step === 2 && parsedData && (
+        <StepTwoForm
+          parsedData={parsedData}
+          formData={formData}
+          setFormData={setFormData}
+          onGenerate={handleGenerateReport}
+          onReset={handleReset}
+          report={report}
+          onGoBackToStep1={goBackToStep1}
+        />
+      )}
+      {step === 3 && (
+        <ReportOutput
+          report={report}
+          onReset={handleReset}
+          onGoBackToStep2={goBackToStep2}
+        />
+      )}
+    </main>
   );
 }
