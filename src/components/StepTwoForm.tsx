@@ -68,7 +68,23 @@ export default function StepTwoForm({
   report,
   onGoBackToStep1,
 }: StepTwoFormProps) {
-  // Manejo genérico de campos
+  /**
+   * 1) Forzar la fecha actual en el estado si está vacía.
+   *    Se hace una sola vez al montar el componente (useEffect con dependencia vacía).
+   */
+  useEffect(() => {
+    if (!formData.date) {
+      setFormData({
+        ...formData,
+        date: new Date().toISOString().split("T")[0],
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // <--- sin dependencias para que sólo se ejecute al montar
+
+  /**
+   * Manejo genérico de campos del FormData
+   */
   const handleInputChange = (
     field: keyof FormData,
     value: string | boolean | Summary
@@ -76,9 +92,10 @@ export default function StepTwoForm({
     setFormData({ ...formData, [field]: value });
   };
 
-  // Batería de Pruebas
+  /**
+   * Ajuste de la batería de pruebas por defecto al montar
+   */
   useEffect(() => {
-    // Ajustar el test PR-001 por defecto
     const newTests = [...formData.batteryTests];
     newTests.forEach((test) => {
       if (
@@ -93,8 +110,10 @@ export default function StepTwoForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /**
+   * Añadir nuevo caso de prueba
+   */
   const addBatteryTest = () => {
-    // Creamos el nuevo test
     const newTest: BatteryTest = {
       id: "PR-001",
       description: "",
@@ -106,10 +125,8 @@ export default function StepTwoForm({
       testStatus: "FALLIDO",
     };
 
-    // Agregamos a la lista
     const newTests = [...formData.batteryTests, newTest];
-
-    // (Cambio 3) Actualizar automáticamente 'Total de Pruebas'
+    // Actualizamos el total de pruebas
     const updatedSummary = {
       ...formData.summary,
       totalTests: String(newTests.length),
@@ -122,17 +139,29 @@ export default function StepTwoForm({
     });
   };
 
+  /**
+   * Eliminar caso de prueba
+   */
   const removeBatteryTest = (index: number) => {
     const newTests = [...formData.batteryTests];
     newTests.splice(index, 1);
+
     // Ajustamos el total de pruebas
     const updatedSummary = {
       ...formData.summary,
       totalTests: String(newTests.length),
     };
-    setFormData({ ...formData, batteryTests: newTests, summary: updatedSummary });
+
+    setFormData({
+      ...formData,
+      batteryTests: newTests,
+      summary: updatedSummary,
+    });
   };
 
+  /**
+   * Actualizar propiedades de un caso de prueba
+   */
   const handleBatteryTestChange = (
     index: number,
     field: keyof BatteryTest,
@@ -143,7 +172,9 @@ export default function StepTwoForm({
     setFormData({ ...formData, batteryTests: newTests });
   };
 
-  // Incidencias
+  /**
+   * Incidencias
+   */
   const addIncidence = () => {
     if (formData.incidences.length === 0) {
       setFormData({
@@ -176,21 +207,30 @@ export default function StepTwoForm({
     setFormData({ ...formData, incidences: newIncidences });
   };
 
+  /**
+   * Manejar activación de incidencias
+   */
   useEffect(() => {
     if (formData.hasIncidences) {
+      // Si no hay incidencias, añadimos la de ejemplo
       if (formData.incidences.length === 0) {
         addIncidence();
-      } else if (formData.incidences.length > 1) {
+      }
+      // Si hay más de 1, nos quedamos sólo con la primera
+      else if (formData.incidences.length > 1) {
         const firstInc = formData.incidences[0];
         setFormData({ ...formData, incidences: [firstInc] });
       }
     } else {
+      // Si hasIncidences es false, vaciamos el array de incidences
       setFormData({ ...formData, incidences: [] });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.hasIncidences]);
 
-  // Versiones
+  /**
+   * Manejo de versiones
+   */
   const handleVersionChange = (
     index: number,
     field: "appName" | "appVersion",
@@ -208,12 +248,11 @@ export default function StepTwoForm({
     });
   };
 
-  // Manejo de conclusiones
   const isExampleConclusion = formData.conclusion === EXAMPLE_CONCLUSION;
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto relative z-20">
-      {/* Encabezado con botón a la derecha (Cambio 2) */}
+      {/* Encabezado con botón a la derecha */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold">Paso 2: Datos adicionales</h2>
         <button
@@ -235,7 +274,7 @@ export default function StepTwoForm({
           <input
             type="date"
             className="border border-gray-300 rounded p-2 w-full"
-            value={formData.date || new Date().toISOString().split("T")[0]} // Rellena con la fecha actual si está vacío
+            value={formData.date || new Date().toISOString().split("T")[0]}
             onChange={(e) => handleInputChange("date", e.target.value)}
           />
         </div>
@@ -246,7 +285,7 @@ export default function StepTwoForm({
             className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400"
             value={formData.tester}
             onChange={(e) => handleInputChange("tester", e.target.value)}
-            placeholder="ABP" // (Cambio 1) solo ABP
+            placeholder="ABP"
           />
         </div>
         <div>
@@ -401,6 +440,7 @@ export default function StepTwoForm({
               key={idx}
               className="relative border border-gray-300 rounded p-2 space-y-2"
             >
+              {/* Botón para eliminar el caso de prueba */}
               <button
                 onClick={() => removeBatteryTest(idx)}
                 className="absolute top-2 right-2 text-red-600 font-bold"
@@ -408,6 +448,8 @@ export default function StepTwoForm({
               >
                 X
               </button>
+
+              {/* ID Prueba */}
               <div>
                 <label className="block font-medium">ID Prueba</label>
                 <input
@@ -422,6 +464,8 @@ export default function StepTwoForm({
                   }
                 />
               </div>
+
+              {/* Pasos */}
               <div>
                 <label className="block font-medium">Pasos</label>
                 <textarea
@@ -435,6 +479,8 @@ export default function StepTwoForm({
                   }
                 />
               </div>
+
+              {/* Resultado Esperado */}
               <div>
                 <label className="block font-medium">Resultado Esperado</label>
                 <textarea
@@ -448,19 +494,23 @@ export default function StepTwoForm({
                   }
                 />
               </div>
+
+              {/* Resultado Obtenido */}
               <div>
                 <label className="block font-medium">Resultado Obtenido</label>
                 <textarea
                   className={`w-full border border-gray-300 rounded p-2 ${
                     isExample ? "text-gray-400 italic" : ""
                   }`}
-                  placeholder="Ejemplo: ❌ El sistema no procesó correctamente la eliminación del servicio con retirada, generando un error inesperado."
+                  placeholder="Ejemplo: ❌ El sistema no procesó correctamente..."
                   value={test.obtainedResult}
                   onChange={(e) =>
                     handleBatteryTestChange(idx, "obtainedResult", e.target.value)
                   }
                 />
               </div>
+
+              {/* Estado */}
               <div>
                 <label className="block font-medium">Estado</label>
                 <input
@@ -662,7 +712,7 @@ export default function StepTwoForm({
         <h3 className="font-semibold">Conclusiones</h3>
         <textarea
           className={`w-full border border-gray-300 rounded p-2 placeholder:text-gray-400 ${
-            formData.conclusion === EXAMPLE_CONCLUSION ? "text-gray-400 italic" : ""
+            isExampleConclusion ? "text-gray-400 italic" : ""
           }`}
           placeholder={EXAMPLE_CONCLUSION}
           value={formData.conclusion}
@@ -672,15 +722,12 @@ export default function StepTwoForm({
 
       {/* Botones */}
       <div className="flex flex-wrap gap-3 justify-end">
-        {/* Generar Reporte */}
         <button
           onClick={onGenerate}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500 transition"
         >
           Generar Reporte
         </button>
-
-        {/* Reiniciar */}
         <button
           onClick={onReset}
           className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-300 transition"

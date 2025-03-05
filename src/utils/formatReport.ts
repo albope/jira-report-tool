@@ -1,5 +1,3 @@
-// src/utils/formatReport.ts
-
 import { ParsedData } from "./parseJiraContent";
 
 interface BatteryTest {
@@ -47,7 +45,14 @@ interface FormData {
 
 export default function formatReport(parsed: ParsedData, formData: FormData): string {
   //
-  // Sección de versiones (versión Markdown)
+  // (1) Si la fecha está vacía en formData, forzamos la fecha actual en el reporte
+  //
+  const finalDate = formData.date
+    ? formData.date
+    : new Date().toISOString().split("T")[0];
+
+  //
+  // Sección de versiones (Markdown)
   //
   let versionTable = "";
   formData.versions.forEach((v) => {
@@ -58,13 +63,17 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
   }
 
   //
-  // Sección de Batería de Pruebas (tabla Markdown)
+  // Sección de Batería de Pruebas (Markdown)
   //
   let batteryTable = `| ID Prueba | Descripción | Pasos | Resultado Esperado | Resultado Obtenido | Estado |\n`;
   batteryTable += `| --------- | ----------- | ----- | ------------------ | ------------------ | ------ |\n`;
   if (formData.batteryTests.length > 0) {
     formData.batteryTests.forEach((bt) => {
-      batteryTable += `| ${bt.id} | ${bt.description} | ${bt.steps} | ${bt.expectedResult} | ${bt.obtainedResult} | ${bt.testStatus} |\n`;
+      // (2) Mantener los saltos de línea para los pasos en la misma celda
+      // Reemplazamos saltos de línea por <br> para que se muestren en Markdown
+      const stepsCell = bt.steps.replace(/\r?\n/g, "<br>");
+
+      batteryTable += `| ${bt.id} | ${bt.description} | ${stepsCell} | ${bt.expectedResult} | ${bt.obtainedResult} | ${bt.testStatus} |\n`;
     });
   } else {
     batteryTable += "| (Sin pruebas) | - | - | - | - | - |\n";
@@ -92,12 +101,12 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
   }
 
   //
-  // Construcción del reporte final
+  // Construcción final del reporte
   //
   return `
 📌 **Información General**
 **Título:** ${parsed.title}
-**Fecha de Prueba:** ${formData.date}
+**Fecha de Prueba:** ${finalDate}
 **Tester:** ${formData.tester}
 **Estado de la Prueba:** ${formData.testStatus}
 
