@@ -114,7 +114,7 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
 **Estado de la Prueba:** ${formData.testStatus}
 
 📌 **Versiones del Sistema**
-| **Componente** | **Versión** |
+| **Aplicativo** | **Versión** |
 | -------------- | ----------- |
 ${versionTable.trim()}
 
@@ -131,7 +131,6 @@ ${versionTable.trim()}
 | Ambiente                       | ${formData.ambiente}            |
 
 ✅ **Batería de Pruebas**
-🔹 **Funcionalidad Nueva / Modificada**
 
 ${batteryTable.trim()}
 

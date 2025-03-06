@@ -117,7 +117,7 @@ export default function StepTwoForm({
     const newTest: BatteryTest = {
       id: "PR-001",
       description: "",
-      steps: "Acceder a la acción de regulación de eliminar servicio...",
+      steps: "Paso 1: Acceder a la acción de regulación de eliminar servicio...",
       expectedResult:
         "El servicio se elimina correctamente añadiendo su viaje de retirada correspondiente.",
       obtainedResult:
