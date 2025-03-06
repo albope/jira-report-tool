@@ -1,12 +1,14 @@
+// src/utils/formatReport.ts
+
 import { ParsedData } from "./parseJiraContent";
 
 interface BatteryTest {
   id: string;
-  description: string;
   steps: string;
   expectedResult: string;
   obtainedResult: string;
   testStatus: string;
+  // OJO: Eliminado 'description' para que coincida con el formulario
 }
 
 interface Incidence {
@@ -44,24 +46,20 @@ interface FormData {
 }
 
 /**
- * Convierte cada línea de `steps` en un guion `- ` seguido del texto,
- * y los separa con `\\` para forzar un salto de línea en Markdown,
- * evitando que las enumeraciones rompan la tabla.
+ * Convierte cada línea de `steps` en un ítem enumerado,
+ * separado por '\\n' para que se mantenga multiline en la misma celda Markdown.
  */
 function formatStepsCell(steps: string): string {
-  // Dividir en líneas y filtrar vacíos
-  const lines = steps.split(/\r?\n/).filter(line => line.trim() !== "");
-  // Para cada línea, anteponemos "- " y unimos con "\\" (doble barra invertida)
-  // que en GFM y en varios visores de Markdown (incluyendo JIRA) fuerza un salto
-  // de línea dentro de la misma celda sin romper la tabla.
-  return lines.map(line => `- ${line}`).join(" \\\\ ");
+  const lines = steps.split(/\r?\n/).filter((line) => line.trim() !== "");
+  // Anteponemos "- " a cada línea y unimos con " \\n "
+  return lines.map((line) => `- ${line}`).join(" \\n ");
 }
 
 export default function formatReport(parsed: ParsedData, formData: FormData): string {
-  // Fecha por defecto
+  // Fecha por defecto si el usuario no eligió ninguna
   const finalDate = formData.date || new Date().toISOString().split("T")[0];
 
-  // -- Sección Versiones --
+  // -- Sección de Versiones --
   let versionTable = "";
   formData.versions.forEach((v) => {
     versionTable += `| ${v.appName.trim()} | ${v.appVersion.trim()} |\n`;
@@ -71,17 +69,17 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
   }
 
   // -- Batería de Pruebas --
-  let batteryTable = `| ID Prueba | Descripción | Pasos | Resultado Esperado | Resultado Obtenido | Estado |\n`;
-  batteryTable += `| --------- | ----------- | ----- | ------------------ | ------------------ | ------ |\n`;
+  // Eliminamos la columna "Descripción"
+  let batteryTable = `| ID Prueba | Pasos | Resultado Esperado | Resultado Obtenido | Estado |\n`;
+  batteryTable += `| --------- | ----- | ------------------ | ------------------ | ------ |\n`;
 
   if (formData.batteryTests.length > 0) {
     formData.batteryTests.forEach((bt) => {
-      // Aplicamos la función para formatear
       const stepsCell = formatStepsCell(bt.steps);
-      batteryTable += `| ${bt.id} | ${bt.description} | ${stepsCell} | ${bt.expectedResult} | ${bt.obtainedResult} | ${bt.testStatus} |\n`;
+      batteryTable += `| ${bt.id} | ${stepsCell} | ${bt.expectedResult} | ${bt.obtainedResult} | ${bt.testStatus} |\n`;
     });
   } else {
-    batteryTable += "| (Sin pruebas) | - | - | - | - | - |\n";
+    batteryTable += "| (Sin pruebas) | - | - | - | - |\n";
   }
 
   // -- Resumen de Resultados --
@@ -106,6 +104,7 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
   }
 
   // -- Construcción final del reporte --
+  // Aseguramos DOBLE salto de línea antes de cada tabla para que `markdownToDocx` lo reconozca.
   return `
 📌 **Información General**
 **Título:** ${parsed.title}
@@ -114,11 +113,13 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
 **Estado de la Prueba:** ${formData.testStatus}
 
 📌 **Versiones del Sistema**
+
 | **Aplicativo** | **Versión** |
 | -------------- | ----------- |
 ${versionTable.trim()}
 
 🖥️ **Entorno de Pruebas**
+
 | **Parámetros de Configuración** | **Detalle**                     |
 | ------------------------------- | ------------------------------- |
 | Servidor de Pruebas            | ${formData.serverPruebas}       |
@@ -142,6 +143,7 @@ ${batteryTable.trim()}
 💡 "Aquí se deben adjuntar logs del sistema o registros relevantes para la validación de la prueba."
 
 📊 **Resumen de Resultados**
+
 ${summaryTable.trim()}
 
 🛠️ **Incidencias Detectadas**
