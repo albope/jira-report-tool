@@ -56,8 +56,8 @@ interface StepTwoFormProps {
   onGoBackToStep1: () => void; // Botón para volver a la pantalla 1
 }
 
-const EXAMPLE_CONCLUSION = `❌ Rechazado → El fallo bloquea la validación de la funcionalidad
-✔ Aceptado → Se valida la funcionalidad completa`;
+const EXAMPLE_CONCLUSION = `Ejemplo de conclusión:
+❌ Rechazado → El fallo bloquea la validación de la funcionalidad`;
 
 export default function StepTwoForm({
   parsedData,
@@ -117,7 +117,7 @@ export default function StepTwoForm({
     const newTest: BatteryTest = {
       id: "PR-001",
       description: "",
-      steps: "1. Acceder a la acción de regulación de eliminar servicio...",
+      steps: "Acceder a la acción de regulación de eliminar servicio...",
       expectedResult:
         "El servicio se elimina correctamente añadiendo su viaje de retirada correspondiente.",
       obtainedResult:

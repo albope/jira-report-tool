@@ -44,23 +44,24 @@ interface FormData {
 }
 
 /**
- * Convierte cada salto de línea en HTML <br />, con una pequeña “trampa”:
- * - Si tu JIRA interpreta HTML en celdas, mostrará saltos de línea.
- * - No aparecerá literalmente "<br />", sino que se renderizará como salto.
+ * Convierte cada línea de `steps` en un guion `- ` seguido del texto,
+ * y los separa con `\\` para forzar un salto de línea en Markdown,
+ * evitando que las enumeraciones rompan la tabla.
  */
 function formatStepsCell(steps: string): string {
-  // Dividir por salto de línea
-  const lines = steps.split(/\r?\n/);
-  // Unir usando <br />, para forzar salto en el render
-  // Sin mostrar el literal <br /> en pantalla (si JIRA renderiza HTML)
-  return lines.join("<br />");
+  // Dividir en líneas y filtrar vacíos
+  const lines = steps.split(/\r?\n/).filter(line => line.trim() !== "");
+  // Para cada línea, anteponemos "- " y unimos con "\\" (doble barra invertida)
+  // que en GFM y en varios visores de Markdown (incluyendo JIRA) fuerza un salto
+  // de línea dentro de la misma celda sin romper la tabla.
+  return lines.map(line => `- ${line}`).join(" \\\\ ");
 }
 
 export default function formatReport(parsed: ParsedData, formData: FormData): string {
-  // Si no hay fecha en formData, usar la fecha de hoy
+  // Fecha por defecto
   const finalDate = formData.date || new Date().toISOString().split("T")[0];
 
-  // -- Versiones --
+  // -- Sección Versiones --
   let versionTable = "";
   formData.versions.forEach((v) => {
     versionTable += `| ${v.appName.trim()} | ${v.appVersion.trim()} |\n`;
@@ -75,6 +76,7 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
 
   if (formData.batteryTests.length > 0) {
     formData.batteryTests.forEach((bt) => {
+      // Aplicamos la función para formatear
       const stepsCell = formatStepsCell(bt.steps);
       batteryTable += `| ${bt.id} | ${bt.description} | ${stepsCell} | ${bt.expectedResult} | ${bt.obtainedResult} | ${bt.testStatus} |\n`;
     });
