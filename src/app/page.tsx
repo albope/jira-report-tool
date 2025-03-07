@@ -4,6 +4,7 @@ import { useState } from "react";
 import StepOnePaste from "@/components/StepOnePaste";
 import StepTwoForm from "@/components/StepTwoForm";
 import ReportOutput from "@/components/ReportOutput";
+import Feedback from "@/components/Feedback";
 import parseJiraContent, { ParsedData } from "@/utils/parseJiraContent";
 import formatReport from "@/utils/formatReport";
 
@@ -131,7 +132,7 @@ export default function Home() {
   const goBackToStep2 = () => setStep(2);
 
   return (
-    <main className="p-8 min-h-screen bg-gray-50">
+    <main className="p-8 min-h-screen bg-gray-50 relative">
       {step === 1 && (
         <StepOnePaste
           jiraContent={jiraContent}
@@ -157,6 +158,8 @@ export default function Home() {
           onGoBackToStep2={goBackToStep2}
         />
       )}
+      {/* Componente de Feedback: botón flotante y modal */}
+      <Feedback />
     </main>
   );
 }

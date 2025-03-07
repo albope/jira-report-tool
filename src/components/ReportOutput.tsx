@@ -2,7 +2,13 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Document, Packer } from "docx";
+import {
+  Document,
+  Packer,
+  Paragraph,
+  TextRun,
+  AlignmentType
+} from "docx";
 import { markdownToDocx } from "@/utils/markdownToDocx";
 
 interface ReportOutputProps {
@@ -49,9 +55,10 @@ export default function ReportOutput({
   };
 
   /**
-   * Exportar a Word usando la función markdownToDocx.
+   * Exportar a Word sin numeración de páginas.
    */
   const exportToWord = async () => {
+    // Convertir Markdown a elementos docx
     const docElements = markdownToDocx(report);
     const doc = new Document({
       sections: [
@@ -61,6 +68,7 @@ export default function ReportOutput({
       ],
     });
 
+    // Generar el Blob y forzar la descarga
     const blob = await Packer.toBlob(doc);
     const blobUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -74,7 +82,9 @@ export default function ReportOutput({
     <div className="max-w-3xl mx-auto bg-white p-4 rounded shadow space-y-4 relative z-50">
       {/* Título de Paso 3 */}
       <div className="mb-2">
-        <h3 className="text-lg font-semibold text-gray-600">Paso 3: Revisión del Reporte</h3>
+        <h3 className="text-lg font-semibold text-gray-600">
+          Paso 3: Revisión del Reporte
+        </h3>
       </div>
 
       {/* Encabezado con botón a la derecha */}
