@@ -1,11 +1,9 @@
+// src/components/ReportOutput.tsx
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { jsPDF } from "jspdf";
-import { Document, Packer, Paragraph, Table, TextRun } from "docx";
-import autoTable from "jspdf-autotable";
-
-import { markdownToDocx } from "@/utils/markdownToDocx"; // <-- Nueva función para convertir Markdown a docx nativo
+import { Document, Packer } from "docx";
+import { markdownToDocx } from "@/utils/markdownToDocx";
 
 interface ReportOutputProps {
   report: string;
@@ -39,7 +37,7 @@ export default function ReportOutput({
   const toggleExportMenu = () => setShowExportMenu(!showExportMenu);
 
   /**
-   * Copiar el reporte (Markdown) al portapapeles
+   * Copiar el reporte (Markdown) al portapapeles.
    */
   const copyToClipboard = async () => {
     try {
@@ -51,91 +49,10 @@ export default function ReportOutput({
   };
 
   /**
-   * Exportar a PDF con tablas nativas usando jspdf + autotable
-   */
-  const exportToPDF = () => {
-    const doc = new jsPDF("p", "pt", "a4");
-
-    // Dividimos en bloques por doble salto de línea
-    const blocks = report.split("\n\n");
-    let yPos = 50;
-
-    for (const block of blocks) {
-      const lines = block.split("\n").map((line) => line.trim());
-      // Detectar si es tabla:
-      // - Mínimo 2 líneas
-      // - Primera y segunda empiezan con "|"
-      if (
-        lines.length >= 2 &&
-        lines[0].startsWith("|") &&
-        lines[1].startsWith("|")
-      ) {
-        // Parseamos la tabla para autotable
-        const { head, body } = parseMarkdownTable(lines);
-
-        autoTable(doc, {
-          startY: yPos,
-          head: [head],
-          body,
-          theme: "grid",
-          styles: { fontSize: 10 },
-        });
-
-        yPos = (doc as any).lastAutoTable.finalY + 20;
-      } else {
-        // Texto normal => lo imprimimos línea a línea
-        for (const line of lines) {
-          doc.text(line, 50, yPos);
-          yPos += 14; // salto de línea
-        }
-        yPos += 10; // espacio entre bloques
-      }
-    }
-
-    doc.save("Reporte.pdf");
-  };
-
-  /**
-   * parseMarkdownTable:
-   *  Dadas las líneas de una tabla Markdown, genera { head, body } para jspdf-autotable
-   */
-  const parseMarkdownTable = (lines: string[]) => {
-    // lines[0] => encabezado
-    // lines[1] => separador
-    // lines[2..] => filas
-    const headerCells = parseTableRow(lines[0]);
-    const head = headerCells; // array de celdas
-
-    const dataLines = lines.slice(2);
-    const body: string[][] = [];
-
-    for (const dl of dataLines) {
-      if (!dl.startsWith("|")) continue;
-      const rowCells = parseTableRow(dl);
-      body.push(rowCells);
-    }
-
-    return { head, body };
-  };
-
-  /**
-   * parseTableRow:
-   *  "| Col1 | Col2 |" => ["Col1", "Col2"]
-   */
-  const parseTableRow = (line: string): string[] => {
-    return line
-      .split("|")
-      .map((cell) => cell.trim())
-      .filter((cell) => cell.length > 0 && !cell.startsWith("---"));
-  };
-
-  /**
-   * Exportar a Word con tablas nativas usando docx
+   * Exportar a Word usando la función markdownToDocx.
    */
   const exportToWord = async () => {
-    // markdownToDocx => convierte el Markdown en un array de Paragraph | Table
     const docElements = markdownToDocx(report);
-
     const doc = new Document({
       sections: [
         {
@@ -171,13 +88,13 @@ export default function ReportOutput({
         </button>
       </div>
 
-      {/* Texto del reporte en un <pre> para mostrar saltos de línea */}
+      {/* Visualización del reporte */}
       <pre className="whitespace-pre-wrap bg-gray-50 p-3 rounded border border-gray-200 max-h-96 overflow-auto">
         {report}
       </pre>
 
       <div className="flex flex-wrap gap-3">
-        {/* Botón para copiar */}
+        {/* Botón Copiar */}
         <button
           onClick={copyToClipboard}
           className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-500 transition"
@@ -185,7 +102,7 @@ export default function ReportOutput({
           Copiar al Portapapeles
         </button>
 
-        {/* Dropdown Exportar */}
+        {/* Menú desplegable para Exportar */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={toggleExportMenu}
@@ -204,17 +121,12 @@ export default function ReportOutput({
               >
                 Word
               </button>
-              <button
-                onClick={exportToPDF}
-                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-              >
-                PDF
-              </button>
+              {/* Opción PDF eliminada */}
             </div>
           )}
         </div>
 
-        {/* Botón para Reiniciar */}
+        {/* Botón Reiniciar */}
         <button
           onClick={onReset}
           className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-300 transition"

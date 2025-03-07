@@ -542,10 +542,14 @@ export default function StepTwoForm({
         <p className="text-sm text-gray-500">
           (En esta sección se registran los resultados de las pruebas ejecutadas, incluyendo el número total de pruebas, las exitosas y las fallidas, junto con observaciones adicionales sobre la ejecución.)
         </p>
+
+        {/* Total de Pruebas -> ahora number */}
         <div>
           <label className="block font-medium">Total de Pruebas</label>
           <input
-            type="text"
+            type="number"
+            min="0"
+            step="1"
             className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400"
             placeholder=""
             value={formData.summary.totalTests}
@@ -557,10 +561,14 @@ export default function StepTwoForm({
             }
           />
         </div>
+
+        {/* Pruebas Exitosas -> ahora number */}
         <div>
           <label className="block font-medium">Pruebas Exitosas</label>
           <input
-            type="text"
+            type="number"
+            min="0"
+            step="1"
             className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400"
             placeholder=""
             value={formData.summary.successfulTests}
@@ -572,10 +580,14 @@ export default function StepTwoForm({
             }
           />
         </div>
+
+        {/* Pruebas Fallidas -> ahora number */}
         <div>
           <label className="block font-medium">Pruebas Fallidas</label>
           <input
-            type="text"
+            type="number"
+            min="0"
+            step="1"
             className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400"
             placeholder=""
             value={formData.summary.failedTests}
@@ -587,6 +599,7 @@ export default function StepTwoForm({
             }
           />
         </div>
+
         <div>
           <label className="block font-medium">Observaciones</label>
           <textarea
