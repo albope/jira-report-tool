@@ -68,10 +68,7 @@ export default function StepTwoForm({
   report,
   onGoBackToStep1,
 }: StepTwoFormProps) {
-  /**
-   * 1) Forzar la fecha actual en el estado si está vacía.
-   *    Se hace una sola vez al montar el componente (useEffect con dependencia vacía).
-   */
+  // 1) Forzar la fecha actual en el estado si está vacía (al montar)
   useEffect(() => {
     if (!formData.date) {
       setFormData({
@@ -80,11 +77,9 @@ export default function StepTwoForm({
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // <--- sin dependencias para que sólo se ejecute al montar
+  }, []);
 
-  /**
-   * Manejo genérico de campos del FormData
-   */
+  // Manejo genérico de campos
   const handleInputChange = (
     field: keyof FormData,
     value: string | boolean | Summary
@@ -92,9 +87,7 @@ export default function StepTwoForm({
     setFormData({ ...formData, [field]: value });
   };
 
-  /**
-   * Ajuste de la batería de pruebas por defecto al montar
-   */
+  // Ajuste de la batería de pruebas por defecto al montar
   useEffect(() => {
     const newTests = [...formData.batteryTests];
     newTests.forEach((test) => {
@@ -110,9 +103,7 @@ export default function StepTwoForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /**
-   * Añadir nuevo caso de prueba
-   */
+  // Añadir nuevo caso de prueba
   const addBatteryTest = () => {
     const newTest: BatteryTest = {
       id: "PR-001",
@@ -126,7 +117,6 @@ export default function StepTwoForm({
     };
 
     const newTests = [...formData.batteryTests, newTest];
-    // Actualizamos el total de pruebas
     const updatedSummary = {
       ...formData.summary,
       totalTests: String(newTests.length),
@@ -139,19 +129,14 @@ export default function StepTwoForm({
     });
   };
 
-  /**
-   * Eliminar caso de prueba
-   */
+  // Eliminar caso de prueba
   const removeBatteryTest = (index: number) => {
     const newTests = [...formData.batteryTests];
     newTests.splice(index, 1);
-
-    // Ajustamos el total de pruebas
     const updatedSummary = {
       ...formData.summary,
       totalTests: String(newTests.length),
     };
-
     setFormData({
       ...formData,
       batteryTests: newTests,
@@ -159,9 +144,7 @@ export default function StepTwoForm({
     });
   };
 
-  /**
-   * Actualizar propiedades de un caso de prueba
-   */
+  // Actualizar propiedades de un caso de prueba
   const handleBatteryTestChange = (
     index: number,
     field: keyof BatteryTest,
@@ -172,9 +155,7 @@ export default function StepTwoForm({
     setFormData({ ...formData, batteryTests: newTests });
   };
 
-  /**
-   * Incidencias
-   */
+  // Incidencias
   const addIncidence = () => {
     if (formData.incidences.length === 0) {
       setFormData({
@@ -207,30 +188,22 @@ export default function StepTwoForm({
     setFormData({ ...formData, incidences: newIncidences });
   };
 
-  /**
-   * Manejar activación de incidencias
-   */
+  // Manejar activación de incidencias
   useEffect(() => {
     if (formData.hasIncidences) {
-      // Si no hay incidencias, añadimos la de ejemplo
       if (formData.incidences.length === 0) {
         addIncidence();
-      }
-      // Si hay más de 1, nos quedamos sólo con la primera
-      else if (formData.incidences.length > 1) {
+      } else if (formData.incidences.length > 1) {
         const firstInc = formData.incidences[0];
         setFormData({ ...formData, incidences: [firstInc] });
       }
     } else {
-      // Si hasIncidences es false, vaciamos el array de incidences
       setFormData({ ...formData, incidences: [] });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.hasIncidences]);
 
-  /**
-   * Manejo de versiones
-   */
+  // Manejo de versiones
   const handleVersionChange = (
     index: number,
     field: "appName" | "appVersion",
@@ -254,7 +227,7 @@ export default function StepTwoForm({
     <div className="space-y-6 max-w-3xl mx-auto relative z-20">
       {/* Encabezado con botón a la derecha */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Paso 2: Datos adicionales</h2>
+        <h2 className="text-2xl font-semibold text-gray-800">Paso 2: Datos adicionales</h2>
         <button
           onClick={onGoBackToStep1}
           className="px-3 py-1 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition"
@@ -264,34 +237,37 @@ export default function StepTwoForm({
       </div>
 
       {/* Datos básicos */}
-      <div className="space-y-2">
+      <div className="space-y-4">
         <div>
-          <label className="block font-medium">Título</label>
-          <p className="p-2 bg-gray-100 rounded">{parsedData.title}</p>
+          <label className="block font-medium text-gray-700">Título</label>
+          <p className="p-2 bg-gray-100 rounded text-gray-800">{parsedData.title}</p>
         </div>
         <div>
-          <label className="block font-medium">Fecha de Prueba</label>
+          <label className="block font-medium text-gray-700">Fecha de Prueba</label>
           <input
             type="date"
-            className="border border-gray-300 rounded p-2 w-full"
+            className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={formData.date || new Date().toISOString().split("T")[0]}
             onChange={(e) => handleInputChange("date", e.target.value)}
           />
         </div>
         <div>
-          <label className="block font-medium">Tester</label>
+          <label className="block font-medium text-gray-700">Tester</label>
           <input
             type="text"
-            className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400"
+            className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={formData.tester}
             onChange={(e) => handleInputChange("tester", e.target.value)}
             placeholder="ABP"
           />
         </div>
         <div>
-          <label className="block font-medium">Estado de la Prueba</label>
+          <label className="block font-medium text-gray-700">Estado de la Prueba</label>
           <select
-            className="border border-gray-300 rounded p-2 w-full"
+            className="border border-gray-300 rounded p-2 w-full
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={formData.testStatus}
             onChange={(e) => handleInputChange("testStatus", e.target.value)}
           >
@@ -304,32 +280,30 @@ export default function StepTwoForm({
 
       {/* Versiones */}
       <div className="space-y-2">
-        <label className="block font-medium">Versiones</label>
+        <label className="block font-medium text-gray-700">Versiones</label>
         {formData.versions.map((version, idx) => (
           <div key={idx} className="flex space-x-2">
             <input
               type="text"
-              className="border border-gray-300 rounded p-2 flex-1 placeholder:text-gray-400"
+              className="border border-gray-300 rounded p-2 flex-1 placeholder:text-gray-400
+                         focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Nombre aplicativo (ej. Rail-server)"
               value={version.appName}
-              onChange={(e) =>
-                handleVersionChange(idx, "appName", e.target.value)
-              }
+              onChange={(e) => handleVersionChange(idx, "appName", e.target.value)}
             />
             <input
               type="text"
-              className="border border-gray-300 rounded p-2 flex-1 placeholder:text-gray-400"
+              className="border border-gray-300 rounded p-2 flex-1 placeholder:text-gray-400
+                         focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Versión (ej. 1.25.02.1)"
               value={version.appVersion}
-              onChange={(e) =>
-                handleVersionChange(idx, "appVersion", e.target.value)
-              }
+              onChange={(e) => handleVersionChange(idx, "appVersion", e.target.value)}
             />
           </div>
         ))}
         <button
           onClick={addVersion}
-          className="mt-2 px-3 py-1 bg-green-500 text-white rounded"
+          className="mt-2 px-3 py-1 bg-green-500 text-white rounded hover:bg-green-400 transition"
         >
           + Añadir versión
         </button>
@@ -338,59 +312,65 @@ export default function StepTwoForm({
       {/* Entorno de Pruebas */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block font-medium">Servidor de Pruebas</label>
+          <label className="block font-medium text-gray-700">Servidor de Pruebas</label>
           <input
             type="text"
-            className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400"
+            className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={formData.serverPruebas}
             onChange={(e) => handleInputChange("serverPruebas", e.target.value)}
             placeholder="MLOApps"
           />
         </div>
         <div>
-          <label className="block font-medium">IP Máquina</label>
+          <label className="block font-medium text-gray-700">IP Máquina</label>
           <input
             type="text"
-            className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400"
+            className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={formData.ipMaquina}
             onChange={(e) => handleInputChange("ipMaquina", e.target.value)}
             placeholder="172.25.2.62"
           />
         </div>
         <div>
-          <label className="block font-medium">Usuario</label>
+          <label className="block font-medium text-gray-700">Usuario</label>
           <input
             type="text"
-            className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400"
+            className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={formData.usuario}
             onChange={(e) => handleInputChange("usuario", e.target.value)}
             placeholder="admin"
           />
         </div>
         <div>
-          <label className="block font-medium">Contraseña</label>
+          <label className="block font-medium text-gray-700">Contraseña</label>
           <input
             type="text"
-            className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400"
+            className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={formData.contrasena}
             onChange={(e) => handleInputChange("contrasena", e.target.value)}
             placeholder="admin"
           />
         </div>
         <div>
-          <label className="block font-medium">Navegador Utilizado</label>
+          <label className="block font-medium text-gray-700">Navegador Utilizado</label>
           <input
             type="text"
-            className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400"
+            className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={formData.navegador}
             onChange={(e) => handleInputChange("navegador", e.target.value)}
             placeholder="Chrome"
           />
         </div>
         <div>
-          <label className="block font-medium">Base de Datos</label>
+          <label className="block font-medium text-gray-700">Base de Datos</label>
           <select
-            className="border border-gray-300 rounded p-2 w-full"
+            className="border border-gray-300 rounded p-2 w-full
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={formData.baseDatos}
             onChange={(e) => handleInputChange("baseDatos", e.target.value)}
           >
@@ -400,21 +380,21 @@ export default function StepTwoForm({
           </select>
         </div>
         <div>
-          <label className="block font-medium">Maqueta Utilizada</label>
+          <label className="block font-medium text-gray-700">Maqueta Utilizada</label>
           <input
             type="text"
-            className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400"
+            className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={formData.maquetaUtilizada}
-            onChange={(e) =>
-              handleInputChange("maquetaUtilizada", e.target.value)
-            }
+            onChange={(e) => handleInputChange("maquetaUtilizada", e.target.value)}
             placeholder="Maqueta MLO - 172.31.27.16"
           />
         </div>
         <div>
-          <label className="block font-medium">Ambiente</label>
+          <label className="block font-medium text-gray-700">Ambiente</label>
           <select
-            className="border border-gray-300 rounded p-2 w-full"
+            className="border border-gray-300 rounded p-2 w-full
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={formData.ambiente}
             onChange={(e) => handleInputChange("ambiente", e.target.value)}
           >
@@ -429,7 +409,7 @@ export default function StepTwoForm({
 
       {/* Batería de Pruebas */}
       <div className="space-y-2">
-        <h3 className="font-semibold">Batería de Pruebas</h3>
+        <h3 className="font-semibold text-gray-800">Batería de Pruebas</h3>
         <p className="text-sm text-gray-500">
           (En esta sección se definen los casos de prueba realizados y sus resultados.)
         </p>
@@ -440,7 +420,6 @@ export default function StepTwoForm({
               key={idx}
               className="relative border border-gray-300 rounded p-2 space-y-2"
             >
-              {/* Botón para eliminar el caso de prueba */}
               <button
                 onClick={() => removeBatteryTest(idx)}
                 className="absolute top-2 right-2 text-red-600 font-bold"
@@ -451,12 +430,12 @@ export default function StepTwoForm({
 
               {/* ID Prueba */}
               <div>
-                <label className="block font-medium">ID Prueba</label>
+                <label className="block font-medium text-gray-700">ID Prueba</label>
                 <input
                   type="text"
-                  className={`border border-gray-300 rounded p-2 w-full ${
-                    isExample ? "text-gray-400 italic" : ""
-                  }`}
+                  className={`border border-gray-300 rounded p-2 w-full placeholder:text-gray-400 
+                              focus:outline-none focus:ring-2 focus:ring-blue-500
+                              ${isExample ? "text-gray-400 italic" : ""}`}
                   placeholder="Ejemplo: PR-001"
                   value={test.id}
                   onChange={(e) =>
@@ -467,11 +446,11 @@ export default function StepTwoForm({
 
               {/* Pasos */}
               <div>
-                <label className="block font-medium">Pasos</label>
+                <label className="block font-medium text-gray-700">Pasos</label>
                 <textarea
-                  className={`w-full border border-gray-300 rounded p-2 ${
-                    isExample ? "text-gray-400 italic" : ""
-                  }`}
+                  className={`w-full border border-gray-300 rounded p-2 placeholder:text-gray-400
+                              focus:outline-none focus:ring-2 focus:ring-blue-500
+                              ${isExample ? "text-gray-400 italic" : ""}`}
                   placeholder="Ejemplo: 1. Acceder a la acción de regulación..."
                   value={test.steps}
                   onChange={(e) =>
@@ -482,11 +461,11 @@ export default function StepTwoForm({
 
               {/* Resultado Esperado */}
               <div>
-                <label className="block font-medium">Resultado Esperado</label>
+                <label className="block font-medium text-gray-700">Resultado Esperado</label>
                 <textarea
-                  className={`w-full border border-gray-300 rounded p-2 ${
-                    isExample ? "text-gray-400 italic" : ""
-                  }`}
+                  className={`w-full border border-gray-300 rounded p-2 placeholder:text-gray-400
+                              focus:outline-none focus:ring-2 focus:ring-blue-500
+                              ${isExample ? "text-gray-400 italic" : ""}`}
                   placeholder="Ejemplo: El servicio se elimina correctamente..."
                   value={test.expectedResult}
                   onChange={(e) =>
@@ -497,11 +476,11 @@ export default function StepTwoForm({
 
               {/* Resultado Obtenido */}
               <div>
-                <label className="block font-medium">Resultado Obtenido</label>
+                <label className="block font-medium text-gray-700">Resultado Obtenido</label>
                 <textarea
-                  className={`w-full border border-gray-300 rounded p-2 ${
-                    isExample ? "text-gray-400 italic" : ""
-                  }`}
+                  className={`w-full border border-gray-300 rounded p-2 placeholder:text-gray-400
+                              focus:outline-none focus:ring-2 focus:ring-blue-500
+                              ${isExample ? "text-gray-400 italic" : ""}`}
                   placeholder="Ejemplo: ❌ El sistema no procesó correctamente..."
                   value={test.obtainedResult}
                   onChange={(e) =>
@@ -512,12 +491,12 @@ export default function StepTwoForm({
 
               {/* Estado */}
               <div>
-                <label className="block font-medium">Estado</label>
+                <label className="block font-medium text-gray-700">Estado</label>
                 <input
                   type="text"
-                  className={`border border-gray-300 rounded p-2 w-full ${
-                    isExample ? "text-gray-400 italic" : ""
-                  }`}
+                  className={`border border-gray-300 rounded p-2 w-full placeholder:text-gray-400
+                              focus:outline-none focus:ring-2 focus:ring-blue-500
+                              ${isExample ? "text-gray-400 italic" : ""}`}
                   placeholder="Ejemplo: FALLIDO"
                   value={test.testStatus}
                   onChange={(e) =>
@@ -530,7 +509,7 @@ export default function StepTwoForm({
         })}
         <button
           onClick={addBatteryTest}
-          className="mt-2 px-3 py-1 bg-green-500 text-white rounded"
+          className="mt-2 px-3 py-1 bg-green-500 text-white rounded hover:bg-green-400 transition"
         >
           + Añadir caso de prueba
         </button>
@@ -538,19 +517,20 @@ export default function StepTwoForm({
 
       {/* Resumen de Resultados */}
       <div className="space-y-2">
-        <h3 className="font-semibold">Resumen de Resultados</h3>
+        <h3 className="font-semibold text-gray-800">Resumen de Resultados</h3>
         <p className="text-sm text-gray-500">
           (En esta sección se registran los resultados de las pruebas ejecutadas, incluyendo el número total de pruebas, las exitosas y las fallidas, junto con observaciones adicionales sobre la ejecución.)
         </p>
 
-        {/* Total de Pruebas -> ahora number */}
+        {/* Total de Pruebas -> number */}
         <div>
-          <label className="block font-medium">Total de Pruebas</label>
+          <label className="block font-medium text-gray-700">Total de Pruebas</label>
           <input
             type="number"
             min="0"
             step="1"
-            className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400"
+            className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder=""
             value={formData.summary.totalTests}
             onChange={(e) =>
@@ -562,14 +542,15 @@ export default function StepTwoForm({
           />
         </div>
 
-        {/* Pruebas Exitosas -> ahora number */}
+        {/* Pruebas Exitosas -> number */}
         <div>
-          <label className="block font-medium">Pruebas Exitosas</label>
+          <label className="block font-medium text-gray-700">Pruebas Exitosas</label>
           <input
             type="number"
             min="0"
             step="1"
-            className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400"
+            className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder=""
             value={formData.summary.successfulTests}
             onChange={(e) =>
@@ -581,14 +562,15 @@ export default function StepTwoForm({
           />
         </div>
 
-        {/* Pruebas Fallidas -> ahora number */}
+        {/* Pruebas Fallidas -> number */}
         <div>
-          <label className="block font-medium">Pruebas Fallidas</label>
+          <label className="block font-medium text-gray-700">Pruebas Fallidas</label>
           <input
             type="number"
             min="0"
             step="1"
-            className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400"
+            className="border border-gray-300 rounded p-2 w-full placeholder:text-gray-400
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder=""
             value={formData.summary.failedTests}
             onChange={(e) =>
@@ -601,9 +583,10 @@ export default function StepTwoForm({
         </div>
 
         <div>
-          <label className="block font-medium">Observaciones</label>
+          <label className="block font-medium text-gray-700">Observaciones</label>
           <textarea
-            className="w-full border border-gray-300 rounded p-2 placeholder:text-gray-400"
+            className="w-full border border-gray-300 rounded p-2 placeholder:text-gray-400
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder=""
             value={formData.summary.observations}
             onChange={(e) =>
@@ -618,14 +601,17 @@ export default function StepTwoForm({
 
       {/* Incidencias Detectadas */}
       <div className="space-y-2">
-        <h3 className="font-semibold">Incidencias Detectadas</h3>
+        <h3 className="font-semibold text-gray-800">Incidencias Detectadas</h3>
         <p className="text-sm text-gray-500">
           (En esta sección se registran las incidencias encontradas durante la ejecución de las pruebas.)
         </p>
         <div>
-          <label className="block font-medium">¿Se detectaron incidencias?</label>
+          <label className="block font-medium text-gray-700">
+            ¿Se detectaron incidencias?
+          </label>
           <select
-            className="border border-gray-300 rounded p-2 w-full"
+            className="border border-gray-300 rounded p-2 w-full
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={formData.hasIncidences ? "Sí" : "No"}
             onChange={(e) =>
               handleInputChange("hasIncidences", e.target.value === "Sí")
@@ -651,12 +637,12 @@ export default function StepTwoForm({
                   X
                 </button>
                 <div>
-                  <label className="block font-medium">ID Prueba</label>
+                  <label className="block font-medium text-gray-700">ID Prueba</label>
                   <input
                     type="text"
-                    className={`border border-gray-300 rounded p-2 w-full ${
-                      isExample ? "text-gray-400 italic" : ""
-                    }`}
+                    className={`border border-gray-300 rounded p-2 w-full placeholder:text-gray-400
+                                focus:outline-none focus:ring-2 focus:ring-blue-500
+                                ${isExample ? "text-gray-400 italic" : ""}`}
                     placeholder="Ejemplo: PR-001"
                     value={inc.id}
                     onChange={(e) => {
@@ -667,13 +653,13 @@ export default function StepTwoForm({
                   />
                 </div>
                 <div>
-                  <label className="block font-medium">
+                  <label className="block font-medium text-gray-700">
                     Descripción de la Incidencia
                   </label>
                   <textarea
-                    className={`w-full border border-gray-300 rounded p-2 ${
-                      isExample ? "text-gray-400 italic" : ""
-                    }`}
+                    className={`w-full border border-gray-300 rounded p-2 placeholder:text-gray-400
+                                focus:outline-none focus:ring-2 focus:ring-blue-500
+                                ${isExample ? "text-gray-400 italic" : ""}`}
                     placeholder="Ejemplo: Descripción de la incidencia"
                     value={inc.description}
                     onChange={(e) => {
@@ -684,12 +670,12 @@ export default function StepTwoForm({
                   />
                 </div>
                 <div>
-                  <label className="block font-medium">Impacto</label>
+                  <label className="block font-medium text-gray-700">Impacto</label>
                   <input
                     type="text"
-                    className={`border border-gray-300 rounded p-2 w-full ${
-                      isExample ? "text-gray-400 italic" : ""
-                    }`}
+                    className={`border border-gray-300 rounded p-2 w-full placeholder:text-gray-400
+                                focus:outline-none focus:ring-2 focus:ring-blue-500
+                                ${isExample ? "text-gray-400 italic" : ""}`}
                     placeholder="Ejemplo: Error LEVE"
                     value={inc.impact}
                     onChange={(e) => {
@@ -700,12 +686,12 @@ export default function StepTwoForm({
                   />
                 </div>
                 <div>
-                  <label className="block font-medium">Estado</label>
+                  <label className="block font-medium text-gray-700">Estado</label>
                   <input
                     type="text"
-                    className={`border border-gray-300 rounded p-2 w-full ${
-                      isExample ? "text-gray-400 italic" : ""
-                    }`}
+                    className={`border border-gray-300 rounded p-2 w-full placeholder:text-gray-400
+                                focus:outline-none focus:ring-2 focus:ring-blue-500
+                                ${isExample ? "text-gray-400 italic" : ""}`}
                     placeholder="Ejemplo: Reabierto"
                     value={inc.status}
                     onChange={(e) => {
@@ -722,11 +708,11 @@ export default function StepTwoForm({
 
       {/* Conclusiones */}
       <div className="space-y-2">
-        <h3 className="font-semibold">Conclusiones</h3>
+        <h3 className="font-semibold text-gray-800">Conclusiones</h3>
         <textarea
-          className={`w-full border border-gray-300 rounded p-2 placeholder:text-gray-400 ${
-            isExampleConclusion ? "text-gray-400 italic" : ""
-          }`}
+          className={`w-full border border-gray-300 rounded p-2 placeholder:text-gray-400
+                      focus:outline-none focus:ring-2 focus:ring-blue-500
+                      ${isExampleConclusion ? "text-gray-400 italic" : ""}`}
           placeholder={EXAMPLE_CONCLUSION}
           value={formData.conclusion}
           onChange={(e) => handleInputChange("conclusion", e.target.value)}

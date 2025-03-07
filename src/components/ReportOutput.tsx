@@ -1,14 +1,7 @@
-// src/components/ReportOutput.tsx
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import {
-  Document,
-  Packer,
-  Paragraph,
-  TextRun,
-  AlignmentType
-} from "docx";
+import { Document, Packer } from "docx";
 import { markdownToDocx } from "@/utils/markdownToDocx";
 
 interface ReportOutputProps {
@@ -55,10 +48,9 @@ export default function ReportOutput({
   };
 
   /**
-   * Exportar a Word sin numeración de páginas.
+   * Exportar a Word (sin numeración de páginas).
    */
   const exportToWord = async () => {
-    // Convertir Markdown a elementos docx
     const docElements = markdownToDocx(report);
     const doc = new Document({
       sections: [
@@ -68,7 +60,6 @@ export default function ReportOutput({
       ],
     });
 
-    // Generar el Blob y forzar la descarga
     const blob = await Packer.toBlob(doc);
     const blobUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -79,17 +70,17 @@ export default function ReportOutput({
   };
 
   return (
-    <div className="max-w-3xl mx-auto bg-white p-4 rounded shadow space-y-4 relative z-50">
+    <div className="max-w-3xl mx-auto bg-white p-6 rounded shadow space-y-6 relative z-50">
       {/* Título de Paso 3 */}
-      <div className="mb-2">
-        <h3 className="text-lg font-semibold text-gray-600">
+      <div>
+        <h3 className="text-2xl font-semibold text-gray-800">
           Paso 3: Revisión del Reporte
         </h3>
       </div>
 
       {/* Encabezado con botón a la derecha */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">Reporte Generado</h2>
+        <h2 className="text-xl font-bold text-gray-800">Reporte Generado</h2>
         <button
           onClick={onGoBackToStep2}
           className="px-3 py-1 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition"
@@ -99,7 +90,7 @@ export default function ReportOutput({
       </div>
 
       {/* Visualización del reporte */}
-      <pre className="whitespace-pre-wrap bg-gray-50 p-3 rounded border border-gray-200 max-h-96 overflow-auto">
+      <pre className="whitespace-pre-wrap bg-gray-50 p-4 rounded border border-gray-200 max-h-96 overflow-auto text-gray-800">
         {report}
       </pre>
 
@@ -127,11 +118,10 @@ export default function ReportOutput({
             >
               <button
                 onClick={exportToWord}
-                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-800"
               >
                 Word
               </button>
-              {/* Opción PDF eliminada */}
             </div>
           )}
         </div>
