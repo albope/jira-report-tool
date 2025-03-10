@@ -100,7 +100,7 @@ export default function StepOnePaste({
             focus:ring-offset-2
           "
         >
-          Generar
+          Siguiente Paso
         </button>
       </div>
     </div>
