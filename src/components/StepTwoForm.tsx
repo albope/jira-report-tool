@@ -224,7 +224,7 @@ export default function StepTwoForm({
   const isExampleConclusion = formData.conclusion === EXAMPLE_CONCLUSION;
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto relative z-20">
+    <div className="space-y-6 max-w-3xl mx-auto relative z-20 mb-12">
       {/* Encabezado con botón a la derecha */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold text-gray-800">Paso 2: Datos adicionales</h2>
@@ -720,7 +720,7 @@ export default function StepTwoForm({
       </div>
 
       {/* Botones */}
-      <div className="flex flex-wrap gap-3 justify-end">
+      <div className="flex flex-wrap gap-3 justify-end mt-6">
         <button
           onClick={onGenerate}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500 transition"

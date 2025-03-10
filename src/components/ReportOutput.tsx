@@ -1,3 +1,4 @@
+// src/components/ReportOutput.tsx
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -70,7 +71,15 @@ export default function ReportOutput({
   };
 
   return (
-    <div className="max-w-3xl mx-auto bg-white p-6 rounded shadow space-y-6 relative z-50">
+    <div
+      className="
+        max-w-4xl mx-auto
+        bg-gradient-to-br from-white via-blue-50 to-white
+        shadow-lg rounded-lg p-8 space-y-6
+        relative z-50
+        mb-8
+      "
+    >
       {/* Título de Paso 3 */}
       <div>
         <h3 className="text-2xl font-semibold text-gray-800">
@@ -94,7 +103,7 @@ export default function ReportOutput({
         {report}
       </pre>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3 justify-end">
         {/* Botón Copiar */}
         <button
           onClick={copyToClipboard}
