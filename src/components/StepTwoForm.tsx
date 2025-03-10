@@ -230,7 +230,7 @@ export default function StepTwoForm({
         <h2 className="text-2xl font-semibold text-gray-800">Paso 2: Datos adicionales</h2>
         <button
           onClick={onGoBackToStep1}
-          className="px-3 py-1 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition"
+          className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-500 transition"
         >
           ← Volver a la introducción del JIRA
         </button>
