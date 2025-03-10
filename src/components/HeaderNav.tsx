@@ -1,4 +1,3 @@
-// src/components/HeaderNav.tsx
 "use client";
 
 import Link from "next/link";
@@ -10,29 +9,31 @@ export default function HeaderNav() {
       className="
         fixed top-0 w-full z-50
         flex items-center justify-between
-        px-4 py-2  /* <-- Ajustar aquí la altura */
-        bg-white shadow-sm
+        px-4 py-1
+        bg-gradient-to-br from-white via-blue-50 to-white
+        shadow-sm
       "
     >
-      {/* Izquierda: Logo y nombre de la marca */}
-      <div className="flex items-center space-x-2">
-        <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-          <span className="text-white text-lg">📝</span>
+      {/* Izquierda: Logo e identificación de la aplicación */}
+      <div className="flex items-center space-x-3">
+        {/* Ícono circular con color sólido para destacar */}
+        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+          <span className="text-white text-sm">📝</span>
         </div>
-        <span className="text-xl font-bold text-gray-800">
+        <span className="text-lg font-bold text-gray-800">
           Generador de Reportes JIRA
         </span>
       </div>
 
-      {/* Derecha: Enlaces de navegación */}
-      <nav className="flex space-x-6">
-        <Link href="/" className="text-gray-600 hover:text-blue-600 transition">
+      {/* Derecha: Navegación */}
+      <nav className="flex space-x-4">
+        <Link href="/" className="text-gray-800 hover:text-blue-600 transition">
           Inicio
         </Link>
-        <Link href="/help" className="text-gray-600 hover:text-blue-600 transition">
+        <Link href="/help" className="text-gray-800 hover:text-blue-600 transition">
           Ayuda
         </Link>
-        <Link href="/release-notes" className="text-gray-600 hover:text-blue-600 transition">
+        <Link href="/release-notes" className="text-gray-800 hover:text-blue-600 transition">
           Release Notes
         </Link>
       </nav>

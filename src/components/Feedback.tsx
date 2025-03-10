@@ -161,10 +161,10 @@ export default function Feedback() {
             <button
               onClick={handleSubmit}
               disabled={name.trim() === "" || description.trim() === ""}
-              className={`w-full bg-green-600 text-white py-2 rounded mb-4 ${
+              className={`w-full bg-blue-600 text-white py-2 rounded mb-4 ${
                 name.trim() === "" || description.trim() === ""
                   ? "opacity-50 cursor-not-allowed"
-                  : "hover:bg-green-500"
+                  : "hover:bg-blue-600"
               }`}
             >
               Enviar
