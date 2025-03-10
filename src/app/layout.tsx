@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Generador de Reportes JIRA",
+  title: "[EID] Generador Reportes JIRA",
   description: "Ejemplo minimalista con Next.js, Tailwind y TypeScript",
 };
 
