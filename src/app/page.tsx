@@ -6,6 +6,7 @@ import StepTwoForm from "@/components/StepTwoForm";
 import ReportOutput from "@/components/ReportOutput";
 import Feedback from "@/components/Feedback";
 import HeaderNav from "@/components/HeaderNav";
+import FooterNav from "@/components/FooterNav"; // <-- Importa el nuevo Footer
 import parseJiraContent, { ParsedData } from "@/utils/parseJiraContent";
 import formatReport from "@/utils/formatReport";
 
@@ -138,8 +139,8 @@ export default function Home() {
       <HeaderNav />
 
       {/* 
-        Usamos pt-20 para dejar espacio debajo del header fijo 
-        (ajusta la altura según tu diseño).
+        Agregamos pt-20 para dejar espacio debajo del header fijo
+        y evitar que el contenido se solape.
       */}
       <main className="pt-20 min-h-screen bg-gray-50 relative">
         {step === 1 && (
@@ -168,9 +169,12 @@ export default function Home() {
           />
         )}
 
-        {/* Botón flotante de Feedback */}
+        {/* Botón flotante Feedback */}
         <Feedback />
       </main>
+
+      {/* Footer al final de la página */}
+      <FooterNav />
     </>
   );
 }

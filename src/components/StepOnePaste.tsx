@@ -26,7 +26,7 @@ export default function StepOnePaste({
           Esta herramienta te permite crear reportes profesionales a partir del contenido de tu JIRA de forma rápida y sencilla.
         </p>
         <h2 className="text-2xl font-semibold text-gray-800">
-          Paso 1: Ingreso del Contenido JIRA
+          Paso 1: Ingreso del Contenido del JIRA
         </h2>
       </div>
 

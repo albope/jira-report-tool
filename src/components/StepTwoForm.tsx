@@ -227,7 +227,7 @@ export default function StepTwoForm({
     <div className="space-y-6 max-w-3xl mx-auto relative z-20 mb-12">
       {/* Encabezado con botón a la derecha */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold text-gray-800">Paso 2: Datos adicionales</h2>
+        <h2 className="text-2xl font-semibold text-gray-800">Paso 2: Introduce los datos adicionales</h2>
         <button
           onClick={onGoBackToStep1}
           className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-500 transition"
