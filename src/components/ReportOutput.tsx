@@ -73,11 +73,12 @@ export default function ReportOutput({
   return (
     <div
       className="
-        max-w-4xl mx-auto
-        bg-gradient-to-br from-white via-blue-50 to-white
-        shadow-lg rounded-lg p-8 space-y-6
-        relative z-50
-        mb-8
+    max-w-4xl mx-auto
+    mt-8                        /* Para separarlo del header */
+    bg-gradient-to-br from-white via-blue-50 to-white
+    shadow-lg rounded-lg p-8 space-y-6
+    relative z-10               /* z-10 en lugar de z-50 */
+    mb-8
       "
     >
       {/* Título de Paso 3 */}
