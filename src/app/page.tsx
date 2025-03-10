@@ -5,6 +5,7 @@ import StepOnePaste from "@/components/StepOnePaste";
 import StepTwoForm from "@/components/StepTwoForm";
 import ReportOutput from "@/components/ReportOutput";
 import Feedback from "@/components/Feedback";
+import HeaderNav from "@/components/HeaderNav";
 import parseJiraContent, { ParsedData } from "@/utils/parseJiraContent";
 import formatReport from "@/utils/formatReport";
 
@@ -132,34 +133,44 @@ export default function Home() {
   const goBackToStep2 = () => setStep(2);
 
   return (
-    <main className="p-8 min-h-screen bg-gray-50 relative">
-      {step === 1 && (
-        <StepOnePaste
-          jiraContent={jiraContent}
-          setJiraContent={setJiraContent}
-          onParse={handleParseJira}
-        />
-      )}
-      {step === 2 && parsedData && (
-        <StepTwoForm
-          parsedData={parsedData}
-          formData={formData}
-          setFormData={setFormData}
-          onGenerate={handleGenerateReport}
-          onReset={handleReset}
-          report={report}
-          onGoBackToStep1={goBackToStep1}
-        />
-      )}
-      {step === 3 && (
-        <ReportOutput
-          report={report}
-          onReset={handleReset}
-          onGoBackToStep2={goBackToStep2}
-        />
-      )}
-      {/* Componente de Feedback: botón flotante y modal */}
-      <Feedback />
-    </main>
+    <>
+      {/* Header fijo */}
+      <HeaderNav />
+
+      {/* 
+        Usamos pt-20 para dejar espacio debajo del header fijo 
+        (ajusta la altura según tu diseño).
+      */}
+      <main className="pt-20 min-h-screen bg-gray-50 relative">
+        {step === 1 && (
+          <StepOnePaste
+            jiraContent={jiraContent}
+            setJiraContent={setJiraContent}
+            onParse={handleParseJira}
+          />
+        )}
+        {step === 2 && parsedData && (
+          <StepTwoForm
+            parsedData={parsedData}
+            formData={formData}
+            setFormData={setFormData}
+            onGenerate={handleGenerateReport}
+            onReset={handleReset}
+            report={report}
+            onGoBackToStep1={goBackToStep1}
+          />
+        )}
+        {step === 3 && (
+          <ReportOutput
+            report={report}
+            onReset={handleReset}
+            onGoBackToStep2={goBackToStep2}
+          />
+        )}
+
+        {/* Botón flotante de Feedback */}
+        <Feedback />
+      </main>
+    </>
   );
 }
