@@ -225,9 +225,24 @@ export default function StepTwoForm({
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto relative z-20 mb-12">
-      {/* Encabezado con botón a la derecha */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold text-gray-800">Paso 2: Introduce los datos adicionales</h2>
+      {/* Encabezado modificado con ícono, subtítulo y separación */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="flex items-center text-2xl font-bold text-gray-800 mb-1">
+            {/* Ícono decorativo */}
+            <svg
+              className="w-6 h-6 mr-2 text-blue-600"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11H9v-2h2v2zm0-4H9V5h2v4z" />
+            </svg>
+            Paso 2
+          </h2>
+          <p className="text-gray-600">Introduce los datos adicionales</p>
+          <hr className="mt-3 border-gray-200" />
+        </div>
         <button
           onClick={onGoBackToStep1}
           className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-500 transition"
@@ -235,7 +250,6 @@ export default function StepTwoForm({
           ← Volver a la introducción del JIRA
         </button>
       </div>
-
       {/* Datos básicos */}
       <div className="space-y-4">
         <div>

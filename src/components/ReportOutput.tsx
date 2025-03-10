@@ -1,4 +1,3 @@
-// src/components/ReportOutput.tsx
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -73,24 +72,49 @@ export default function ReportOutput({
   return (
     <div
       className="
-    max-w-4xl mx-auto
-    mt-8                        /* Para separarlo del header */
-    bg-gradient-to-br from-white via-blue-50 to-white
-    shadow-lg rounded-lg p-8 space-y-6
-    relative z-10               /* z-10 en lugar de z-50 */
-    mb-8
+        max-w-4xl mx-auto
+        mt-8 /* Para separarlo del header */
+        bg-gradient-to-br from-white via-blue-50 to-white
+        shadow-lg rounded-lg p-8 space-y-6
+        relative z-10
+        mb-8
       "
     >
-      {/* Título de Paso 3 */}
-      <div>
-        <h3 className="text-2xl font-semibold text-gray-800">
-          Paso 3: Revisión del Reporte
-        </h3>
+      {/* Encabezado del Paso 3 con ícono distinto */}
+      <div className="mb-6">
+        <div className="flex items-center mb-2 space-x-2">
+          {/* Ícono circular con fondo verde para diferenciar */}
+          <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+            <svg
+              className="text-white w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+              />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-gray-800">Paso 3</h2>
+        </div>
+        <p className="text-gray-600 ml-10">Revisión del Reporte</p>
+        <hr className="mt-3 border-gray-200" />
       </div>
 
       {/* Encabezado con botón a la derecha */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-800">Reporte Generado</h2>
+        <h3 className="text-lg font-bold text-gray-800">Reporte Generado</h3>
         <button
           onClick={onGoBackToStep2}
           className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-500 transition"
