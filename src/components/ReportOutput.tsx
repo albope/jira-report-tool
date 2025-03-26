@@ -7,13 +7,16 @@ import { markdownToDocx } from "@/utils/markdownToDocx";
 interface ReportOutputProps {
   report: string;
   onReset: () => void;
-  onGoBackToStep2: () => void; // Botón para volver a la pantalla 2
+  onGoBackToStep2: () => void;
+  /** Nueva prop para renombrar Word */
+  jiraCode?: string;
 }
 
 export default function ReportOutput({
   report,
   onReset,
   onGoBackToStep2,
+  jiraCode,
 }: ReportOutputProps) {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -35,9 +38,7 @@ export default function ReportOutput({
 
   const toggleExportMenu = () => setShowExportMenu(!showExportMenu);
 
-  /**
-   * Copiar el reporte (Markdown) al portapapeles.
-   */
+  /** Copiar al portapapeles */
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(report);
@@ -47,9 +48,7 @@ export default function ReportOutput({
     }
   };
 
-  /**
-   * Exportar a Word (sin numeración de páginas).
-   */
+  /** Exportar a Word => "Reporte_{jiraCode}.docx" */
   const exportToWord = async () => {
     const docElements = markdownToDocx(report);
     const doc = new Document({
@@ -62,9 +61,14 @@ export default function ReportOutput({
 
     const blob = await Packer.toBlob(doc);
     const blobUrl = URL.createObjectURL(blob);
+
     const link = document.createElement("a");
     link.href = blobUrl;
-    link.download = "Reporte.docx";
+
+    // Si tenemos jiraCode, usarlo en el nombre
+    const code = jiraCode?.trim();
+    link.download = code ? `Reporte_${code}.docx` : "Reporte.docx";
+
     link.click();
     URL.revokeObjectURL(blobUrl);
   };
@@ -73,36 +77,30 @@ export default function ReportOutput({
     <div
       className="
         max-w-4xl mx-auto
-        mt-8 /* Para separarlo del header */
+        mt-8
         bg-gradient-to-br from-white via-blue-50 to-white
         shadow-lg rounded-lg p-8 space-y-6
         relative z-10
         mb-8
       "
     >
-      {/* Encabezado del Paso 3 con ícono distinto */}
+      {/* Título Paso 3 */}
       <div className="mb-6">
         <div className="flex items-center mb-2 space-x-2">
-          {/* Ícono circular con fondo verde para diferenciar */}
           <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
             <svg
               className="text-white w-5 h-5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
-              xmlns="http://www.w3.org/2000/svg"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
               />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477
+                   0 8.268 2.943 9.542 7-1.274 4.057-5.065
+                   7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
               />
             </svg>
           </div>
@@ -112,7 +110,7 @@ export default function ReportOutput({
         <hr className="mt-3 border-gray-200" />
       </div>
 
-      {/* Encabezado con botón a la derecha */}
+      {/* Barra superior: Título y Volver */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold text-gray-800">Reporte Generado</h3>
         <button
@@ -123,11 +121,12 @@ export default function ReportOutput({
         </button>
       </div>
 
-      {/* Visualización del reporte */}
+      {/* Contenido del reporte en pre */}
       <pre className="whitespace-pre-wrap bg-gray-50 p-4 rounded border border-gray-200 max-h-96 overflow-auto text-gray-800">
         {report}
       </pre>
 
+      {/* Botones finales */}
       <div className="flex flex-wrap gap-3 justify-end">
         {/* Botón Copiar */}
         <button
@@ -137,7 +136,7 @@ export default function ReportOutput({
           Copiar al Portapapeles
         </button>
 
-        {/* Menú desplegable para Exportar */}
+        {/* Menú Exportar (ahora puedes optar por integrarlo en un solo botón, si gustas) */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={toggleExportMenu}

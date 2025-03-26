@@ -33,7 +33,7 @@ export default function HelpPage() {
             <h2 className="text-2xl font-semibold text-gray-800">1. Ingresar contenido de JIRA</h2>
             <p className="text-gray-600">
               Copia el contenido relevante de tu ticket o incidencia JIRA y pégalo en la
-              sección "Paso 1". Asegúrate de incluir los campos más importantes: título,
+              sección &quot;Paso 1&quot;. Asegúrate de incluir los campos más importantes: título,
               descripción, notas, etc.
             </p>
           </section>
@@ -41,7 +41,7 @@ export default function HelpPage() {
           <section className="space-y-3">
             <h2 className="text-2xl font-semibold text-gray-800">2. Completar Datos Adicionales</h2>
             <p className="text-gray-600">
-              En "Paso 2", podrás configurar detalles como fecha de prueba,
+              En &quot;Paso 2&quot;, podrás configurar detalles como fecha de prueba,
               versiones del sistema, entorno, batería de pruebas y mucho más.
               <br />
               - <strong>Fecha de Prueba:</strong> Selecciona la fecha en la que
@@ -55,8 +55,8 @@ export default function HelpPage() {
           <section className="space-y-3">
             <h2 className="text-2xl font-semibold text-gray-800">3. Generar Reporte</h2>
             <p className="text-gray-600">
-              Una vez completados los campos, haz clic en "Generar Reporte".
-              Serás dirigido a "Paso 3", donde podrás ver y revisar el reporte
+              Una vez completados los campos, haz clic en &quot;Generar Reporte&quot;.
+              Serás dirigido a &quot;Paso 3&quot;, donde podrás ver y revisar el reporte
               final en formato Markdown.
             </p>
             <p className="text-gray-600">

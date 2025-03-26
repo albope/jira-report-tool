@@ -6,7 +6,7 @@ import StepTwoForm from "@/components/StepTwoForm";
 import ReportOutput from "@/components/ReportOutput";
 import Feedback from "@/components/Feedback";
 import HeaderNav from "@/components/HeaderNav";
-import FooterNav from "@/components/FooterNav"; // <-- Importa el nuevo Footer
+import FooterNav from "@/components/FooterNav";
 import parseJiraContent, { ParsedData } from "@/utils/parseJiraContent";
 import formatReport from "@/utils/formatReport";
 
@@ -33,15 +33,18 @@ interface Summary {
   observations: string;
 }
 
+/**
+ * NUEVA estructura sin usuario/contrasena.
+ * Se añade jiraCode como campo obligatorio.
+ */
 interface FormData {
+  jiraCode: string; // campo nuevo para "código JIRA"
   date: string;
   tester: string;
   testStatus: string;
   versions: Array<{ appName: string; appVersion: string }>;
   serverPruebas: string;
   ipMaquina: string;
-  usuario: string;
-  contrasena: string;
   navegador: string;
   baseDatos: string;
   maquetaUtilizada: string;
@@ -58,16 +61,15 @@ export default function Home() {
   const [jiraContent, setJiraContent] = useState("");
   const [parsedData, setParsedData] = useState<ParsedData | null>(null);
 
-  // formData con fecha vacía por defecto
+  // formData con fecha vacía y jiraCode también vacío por defecto
   const [formData, setFormData] = useState<FormData>({
+    jiraCode: "", // Nuevo campo
     date: "",
     tester: "",
     testStatus: "",
     versions: [],
     serverPruebas: "",
     ipMaquina: "",
-    usuario: "",
-    contrasena: "",
     navegador: "",
     baseDatos: "",
     maquetaUtilizada: "",
@@ -102,15 +104,15 @@ export default function Home() {
   const handleReset = () => {
     setJiraContent("");
     setParsedData(null);
+    // Se limpian los campos, incluida jiraCode
     setFormData({
+      jiraCode: "",
       date: "",
       tester: "",
       testStatus: "",
       versions: [],
       serverPruebas: "",
       ipMaquina: "",
-      usuario: "",
-      contrasena: "",
       navegador: "",
       baseDatos: "",
       maquetaUtilizada: "",
@@ -135,13 +137,8 @@ export default function Home() {
 
   return (
     <>
-      {/* Header fijo */}
       <HeaderNav />
 
-      {/* 
-        Agregamos pt-20 para dejar espacio debajo del header fijo
-        y evitar que el contenido se solape.
-      */}
       <main className="pt-20 min-h-screen bg-gray-50 relative">
         {step === 1 && (
           <StepOnePaste
@@ -150,6 +147,7 @@ export default function Home() {
             onParse={handleParseJira}
           />
         )}
+
         {step === 2 && parsedData && (
           <StepTwoForm
             parsedData={parsedData}
@@ -157,23 +155,23 @@ export default function Home() {
             setFormData={setFormData}
             onGenerate={handleGenerateReport}
             onReset={handleReset}
-            report={report}
             onGoBackToStep1={goBackToStep1}
           />
         )}
+
         {step === 3 && (
           <ReportOutput
             report={report}
             onReset={handleReset}
             onGoBackToStep2={goBackToStep2}
+            /** Pasamos jiraCode para renombrar Word */
+            jiraCode={formData.jiraCode}
           />
         )}
 
-        {/* Botón flotante Feedback */}
         <Feedback />
       </main>
 
-      {/* Footer al final de la página */}
       <FooterNav />
     </>
   );

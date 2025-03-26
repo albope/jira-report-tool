@@ -1,5 +1,3 @@
-// src/utils/formatReport.ts
-
 import { ParsedData } from "./parseJiraContent";
 
 interface BatteryTest {
@@ -8,16 +6,13 @@ interface BatteryTest {
   expectedResult: string;
   obtainedResult: string;
   testStatus: string;
-  // OJO: Eliminado 'description' para que coincida con el formulario
 }
-
 interface Incidence {
   id: string;
   description: string;
   impact: string;
   status: string;
 }
-
 interface Summary {
   totalTests: string;
   successfulTests: string;
@@ -25,15 +20,18 @@ interface Summary {
   observations: string;
 }
 
+/**
+ * Se han removido 'usuario' y 'contrasena'.
+ * Añadimos 'jiraCode' si deseas mostrarlo en la info general.
+ */
 interface FormData {
+  jiraCode: string;
   date: string;
   tester: string;
   testStatus: string;
   versions: Array<{ appName: string; appVersion: string }>;
   serverPruebas: string;
   ipMaquina: string;
-  usuario: string;
-  contrasena: string;
   navegador: string;
   baseDatos: string;
   maquetaUtilizada: string;
@@ -45,21 +43,16 @@ interface FormData {
   conclusion: string;
 }
 
-/**
- * Convierte cada línea de `steps` en un ítem enumerado,
- * separado por '\\n' para que se mantenga multiline en la misma celda Markdown.
- */
+// Convierte multiline en bullet points
 function formatStepsCell(steps: string): string {
   const lines = steps.split(/\r?\n/).filter((line) => line.trim() !== "");
-  // Anteponemos "- " a cada línea y unimos con " \\n "
   return lines.map((line) => `- ${line}`).join(" \\n ");
 }
 
 export default function formatReport(parsed: ParsedData, formData: FormData): string {
-  // Fecha por defecto si el usuario no eligió ninguna
   const finalDate = formData.date || new Date().toISOString().split("T")[0];
 
-  // -- Sección de Versiones --
+  // Sección Versiones
   let versionTable = "";
   formData.versions.forEach((v) => {
     versionTable += `| ${v.appName.trim()} | ${v.appVersion.trim()} |\n`;
@@ -68,11 +61,9 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
     versionTable = "| (No hay versiones) | (N/A) |\n";
   }
 
-  // -- Batería de Pruebas --
-  // Eliminamos la columna "Descripción"
+  // Batería de pruebas
   let batteryTable = `| ID Prueba | Pasos | Resultado Esperado | Resultado Obtenido | Estado |\n`;
   batteryTable += `| --------- | ----- | ------------------ | ------------------ | ------ |\n`;
-
   if (formData.batteryTests.length > 0) {
     formData.batteryTests.forEach((bt) => {
       const stepsCell = formatStepsCell(bt.steps);
@@ -82,7 +73,7 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
     batteryTable += "| (Sin pruebas) | - | - | - | - |\n";
   }
 
-  // -- Resumen de Resultados --
+  // Resumen
   let summaryTable = `| **Total de Pruebas** | **Pruebas Exitosas** | **Pruebas Fallidas** | **Observaciones** |\n`;
   summaryTable += `| -------------------- | -------------------- | -------------------- | ----------------- |\n`;
   summaryTable += `| ${formData.summary.totalTests || "0"} | ${
@@ -91,7 +82,7 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
     formData.summary.observations || "(N/A)"
   } |\n`;
 
-  // -- Incidencias --
+  // Incidencias
   let incidencesSection = "";
   if (formData.hasIncidences && formData.incidences.length > 0) {
     incidencesSection += `| **ID Prueba** | **Descripción de la Incidencia** | **Impacto** | **Estado** |\n`;
@@ -103,11 +94,10 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
     incidencesSection = "No se detectaron incidencias durante las pruebas.";
   }
 
-  // -- Construcción final del reporte --
-  // Aseguramos DOBLE salto de línea antes de cada tabla para que `markdownToDocx` lo reconozca.
   return `
 📌 **Información General**
 **Título:** ${parsed.title}
+**Código de JIRA:** ${formData.jiraCode}
 **Fecha de Prueba:** ${finalDate}
 **Tester:** ${formData.tester}
 **Estado de la Prueba:** ${formData.testStatus}
@@ -120,27 +110,24 @@ ${versionTable.trim()}
 
 🖥️ **Entorno de Pruebas**
 
-| **Parámetros de Configuración** | **Detalle**                     |
-| ------------------------------- | ------------------------------- |
-| Servidor de Pruebas            | ${formData.serverPruebas}       |
-| IP Máquina                     | ${formData.ipMaquina}           |
-| Usuario                        | ${formData.usuario}             |
-| Contraseña                     | ${formData.contrasena}          |
-| Navegador Utilizado            | ${formData.navegador}           |
-| Base de Datos                  | ${formData.baseDatos}           |
-| Maqueta Utilizada              | ${formData.maquetaUtilizada}    |
-| Ambiente                       | ${formData.ambiente}            |
+| **Parámetros de Configuración** | **Detalle**                  |
+| ------------------------------- | ---------------------------- |
+| Servidor de Pruebas            | ${formData.serverPruebas}    |
+| IP Máquina                     | ${formData.ipMaquina}        |
+| Navegador Utilizado            | ${formData.navegador}        |
+| Base de Datos                  | ${formData.baseDatos}        |
+| Maqueta Utilizada              | ${formData.maquetaUtilizada} |
+| Ambiente                       | ${formData.ambiente}         |
 
 ✅ **Batería de Pruebas**
 
 ${batteryTable.trim()}
 
 📎 **Evidencias**
-📷 **Capturas de Pantalla**
-💡 "Aquí se deben adjuntar capturas de pantalla relevantes sobre la ejecución de la prueba."
+"Adjuntar capturas de pantalla relevantes"
 
 📝 **Logs Relevantes**
-💡 "Aquí se deben adjuntar logs del sistema o registros relevantes para la validación de la prueba."
+"Adjuntar logs del sistema o registros relevantes"
 
 📊 **Resumen de Resultados**
 
