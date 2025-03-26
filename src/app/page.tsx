@@ -34,11 +34,10 @@ interface Summary {
 }
 
 /**
- * NUEVA estructura sin usuario/contrasena.
- * Se añade jiraCode como campo obligatorio.
+ * Estructura FormData actualizada con campo `datosDePrueba`.
  */
 interface FormData {
-  jiraCode: string; // campo nuevo para "código JIRA"
+  jiraCode: string;
   date: string;
   tester: string;
   testStatus: string;
@@ -54,6 +53,7 @@ interface FormData {
   incidences: Incidence[];
   hasIncidences: boolean;
   conclusion: string;
+  datosDePrueba: string; // <-- nuevo campo
 }
 
 export default function Home() {
@@ -61,9 +61,8 @@ export default function Home() {
   const [jiraContent, setJiraContent] = useState("");
   const [parsedData, setParsedData] = useState<ParsedData | null>(null);
 
-  // formData con fecha vacía y jiraCode también vacío por defecto
   const [formData, setFormData] = useState<FormData>({
-    jiraCode: "", // Nuevo campo
+    jiraCode: "",
     date: "",
     tester: "",
     testStatus: "",
@@ -84,6 +83,7 @@ export default function Home() {
     incidences: [],
     hasIncidences: false,
     conclusion: "",
+    datosDePrueba: "", // <-- valor inicial para nuevo campo
   });
 
   const [report, setReport] = useState("");
@@ -104,7 +104,6 @@ export default function Home() {
   const handleReset = () => {
     setJiraContent("");
     setParsedData(null);
-    // Se limpian los campos, incluida jiraCode
     setFormData({
       jiraCode: "",
       date: "",
@@ -127,6 +126,7 @@ export default function Home() {
       incidences: [],
       hasIncidences: false,
       conclusion: "",
+      datosDePrueba: "", // <-- también aquí
     });
     setReport("");
     setStep(1);
@@ -164,7 +164,6 @@ export default function Home() {
             report={report}
             onReset={handleReset}
             onGoBackToStep2={goBackToStep2}
-            /** Pasamos jiraCode para renombrar Word */
             jiraCode={formData.jiraCode}
           />
         )}
