@@ -8,7 +8,6 @@ export default function ReleaseNotesPage() {
     <>
       <HeaderNav />
       <main className="pt-20 p-8 min-h-screen bg-gray-50">
-        {/* Caja con degradado, igual que en HelpPage */}
         <div
           className="
             max-w-3xl mx-auto
@@ -24,9 +23,21 @@ export default function ReleaseNotesPage() {
           <h1 className="text-3xl font-bold text-gray-800">
             Generador de Reportes JIRA — Release Notes
           </h1>
-          <p className="text-gray-500">Última actualización: Marzo 2025</p>
+          
 
           <section className="space-y-3">
+            <p className="text-gray-500">Última actualización:  27 Marzo 2025</p>
+            <h2 className="text-2xl font-semibold text-gray-800">Versión 1.1.0</h2>
+            <ul className="list-disc list-inside text-gray-600 leading-relaxed">
+              <li>🆕 Se añade la nueva sección <strong>Datos de Prueba</strong> tras la Batería de Pruebas, donde se describen parámetros, datos de entrada y configuración de pruebas.</li>
+              <li>📋 La sección "Datos de Prueba" se incluye automáticamente tanto en el reporte generado en formato Markdown como en la exportación a Word.</li>
+              <li>⚠️ Validación lógica: el número de <strong>Pruebas Exitosas</strong> y <strong>Pruebas Fallidas</strong> no puede superar el <strong>Total de Pruebas</strong>. Se muestra una alerta si se incumple.</li>
+              <li>🛠️ Se refactoriza el componente de paso 2 para incluir validación inteligente del resumen de resultados y mayor control sobre cambios de estado.</li>
+            </ul>
+          </section>
+
+          <section className="space-y-3">
+            <p className="text-gray-500">Última actualización:  13 Marzo 2025</p>
             <h2 className="text-2xl font-semibold text-gray-800">Versión 1.0.0</h2>
             <ul className="list-disc list-inside text-gray-600 leading-relaxed">
               <li>Primera versión inicial del Generador de Reportes JIRA.</li>
