@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect} from "react";
 import { Document, Packer } from "docx";
 import { markdownToDocx } from "@/utils/markdownToDocx";
 
