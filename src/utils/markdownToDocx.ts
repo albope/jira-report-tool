@@ -1,5 +1,3 @@
-// src/utils/markdownToDocx.ts
-
 import {
   Paragraph,
   Table,
@@ -66,8 +64,9 @@ export function markdownToDocx(report: string) {
             line.startsWith("📝") ||
             line.startsWith("📊") ||
             line.startsWith("🛠️") ||
-            line.startsWith("📷")) &&
-          line.includes("**")
+            line.startsWith("📷") ||
+            line.startsWith("💾")) // <-- Si quieres que lo detecte como heading
+          && line.includes("**")
         ) {
           // Quitar los "**"
           const plainText = line.replace(/\*\*/g, "").trim();
@@ -83,11 +82,8 @@ export function markdownToDocx(report: string) {
           );
           docElements.push(new Paragraph("")); // línea en blanco
         }
-        // B.2) Línea normal: parsear la negrita interna
+        // B.2) Línea normal => parsear negrita interna
         else {
-          // Parsear la negrita interna: buscamos **algo** y lo convertimos en TextRun bold
-          // Ejemplo simple: partimos la línea en tokens por "**"
-          // (asumiendo que siempre vienen en pares)
           const textRuns = parseBoldText(line);
 
           docElements.push(
@@ -106,7 +102,7 @@ export function markdownToDocx(report: string) {
 }
 
 /**
- * Crea una tabla docx a partir de líneas Markdown (primera = encabezado, segunda = separador, resto = filas).
+ * Crea una tabla docx a partir de líneas Markdown.
  */
 function buildDocxTable(lines: string[]): Table {
   const headerLine = lines[0];
@@ -163,9 +159,7 @@ function buildDocxTable(lines: string[]): Table {
 }
 
 /**
- * Parsea una fila de Markdown de tabla, por ej:
- * "| Col1 | Col2 | Col3 |"
- * => ["Col1", "Col2", "Col3"]
+ * Parsea una fila de Markdown de tabla en celdas.
  */
 function parseTableRow(line: string): string[] {
   return line
@@ -177,19 +171,14 @@ function parseTableRow(line: string): string[] {
 /**
  * parseBoldText(line):
  * Dada una línea, reemplaza los fragmentos entre ** ** por TextRun bold.
- * Ej: "Hola **Mundo** y **Pruebas**"
- * => [TextRun("Hola "), TextRun("Mundo", bold: true), TextRun(" y "), TextRun("Pruebas", bold: true)]
  */
 function parseBoldText(line: string): TextRun[] {
   const parts = line.split("**");
   const runs: TextRun[] = [];
 
-  // parts vendrá algo como: ["Hola ", "Mundo", " y ", "Pruebas", ""]
-  // cada par 1..2 => negrita, 3..4 => negrita, etc.
   parts.forEach((fragment, index) => {
-    if (fragment === "") return; // ignorar vacíos puros
+    if (fragment === "") return;
 
-    // si el index es impar => fragmento en negrita
     const isBold = index % 2 === 1;
 
     runs.push(new TextRun({ text: fragment, bold: isBold }));

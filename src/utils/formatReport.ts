@@ -21,8 +21,8 @@ interface Summary {
 }
 
 /**
- * Se han removido 'usuario' y 'contrasena'.
- * Añadimos 'jiraCode' si deseas mostrarlo en la info general.
+ * Añadimos 'datosDePrueba' a FormData para poder mostrarlo
+ * en la sección "Datos de Prueba".
  */
 interface FormData {
   jiraCode: string;
@@ -41,9 +41,14 @@ interface FormData {
   incidences: Incidence[];
   hasIncidences: boolean;
   conclusion: string;
+
+  // Campo nuevo para la sección de datos de prueba
+  datosDePrueba: string;
 }
 
-// Convierte multiline en bullet points
+/**
+ * Convierte multiline en bullet points para la columna de Pasos en la batería de pruebas.
+ */
 function formatStepsCell(steps: string): string {
   const lines = steps.split(/\r?\n/).filter((line) => line.trim() !== "");
   return lines.map((line) => `- ${line}`).join(" \\n ");
@@ -61,7 +66,7 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
     versionTable = "| (No hay versiones) | (N/A) |\n";
   }
 
-  // Batería de pruebas
+  // Batería de Pruebas
   let batteryTable = `| ID Prueba | Pasos | Resultado Esperado | Resultado Obtenido | Estado |\n`;
   batteryTable += `| --------- | ----- | ------------------ | ------------------ | ------ |\n`;
   if (formData.batteryTests.length > 0) {
@@ -94,6 +99,8 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
     incidencesSection = "No se detectaron incidencias durante las pruebas.";
   }
 
+  // Bloque final de reporte con la nueva sección "Datos de Prueba".
+  // La insertamos justo después de la batería y antes de "Evidencias".
   return `
 📌 **Información General**
 **Título:** ${parsed.title}
@@ -122,6 +129,9 @@ ${versionTable.trim()}
 ✅ **Batería de Pruebas**
 
 ${batteryTable.trim()}
+
+💾 **Datos de Prueba**
+${formData.datosDePrueba?.trim() || "(Sin datos de prueba)"}
 
 📎 **Evidencias**
 "Adjuntar capturas de pantalla relevantes"
