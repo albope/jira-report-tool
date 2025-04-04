@@ -2,17 +2,20 @@ import { ParsedData } from "./parseJiraContent";
 
 interface BatteryTest {
   id: string;
+  description: string; // Asegurarnos de que existe esta propiedad
   steps: string;
   expectedResult: string;
   obtainedResult: string;
   testStatus: string;
 }
+
 interface Incidence {
   id: string;
   description: string;
   impact: string;
   status: string;
 }
+
 interface Summary {
   totalTests: string;
   successfulTests: string;
@@ -20,10 +23,6 @@ interface Summary {
   observations: string;
 }
 
-/**
- * Añadimos 'datosDePrueba' a FormData para poder mostrarlo
- * en la sección "Datos de Prueba".
- */
 interface FormData {
   jiraCode: string;
   date: string;
@@ -41,13 +40,11 @@ interface FormData {
   incidences: Incidence[];
   hasIncidences: boolean;
   conclusion: string;
-
-  // Campo nuevo para la sección de datos de prueba
   datosDePrueba: string;
 }
 
 /**
- * Convierte multiline en bullet points para la columna de Pasos en la batería de pruebas.
+ * Convierte multiline en bullet points para la columna de Pasos.
  */
 function formatStepsCell(steps: string): string {
   const lines = steps.split(/\r?\n/).filter((line) => line.trim() !== "");
@@ -66,16 +63,16 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
     versionTable = "| (No hay versiones) | (N/A) |\n";
   }
 
-  // Batería de Pruebas
-  let batteryTable = `| ID Prueba | Pasos | Resultado Esperado | Resultado Obtenido | Estado |\n`;
-  batteryTable += `| --------- | ----- | ------------------ | ------------------ | ------ |\n`;
+  // Batería de Pruebas: Añadimos la columna "Descripción"
+  let batteryTable = `| ID Prueba | Descripción | Pasos | Resultado Esperado | Resultado Obtenido | Estado |\n`;
+  batteryTable += `| --------- | ----------- | ----- | ------------------ | ------------------ | ------ |\n`;
   if (formData.batteryTests.length > 0) {
     formData.batteryTests.forEach((bt) => {
       const stepsCell = formatStepsCell(bt.steps);
-      batteryTable += `| ${bt.id} | ${stepsCell} | ${bt.expectedResult} | ${bt.obtainedResult} | ${bt.testStatus} |\n`;
+      batteryTable += `| ${bt.id} | ${bt.description} | ${stepsCell} | ${bt.expectedResult} | ${bt.obtainedResult} | ${bt.testStatus} |\n`;
     });
   } else {
-    batteryTable += "| (Sin pruebas) | - | - | - | - |\n";
+    batteryTable += "| (Sin pruebas) | - | - | - | - | - |\n";
   }
 
   // Resumen
@@ -99,8 +96,7 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
     incidencesSection = "No se detectaron incidencias durante las pruebas.";
   }
 
-  // Bloque final de reporte con la nueva sección "Datos de Prueba".
-  // La insertamos justo después de la batería y antes de "Evidencias".
+  // Reporte final
   return `
 📌 **Información General**
 **Título:** ${parsed.title}

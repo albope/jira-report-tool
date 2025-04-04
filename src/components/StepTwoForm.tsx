@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { ParsedData } from "@/utils/parseJiraContent";
 import * as XLSX from "xlsx";
+import Tippy from "@tippyjs/react";
+import "tippy.js/dist/tippy.css";
 
 /** Batería de Pruebas */
 interface BatteryTest {
   id: string;
-  description: string;       // <-- Asegurarnos de que existe la propiedad "description"
+  description: string;
   steps: string;
   expectedResult: string;
   obtainedResult: string;
@@ -62,6 +64,15 @@ interface StepTwoFormProps {
 
 const EXAMPLE_CONCLUSION = `Ejemplo de conclusión:
 ❌ Rechazado → El fallo bloquea la validación de la funcionalidad`;
+
+const EXPECTED_HEADERS = [
+  "ID Prueba",
+  "Descripción",
+  "Pasos",
+  "Resultado Esperado",
+  "Resultado Obtenido",
+  "Estado",
+];
 
 export default function StepTwoForm({
   parsedData,
@@ -204,7 +215,7 @@ export default function StepTwoForm({
       if (formData.incidences.length === 0) {
         addIncidence();
       } else if (formData.incidences.length > 1) {
-        // solo dejamos 1 en este ejemplo
+        // Solo dejamos 1 en este ejemplo
         const firstInc = formData.incidences[0];
         setFormData({ ...formData, incidences: [firstInc] });
       }
@@ -238,24 +249,13 @@ export default function StepTwoForm({
   // ---------------------------------------------------------------------------------------------
   //  3) IMPORTAR FICHERO EXCEL
   // ---------------------------------------------------------------------------------------------
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImportClick = () => {
-    // Al hacer clic en el botón "Importar Fichero Excel", abrimos el input file:
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
-
-  /** Valida que las columnas sean exactamente las esperadas */
-  const EXPECTED_HEADERS = [
-    "ID Prueba",
-    "Descripción",
-    "Pasos",
-    "Resultado Esperado",
-    "Resultado Obtenido",
-    "Estado",
-  ];
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -347,7 +347,6 @@ export default function StepTwoForm({
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="flex items-center text-2xl font-bold text-gray-800 mb-1">
-            {/* Ícono decorativo */}
             <svg
               className="w-6 h-6 mr-2 text-blue-600"
               fill="currentColor"
@@ -373,10 +372,11 @@ export default function StepTwoForm({
       <div className="space-y-4">
         <div>
           <label className="block font-medium text-gray-700">Título</label>
-          <p className="p-2 bg-gray-100 rounded text-gray-800">{parsedData.title}</p>
+          <p className="p-2 bg-gray-100 rounded text-gray-800">
+            {parsedData.title}
+          </p>
         </div>
 
-        {/* Código de JIRA */}
         <div>
           <label className="block font-medium text-gray-700">
             Código de JIRA <span className="text-red-500">*</span>
@@ -417,7 +417,9 @@ export default function StepTwoForm({
         </div>
 
         <div>
-          <label className="block font-medium text-gray-700">Estado de la Prueba</label>
+          <label className="block font-medium text-gray-700">
+            Estado de la Prueba
+          </label>
           <select
             className="border border-gray-300 rounded p-2 w-full
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -467,7 +469,6 @@ export default function StepTwoForm({
 
       {/* Entorno de Pruebas */}
       <div className="grid grid-cols-2 gap-4">
-        {/* Servidor de Pruebas */}
         <div>
           <label className="block font-medium text-gray-700">Servidor de Pruebas</label>
           <input
@@ -480,7 +481,6 @@ export default function StepTwoForm({
             onChange={(e) => handleInputChange("serverPruebas", e.target.value)}
           />
         </div>
-        {/* IP */}
         <div>
           <label className="block font-medium text-gray-700">IP Máquina</label>
           <input
@@ -493,7 +493,6 @@ export default function StepTwoForm({
             onChange={(e) => handleInputChange("ipMaquina", e.target.value)}
           />
         </div>
-        {/* Navegador */}
         <div>
           <label className="block font-medium text-gray-700">Navegador Utilizado</label>
           <input
@@ -506,7 +505,6 @@ export default function StepTwoForm({
             onChange={(e) => handleInputChange("navegador", e.target.value)}
           />
         </div>
-        {/* BBDD */}
         <div>
           <label className="block font-medium text-gray-700">Base de Datos</label>
           <select
@@ -520,7 +518,6 @@ export default function StepTwoForm({
             <option value="Oracle">Oracle</option>
           </select>
         </div>
-        {/* Maqueta */}
         <div>
           <label className="block font-medium text-gray-700">Maqueta Utilizada</label>
           <input
@@ -533,7 +530,6 @@ export default function StepTwoForm({
             onChange={(e) => handleInputChange("maquetaUtilizada", e.target.value)}
           />
         </div>
-        {/* Ambiente */}
         <div>
           <label className="block font-medium text-gray-700">Ambiente</label>
           <select
@@ -558,7 +554,6 @@ export default function StepTwoForm({
           (En esta sección se definen los casos de prueba realizados y sus resultados.)
         </p>
 
-        {/* Listado de Casos de Prueba */}
         {formData.batteryTests.map((test, idx) => {
           const isExample = test.id === "PR-001";
           return (
@@ -573,8 +568,6 @@ export default function StepTwoForm({
               >
                 X
               </button>
-
-              {/* ID Prueba */}
               <div>
                 <label className="block font-medium text-gray-700">ID Prueba</label>
                 <input
@@ -589,8 +582,6 @@ export default function StepTwoForm({
                   }
                 />
               </div>
-
-              {/* Descripción */}
               <div>
                 <label className="block font-medium text-gray-700">Descripción</label>
                 <textarea
@@ -604,8 +595,6 @@ export default function StepTwoForm({
                   }
                 />
               </div>
-
-              {/* Pasos */}
               <div>
                 <label className="block font-medium text-gray-700">Pasos</label>
                 <textarea
@@ -619,8 +608,6 @@ export default function StepTwoForm({
                   }
                 />
               </div>
-
-              {/* Resultado Esperado */}
               <div>
                 <label className="block font-medium text-gray-700">
                   Resultado Esperado
@@ -636,8 +623,6 @@ export default function StepTwoForm({
                   }
                 />
               </div>
-
-              {/* Resultado Obtenido */}
               <div>
                 <label className="block font-medium text-gray-700">
                   Resultado Obtenido
@@ -653,8 +638,6 @@ export default function StepTwoForm({
                   }
                 />
               </div>
-
-              {/* Estado */}
               <div>
                 <label className="block font-medium text-gray-700">Estado</label>
                 <input
@@ -682,7 +665,7 @@ export default function StepTwoForm({
             + Añadir caso de prueba
           </button>
 
-          {/* Importar Excel con tooltip */}
+          {/* Botón Importar con Tooltip */}
           <div className="relative inline-block">
             <button
               onClick={handleImportClick}
@@ -690,18 +673,46 @@ export default function StepTwoForm({
             >
               Importar Fichero Excel
             </button>
-            {/* Icono con tooltip */}
-            <span
-              className="ml-1 text-gray-500 cursor-pointer"
-              title="Formato esperado de columnas (en la primera fila): 
-[ID Prueba] [Descripción] [Pasos] [Resultado Esperado] [Resultado Obtenido] [Estado]"
+
+            {/* Tippy con ubicación "right" y un <span> que envuelve el icono */}
+            <Tippy
+              content={
+                <div style={{ whiteSpace: "pre-line" }}>
+                  {`El archivo Excel debe tener esta estructura de columnas:
+                  
+columna 1: ID Prueba
+columna 2: Descripción
+columna 3: Pasos
+columna 4: Resultado Esperado
+columna 5: Resultado Obtenido
+columna 6: Estado`}
+                </div>
+              }
+              placement="right"
             >
-              ℹ️
-            </span>
+              <span className="inline-block ml-1 text-gray-500 cursor-pointer">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M13 16h-1v-4h-1m1-4h.01M12
+                    20c4.418 0 8-3.582
+                    8-8s-3.582-8-8-8-8
+                    3.582-8 8 3.582 8 8 8z"
+                  />
+                </svg>
+              </span>
+            </Tippy>
           </div>
         </div>
 
-        {/* input file oculto */}
         <input
           type="file"
           accept=".xls,.xlsx"
