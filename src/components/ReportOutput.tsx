@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect } from "react";
 import { Document, Packer } from "docx";
 import { markdownToDocx } from "@/utils/markdownToDocx";
 
@@ -18,14 +18,9 @@ export default function ReportOutput({
   onGoBackToStep2,
   jiraCode,
 }: ReportOutputProps) {
-  // Eliminamos el menú desplegable, ya que ahora habrá un solo botón
-  // con la lógica combinada.
-  // Por ello, ya no necesitamos showExportMenu ni dropdownRef.
 
   useEffect(() => {
-    // Antes había lógica para cerrar el menú, la removemos al quitar el dropdown.
-    // Si la quisiéramos conservar para algo adicional, dejaríamos aquí, 
-    // pero ya no es necesaria para el botón único.
+    // Lógica anterior vacía o no necesaria
   }, []);
 
   /**
