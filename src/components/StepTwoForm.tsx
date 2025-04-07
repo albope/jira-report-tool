@@ -285,7 +285,7 @@ export default function StepTwoForm({
       ) {
         alert(
           "El formato de columnas no coincide con:\n" +
-            EXPECTED_HEADERS.join(" | ")
+          EXPECTED_HEADERS.join(" | ")
         );
         return;
       }
@@ -294,7 +294,7 @@ export default function StepTwoForm({
       const rows = sheetData.slice(1);
       const importedTests: BatteryTest[] = [];
 
-      rows.forEach((row: any) => {
+      (rows as unknown[][]).forEach((row) => {
         if (!row || row.length < 6) return;
         const [id, description, steps, expResult, obtResult, status] = row;
 
