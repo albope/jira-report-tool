@@ -31,12 +31,6 @@ export default function ReleaseNotesPage() {
               Versión 1.2.0
             </h2>
             <ul className="list-disc list-inside text-gray-600 leading-relaxed">
-<<<<<<< HEAD
-              <li>🆕 Se añade la nueva sección <strong>Datos de Prueba</strong> tras la Batería de Pruebas, donde se describen parámetros, datos de entrada y configuración de pruebas.</li>
-              <li>📋 La sección Datos de Prueba se incluye automáticamente tanto en el reporte generado en formato Markdown como en la exportación a Word.</li>
-              <li>⚠️ Validación lógica: el número de <strong>Pruebas Exitosas</strong> y <strong>Pruebas Fallidas</strong> no puede superar el <strong>Total de Pruebas</strong>. Se muestra una alerta si se incumple.</li>
-              <li>🛠️ Se refactoriza el componente de paso 2 para incluir validación inteligente del resumen de resultados y mayor control sobre cambios de estado.</li>
-=======
               <li>
                 Se añade la funcionalidad de <strong>importar Fichero Excel </strong> para añadir casos de prueba ya creados en un fichero Excel.
               </li>
@@ -49,7 +43,6 @@ export default function ReleaseNotesPage() {
                 Ajustes menores de validación y supresión de advertencias sobre
                 referencias en React.
               </li>
->>>>>>> nuevas-funcionalidades
             </ul>
           </section>
 

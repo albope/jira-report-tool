@@ -1,10 +1,6 @@
 "use client";
 
-<<<<<<< HEAD
-import React, { useEffect} from "react";
-=======
 import React, { useEffect } from "react";
->>>>>>> nuevas-funcionalidades
 import { Document, Packer } from "docx";
 import { markdownToDocx } from "@/utils/markdownToDocx";
 
