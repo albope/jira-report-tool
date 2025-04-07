@@ -9,13 +9,16 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@tippyjs/react": "^4.2.6",
+    "@vercel/analytics": "^1.5.0",
     "date-fns": "^4.1.0",
     "docx": "^8.5.0",
     "jspdf": "^3.0.0",
     "jspdf-autotable": "^5.0.2",
     "next": "15.1.7",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

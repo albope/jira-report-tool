@@ -1,7 +1,10 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { ParsedData } from "@/utils/parseJiraContent";
+import * as XLSX from "xlsx";
+import Tippy from "@tippyjs/react";
+import "tippy.js/dist/tippy.css";
 
 /** Batería de Pruebas */
 interface BatteryTest {
@@ -31,7 +34,7 @@ interface Summary {
 
 /** FormData */
 export interface FormData {
-  jiraCode: string;                // Campo obligatorio
+  jiraCode: string;
   date: string;
   tester: string;
   testStatus: string;
@@ -47,21 +50,29 @@ export interface FormData {
   incidences: Incidence[];
   hasIncidences: boolean;
   conclusion: string;
-  datosDePrueba: string;           // Campo nuevo para la sección "Datos de Prueba"
+  datosDePrueba: string;
 }
 
-/** Props del componente StepTwoForm */
 interface StepTwoFormProps {
   parsedData: ParsedData;
   formData: FormData;
   setFormData: (val: FormData) => void;
   onGenerate: () => void;
   onReset: () => void;
-  onGoBackToStep1: () => void; // Botón para volver a la pantalla 1
+  onGoBackToStep1: () => void;
 }
 
 const EXAMPLE_CONCLUSION = `Ejemplo de conclusión:
 ❌ Rechazado → El fallo bloquea la validación de la funcionalidad`;
+
+const EXPECTED_HEADERS = [
+  "ID Prueba",
+  "Descripción",
+  "Pasos",
+  "Resultado Esperado",
+  "Resultado Obtenido",
+  "Estado",
+];
 
 export default function StepTwoForm({
   parsedData,
@@ -72,7 +83,7 @@ export default function StepTwoForm({
   onGoBackToStep1,
 }: StepTwoFormProps) {
   /**
-   * 1) Forzar fecha actual en el estado si no existe
+   * 1) Forzar fecha actual si no existe
    */
   useEffect(() => {
     if (!formData.date) {
@@ -85,15 +96,12 @@ export default function StepTwoForm({
   }, []);
 
   /**
-   * Manejador genérico de cambios en formData.
-   * Agregamos la validación para que 'successfulTests' y 'failedTests'
-   * no superen 'totalTests'.
+   * Manejador genérico para formData
    */
   const handleInputChange = (
     field: keyof FormData,
     value: string | boolean | Summary
   ) => {
-    // Si estamos modificando algo en 'summary', revisamos la restricción
     if (field === "summary" && typeof value === "object") {
       const newSummary = { ...formData.summary, ...value } as Summary;
       const total = parseInt(newSummary.totalTests || "0", 10);
@@ -112,13 +120,11 @@ export default function StepTwoForm({
       return;
     }
 
-    // Caso general: campo normal
     setFormData({ ...formData, [field]: value });
   };
 
   /**
-   * Ajuste de la batería de pruebas por defecto al montar:
-   * si ID=PR-001 no contiene la cadena “El sistema no procesó correctamente”, se la añade.
+   * 2) Ajuste de la batería de pruebas por defecto al montar
    */
   useEffect(() => {
     const newTests = [...formData.batteryTests];
@@ -135,9 +141,7 @@ export default function StepTwoForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /**
-   * Añadir un caso de prueba
-   */
+  /** Añadir un caso de prueba (manual) */
   const addBatteryTest = () => {
     const newTest: BatteryTest = {
       id: "PR-001",
@@ -150,43 +154,29 @@ export default function StepTwoForm({
       testStatus: "FALLIDO",
     };
 
-    // Añadimos el test y actualizamos el total de pruebas en el summary
     const newTests = [...formData.batteryTests, newTest];
     const updatedSummary = {
       ...formData.summary,
       totalTests: String(newTests.length),
     };
 
-    setFormData({
-      ...formData,
-      batteryTests: newTests,
-      summary: updatedSummary,
-    });
+    setFormData({ ...formData, batteryTests: newTests, summary: updatedSummary });
   };
 
-  /**
-   * Eliminar un caso de prueba
-   */
+  /** Eliminar un caso de prueba */
   const removeBatteryTest = (index: number) => {
     const newTests = [...formData.batteryTests];
     newTests.splice(index, 1);
 
-    // Ajustamos la cantidad total de pruebas en el summary
     const updatedSummary = {
       ...formData.summary,
       totalTests: String(newTests.length),
     };
 
-    setFormData({
-      ...formData,
-      batteryTests: newTests,
-      summary: updatedSummary,
-    });
+    setFormData({ ...formData, batteryTests: newTests, summary: updatedSummary });
   };
 
-  /**
-   * Manejar cambios en un test individual (batería de pruebas)
-   */
+  /** Actualizar campos de un test */
   const handleBatteryTestChange = (
     index: number,
     field: keyof BatteryTest,
@@ -197,9 +187,7 @@ export default function StepTwoForm({
     setFormData({ ...formData, batteryTests: newTests });
   };
 
-  /**
-   * Incidencias
-   */
+  /** Incidencias */
   const addIncidence = () => {
     if (formData.incidences.length === 0) {
       setFormData({
@@ -222,15 +210,12 @@ export default function StepTwoForm({
     setFormData({ ...formData, incidences: newInc });
   };
 
-  /**
-   * Manejar hasIncidences (true => forzamos una incidencia; false => vaciamos incidences).
-   */
   useEffect(() => {
     if (formData.hasIncidences) {
       if (formData.incidences.length === 0) {
         addIncidence();
       } else if (formData.incidences.length > 1) {
-        // Solo permitimos 1 incidencia en este ejemplo
+        // Solo dejamos 1 en este ejemplo
         const firstInc = formData.incidences[0];
         setFormData({ ...formData, incidences: [firstInc] });
       }
@@ -240,9 +225,7 @@ export default function StepTwoForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.hasIncidences]);
 
-  /**
-   * Manejo de versiones
-   */
+  /** Manejo de versiones */
   const handleVersionChange = (
     index: number,
     field: "appName" | "appVersion",
@@ -260,23 +243,116 @@ export default function StepTwoForm({
     });
   };
 
-  // Conclusión de ejemplo en gris si coincide exactamente
+  /** Para mostrar la conclusión de ejemplo en gris si coincide */
   const isExampleConclusion = formData.conclusion === EXAMPLE_CONCLUSION;
+
+  // ---------------------------------------------------------------------------------------------
+  //  3) IMPORTAR FICHERO EXCEL
+  // ---------------------------------------------------------------------------------------------
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+
+      const sheetData = XLSX.utils.sheet_to_json(sheet, {
+        header: 1,
+        blankrows: false,
+      });
+
+      if (!sheetData || sheetData.length < 2) {
+        alert("El Excel está vacío o no tiene filas suficientes.");
+        return;
+      }
+
+      // Validar cabecera
+      const headers = sheetData[0] as string[];
+      if (
+        headers.length !== EXPECTED_HEADERS.length ||
+        !EXPECTED_HEADERS.every((col, idx) => col === headers[idx])
+      ) {
+        alert(
+          "El formato de columnas no coincide con:\n" +
+            EXPECTED_HEADERS.join(" | ")
+        );
+        return;
+      }
+
+      // Filas
+      const rows = sheetData.slice(1);
+      const importedTests: BatteryTest[] = [];
+
+      rows.forEach((row: any) => {
+        if (!row || row.length < 6) return;
+        const [id, description, steps, expResult, obtResult, status] = row;
+
+        const newTest: BatteryTest = {
+          id: id?.toString() || "",
+          description: description?.toString() || "",
+          steps: steps?.toString() || "",
+          expectedResult: expResult?.toString() || "",
+          obtainedResult: obtResult?.toString() || "",
+          testStatus: status?.toString() || "",
+        };
+
+        // solo añadimos si ID no está vacío:
+        if (newTest.id.trim() !== "") {
+          importedTests.push(newTest);
+        }
+      });
+
+      if (importedTests.length === 0) {
+        alert("No se ha podido importar ningún caso. Revisa que las filas tengan contenido.");
+        return;
+      }
+
+      // Actualizar batteryTests y total
+      const updatedTests = [...formData.batteryTests, ...importedTests];
+      const updatedSummary = {
+        ...formData.summary,
+        totalTests: String(updatedTests.length),
+      };
+
+      setFormData({
+        ...formData,
+        batteryTests: updatedTests,
+        summary: updatedSummary,
+      });
+
+      alert(`Se han importado ${importedTests.length} casos de prueba desde Excel.`);
+    } catch (error) {
+      console.error("Error importando el Excel:", error);
+      alert("Ocurrió un error al leer el Excel. Ver consola para más detalles.");
+    } finally {
+      // limpiar input para permitir reimportar
+      e.target.value = "";
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto relative z-20 mb-12">
-      {/* Encabezado del paso */}
+      {/* Encabezado */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="flex items-center text-2xl font-bold text-gray-800 mb-1">
-            {/* Ícono decorativo */}
             <svg
               className="w-6 h-6 mr-2 text-blue-600"
               fill="currentColor"
               viewBox="0 0 20 20"
             >
-              <path d="M10 2a8 8 0 100 16 8
-               8 0 000-16zm1 11H9v-2h2v2zm0-4H9V5h2v4z" />
+              <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11H9v-2h2v2zm0-4H9V5h2v4z" />
             </svg>
             Paso 2
           </h2>
@@ -301,7 +377,6 @@ export default function StepTwoForm({
           </p>
         </div>
 
-        {/* Código de JIRA */}
         <div>
           <label className="block font-medium text-gray-700">
             Código de JIRA <span className="text-red-500">*</span>
@@ -395,9 +470,7 @@ export default function StepTwoForm({
       {/* Entorno de Pruebas */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block font-medium text-gray-700">
-            Servidor de Pruebas
-          </label>
+          <label className="block font-medium text-gray-700">Servidor de Pruebas</label>
           <input
             type="text"
             className="border border-gray-300 rounded p-2 w-full
@@ -421,9 +494,7 @@ export default function StepTwoForm({
           />
         </div>
         <div>
-          <label className="block font-medium text-gray-700">
-            Navegador Utilizado
-          </label>
+          <label className="block font-medium text-gray-700">Navegador Utilizado</label>
           <input
             type="text"
             className="border border-gray-300 rounded p-2 w-full
@@ -448,9 +519,7 @@ export default function StepTwoForm({
           </select>
         </div>
         <div>
-          <label className="block font-medium text-gray-700">
-            Maqueta Utilizada
-          </label>
+          <label className="block font-medium text-gray-700">Maqueta Utilizada</label>
           <input
             type="text"
             className="border border-gray-300 rounded p-2 w-full
@@ -484,6 +553,7 @@ export default function StepTwoForm({
         <p className="text-sm text-gray-500">
           (En esta sección se definen los casos de prueba realizados y sus resultados.)
         </p>
+
         {formData.batteryTests.map((test, idx) => {
           const isExample = test.id === "PR-001";
           return (
@@ -498,15 +568,11 @@ export default function StepTwoForm({
               >
                 X
               </button>
-
-              {/* ID Prueba */}
               <div>
-                <label className="block font-medium text-gray-700">
-                  ID Prueba
-                </label>
+                <label className="block font-medium text-gray-700">ID Prueba</label>
                 <input
                   type="text"
-                  className={`border border-gray-300 rounded p-2 w-full placeholder:text-gray-400
+                  className={`border border-gray-300 rounded p-2 w-full placeholder:text-gray-400 
                               focus:outline-none focus:ring-2 focus:ring-blue-500
                               ${isExample ? "text-gray-400 italic" : ""}`}
                   placeholder="Ejemplo: PR-001"
@@ -516,8 +582,19 @@ export default function StepTwoForm({
                   }
                 />
               </div>
-
-              {/* Pasos */}
+              <div>
+                <label className="block font-medium text-gray-700">Descripción</label>
+                <textarea
+                  className={`w-full border border-gray-300 rounded p-2 placeholder:text-gray-400
+                              focus:outline-none focus:ring-2 focus:ring-blue-500
+                              ${isExample ? "text-gray-400 italic" : ""}`}
+                  placeholder="Ejemplo: Muestra distancias en el mapa..."
+                  value={test.description}
+                  onChange={(e) =>
+                    handleBatteryTestChange(idx, "description", e.target.value)
+                  }
+                />
+              </div>
               <div>
                 <label className="block font-medium text-gray-700">Pasos</label>
                 <textarea
@@ -531,8 +608,6 @@ export default function StepTwoForm({
                   }
                 />
               </div>
-
-              {/* Resultado Esperado */}
               <div>
                 <label className="block font-medium text-gray-700">
                   Resultado Esperado
@@ -548,8 +623,6 @@ export default function StepTwoForm({
                   }
                 />
               </div>
-
-              {/* Resultado Obtenido */}
               <div>
                 <label className="block font-medium text-gray-700">
                   Resultado Obtenido
@@ -565,8 +638,6 @@ export default function StepTwoForm({
                   }
                 />
               </div>
-
-              {/* Estado */}
               <div>
                 <label className="block font-medium text-gray-700">Estado</label>
                 <input
@@ -584,20 +655,78 @@ export default function StepTwoForm({
             </div>
           );
         })}
-        <button
-          onClick={addBatteryTest}
-          className="mt-2 px-3 py-1 bg-green-500 text-white rounded hover:bg-green-400 transition"
-        >
-          + Añadir caso de prueba
-        </button>
+
+        {/* Botones para Añadir e Importar */}
+        <div className="flex items-center gap-2 mt-2">
+          <button
+            onClick={addBatteryTest}
+            className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-400 transition"
+          >
+            + Añadir caso de prueba
+          </button>
+
+          {/* Botón Importar con Tooltip */}
+          <div className="relative inline-block">
+            <button
+              onClick={handleImportClick}
+              className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-400 transition"
+            >
+              Importar Fichero Excel
+            </button>
+
+            {/* Tippy con ubicación "right" y un <span> que envuelve el icono */}
+            <Tippy
+              content={
+                <div style={{ whiteSpace: "pre-line" }}>
+                  {`El archivo Excel debe tener esta estructura de columnas:
+                  
+columna 1: ID Prueba
+columna 2: Descripción
+columna 3: Pasos
+columna 4: Resultado Esperado
+columna 5: Resultado Obtenido
+columna 6: Estado`}
+                </div>
+              }
+              placement="right"
+            >
+              <span className="inline-block ml-1 text-gray-500 cursor-pointer">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M13 16h-1v-4h-1m1-4h.01M12
+                    20c4.418 0 8-3.582
+                    8-8s-3.582-8-8-8-8
+                    3.582-8 8 3.582 8 8 8z"
+                  />
+                </svg>
+              </span>
+            </Tippy>
+          </div>
+        </div>
+
+        <input
+          type="file"
+          accept=".xls,.xlsx"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          style={{ display: "none" }}
+        />
       </div>
 
       {/* Datos de Prueba */}
       <div className="space-y-2">
         <h3 className="font-semibold text-gray-800">Datos de Prueba</h3>
         <p className="text-sm text-gray-500">
-          (Registra aquí los datos de entrada o parámetros usados para reproducir
-           las pruebas.)
+          (Registra aquí los datos de entrada o parámetros usados para reproducir las pruebas.)
         </p>
         <textarea
           className="w-full border border-gray-300 rounded p-2 placeholder:text-gray-400
@@ -613,13 +742,10 @@ export default function StepTwoForm({
       <div className="space-y-2">
         <h3 className="font-semibold text-gray-800">Resumen de Resultados</h3>
         <p className="text-sm text-gray-500">
-          (En esta sección se registran los resultados de las pruebas ejecutadas,
-           el número total de pruebas, las exitosas y las fallidas, y observaciones.)
+          (Número total de pruebas, las exitosas y las fallidas, y observaciones.)
         </p>
         <div>
-          <label className="block font-medium text-gray-700">
-            Total de Pruebas
-          </label>
+          <label className="block font-medium text-gray-700">Total de Pruebas</label>
           <input
             type="number"
             min="0"
@@ -637,9 +763,7 @@ export default function StepTwoForm({
         </div>
 
         <div>
-          <label className="block font-medium text-gray-700">
-            Pruebas Exitosas
-          </label>
+          <label className="block font-medium text-gray-700">Pruebas Exitosas</label>
           <input
             type="number"
             min="0"
@@ -657,9 +781,7 @@ export default function StepTwoForm({
         </div>
 
         <div>
-          <label className="block font-medium text-gray-700">
-            Pruebas Fallidas
-          </label>
+          <label className="block font-medium text-gray-700">Pruebas Fallidas</label>
           <input
             type="number"
             min="0"
@@ -677,9 +799,7 @@ export default function StepTwoForm({
         </div>
 
         <div>
-          <label className="block font-medium text-gray-700">
-            Observaciones
-          </label>
+          <label className="block font-medium text-gray-700">Observaciones</label>
           <textarea
             className="w-full border border-gray-300 rounded p-2 placeholder:text-gray-400
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -694,12 +814,11 @@ export default function StepTwoForm({
         </div>
       </div>
 
-      {/* Incidencias Detectadas */}
+      {/* Incidencias */}
       <div className="space-y-2">
         <h3 className="font-semibold text-gray-800">Incidencias Detectadas</h3>
         <p className="text-sm text-gray-500">
-          (En esta sección se registran las incidencias encontradas durante la
-           ejecución de las pruebas.)
+          (En esta sección se registran las incidencias encontradas durante la ejecución.)
         </p>
         <div>
           <label className="block font-medium text-gray-700">
@@ -717,6 +836,7 @@ export default function StepTwoForm({
             <option value="Sí">Sí</option>
           </select>
         </div>
+
         {formData.hasIncidences &&
           formData.incidences.map((inc, idx) => {
             const isExample = inc.id === "PR-001";
@@ -770,9 +890,7 @@ export default function StepTwoForm({
                   />
                 </div>
                 <div>
-                  <label className="block font-medium text-gray-700">
-                    Impacto
-                  </label>
+                  <label className="block font-medium text-gray-700">Impacto</label>
                   <input
                     type="text"
                     className={`border border-gray-300 rounded p-2 w-full
@@ -826,7 +944,7 @@ export default function StepTwoForm({
         />
       </div>
 
-      {/* Botones Finales */}
+      {/* Botones finales */}
       <div className="flex flex-wrap gap-3 justify-end mt-6">
         <button
           onClick={onGenerate}
