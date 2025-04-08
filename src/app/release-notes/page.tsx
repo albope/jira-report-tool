@@ -24,7 +24,22 @@ export default function ReleaseNotesPage() {
             Generador de Reportes JIRA — Release Notes
           </h1>
 
-          {/* NUEVA SECCIÓN: VERSIÓN 1.2.0 */}
+          {/* NUEVA SECCIÓN: VERSIÓN 1.2.1 */}
+          <section className="space-y-3">
+            <p className="text-gray-500">Última actualización: 8 Abril 2025</p>
+            <h2 className="text-2xl font-semibold text-gray-800">
+              Versión 1.2.1
+            </h2>
+            <ul className="list-disc list-inside text-gray-600 leading-relaxed">
+              <li>
+                Se añade un enlace discreto para descargar la{" "}
+                <strong>plantilla de Excel</strong> desde la sección de Batería de Pruebas, 
+                garantizando así el formato correcto de columnas al importar los casos de prueba.
+              </li>
+            </ul>
+          </section>
+
+          {/* VERSIÓN 1.2.0 */}
           <section className="space-y-3">
             <p className="text-gray-500">Última actualización: 4 Abril 2025</p>
             <h2 className="text-2xl font-semibold text-gray-800">
@@ -32,16 +47,16 @@ export default function ReleaseNotesPage() {
             </h2>
             <ul className="list-disc list-inside text-gray-600 leading-relaxed">
               <li>
-                Se añade la funcionalidad de <strong>importar Fichero Excel </strong> para añadir casos de prueba ya creados en un fichero Excel.
+                Se añade la funcionalidad de <strong>importar Fichero Excel</strong> para 
+                añadir casos de prueba ya creados en un fichero Excel.
               </li>
               <li>
-                Se incluye la columna <strong>Descripción</strong> en la Batería
-                de Pruebas, reflejada en el reporte Markdown y en la
-                exportación a Word.
+                Se incluye la columna <strong>Descripción</strong> en la Batería de Pruebas, 
+                reflejada en el reporte Markdown y en la exportación a Word.
               </li>
               <li>
-                Ajustes menores de validación y supresión de advertencias sobre
-                referencias en React.
+                Ajustes menores de validación y supresión de advertencias sobre referencias 
+                en React.
               </li>
             </ul>
           </section>
@@ -64,11 +79,9 @@ export default function ReleaseNotesPage() {
                 Word.
               </li>
               <li>
-                Validación lógica: el número de{" "}
-                <strong>Pruebas Exitosas</strong> y{" "}
-                <strong>Pruebas Fallidas</strong> no puede superar el{" "}
-                <strong>Total de Pruebas</strong>. Se muestra una alerta si se
-                incumple.
+                Validación lógica: el número de <strong>Pruebas Exitosas</strong> y{" "}
+                <strong>Pruebas Fallidas</strong> no puede superar el <strong>Total de Pruebas</strong>. 
+                Se muestra una alerta si se incumple.
               </li>
               <li>
                 Se refactoriza el componente de paso 2 para incluir validación

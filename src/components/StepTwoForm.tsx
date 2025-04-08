@@ -469,6 +469,7 @@ export default function StepTwoForm({
 
       {/* Entorno de Pruebas */}
       <div className="grid grid-cols-2 gap-4">
+        {/* Servidor de Pruebas */}
         <div>
           <label className="block font-medium text-gray-700">Servidor de Pruebas</label>
           <input
@@ -481,6 +482,7 @@ export default function StepTwoForm({
             onChange={(e) => handleInputChange("serverPruebas", e.target.value)}
           />
         </div>
+        {/* IP */}
         <div>
           <label className="block font-medium text-gray-700">IP Máquina</label>
           <input
@@ -493,6 +495,7 @@ export default function StepTwoForm({
             onChange={(e) => handleInputChange("ipMaquina", e.target.value)}
           />
         </div>
+        {/* Navegador */}
         <div>
           <label className="block font-medium text-gray-700">Navegador Utilizado</label>
           <input
@@ -505,6 +508,7 @@ export default function StepTwoForm({
             onChange={(e) => handleInputChange("navegador", e.target.value)}
           />
         </div>
+        {/* BBDD */}
         <div>
           <label className="block font-medium text-gray-700">Base de Datos</label>
           <select
@@ -518,6 +522,7 @@ export default function StepTwoForm({
             <option value="Oracle">Oracle</option>
           </select>
         </div>
+        {/* Maqueta */}
         <div>
           <label className="block font-medium text-gray-700">Maqueta Utilizada</label>
           <input
@@ -530,6 +535,7 @@ export default function StepTwoForm({
             onChange={(e) => handleInputChange("maquetaUtilizada", e.target.value)}
           />
         </div>
+        {/* Ambiente */}
         <div>
           <label className="block font-medium text-gray-700">Ambiente</label>
           <select
@@ -656,7 +662,7 @@ export default function StepTwoForm({
           );
         })}
 
-        {/* Botones para Añadir e Importar */}
+        {/* Botones para Añadir, Importar y Descarga de Plantilla */}
         <div className="flex items-center gap-2 mt-2">
           <button
             onClick={addBatteryTest}
@@ -678,7 +684,7 @@ export default function StepTwoForm({
             <Tippy
               content={
                 <div style={{ whiteSpace: "pre-line" }}>
-                  {`El archivo Excel debe tener esta estructura de columnas:
+                  {`Para evitar errores, descarga la plantilla disponible en "Plantilla Excel →" y respeta el orden exacto de columnas:
                   
 columna 1: ID Prueba
 columna 2: Descripción
@@ -711,6 +717,15 @@ columna 6: Estado`}
               </span>
             </Tippy>
           </div>
+
+          {/* Enlace sutil para descargar la Plantilla Excel */}
+          <a
+            href="/plantillas/plantilla_bateria_pruebas.xlsx"
+            download
+            className="text-sm text-gray-500 underline hover:text-gray-700 transition"
+          >
+            Plantilla Excel →
+          </a>
         </div>
 
         <input
