@@ -74,7 +74,7 @@ export default function ReleaseNotesPage() {
                 entrada y configuración de pruebas.
               </li>
               <li>
-                La sección "Datos de Prueba" se incluye automáticamente tanto en
+                La sección &quot;Datos de Prueba&quot; se incluye automáticamente tanto en
                 el reporte generado en formato Markdown como en la exportación a
                 Word.
               </li>
