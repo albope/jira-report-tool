@@ -51,6 +51,14 @@ export interface FormData {
   hasIncidences: boolean;
   conclusion: string;
   datosDePrueba: string;
+
+  // Campos APP
+  isApp?: boolean;
+  endpoint?: string;
+  sistemaOperativo?: string;
+  dispositivoPruebas?: string;
+  precondiciones?: string;
+  idioma?: string;
 }
 
 interface StepTwoFormProps {
@@ -243,6 +251,13 @@ export default function StepTwoForm({
     });
   };
 
+  // NUEVO: Función para eliminar una versión individual
+  const removeVersion = (index: number) => {
+    const newVersions = [...formData.versions];
+    newVersions.splice(index, 1);
+    setFormData({ ...formData, versions: newVersions });
+  };
+
   /** Para mostrar la conclusión de ejemplo en gris si coincide */
   const isExampleConclusion = formData.conclusion === EXAMPLE_CONCLUSION;
 
@@ -285,7 +300,7 @@ export default function StepTwoForm({
       ) {
         alert(
           "El formato de columnas no coincide con:\n" +
-          EXPECTED_HEADERS.join(" | ")
+            EXPECTED_HEADERS.join(" | ")
         );
         return;
       }
@@ -314,7 +329,9 @@ export default function StepTwoForm({
       });
 
       if (importedTests.length === 0) {
-        alert("No se ha podido importar ningún caso. Revisa que las filas tengan contenido.");
+        alert(
+          "No se ha podido importar ningún caso. Revisa que las filas tengan contenido."
+        );
         return;
       }
 
@@ -433,11 +450,105 @@ export default function StepTwoForm({
         </div>
       </div>
 
+      {/* Nuevo Heading */}
+      <h3 className="text-xl font-semibold text-gray-800 mt-8">
+        Entorno de Pruebas y Configuración
+      </h3>
+
+      {/* Toggle Validación APP */}
+      <div className="mt-4">
+        <label className="block font-medium text-gray-700 mb-1">
+          ¿Validación de una APP?
+        </label>
+        <label className="inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            className="form-checkbox h-5 w-5 text-blue-600"
+            checked={formData.isApp || false}
+            onChange={(e) => handleInputChange("isApp", e.target.checked)}
+          />
+          <span className="ml-2 text-gray-700">Sí (activar campos APP)</span>
+        </label>
+      </div>
+
+      {/* Campos extra si isApp */}
+      {formData.isApp && (
+        <div className="mt-4 space-y-2 border border-gray-200 rounded p-3">
+          <div>
+            <label className="block font-medium text-gray-700">Endpoint</label>
+            <input
+              type="text"
+              className="border border-gray-300 rounded p-2 w-full
+                         focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Ej: http://localhost:3000 ó 172.25.2.99"
+              value={formData.endpoint || ""}
+              onChange={(e) => handleInputChange("endpoint", e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block font-medium text-gray-700">
+              Sistema Operativo / Versión
+            </label>
+            <input
+              type="text"
+              className="border border-gray-300 rounded p-2 w-full
+                         focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Ej: Android 13, iOS 18.4"
+              value={formData.sistemaOperativo || ""}
+              onChange={(e) =>
+                handleInputChange("sistemaOperativo", e.target.value)
+              }
+            />
+          </div>
+          <div>
+            <label className="block font-medium text-gray-700">
+              Dispositivo de Pruebas
+            </label>
+            <input
+              type="text"
+              className="border border-gray-300 rounded p-2 w-full
+                         focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Ej: Pixel 8, Galaxy A1, emulador iPhone"
+              value={formData.dispositivoPruebas || ""}
+              onChange={(e) =>
+                handleInputChange("dispositivoPruebas", e.target.value)
+              }
+            />
+          </div>
+          <div>
+            <label className="block font-medium text-gray-700">
+              Precondiciones
+            </label>
+            <textarea
+              className="w-full border border-gray-300 rounded p-2
+                         focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Ej: Usuario de pruebas dado de alta, permisos de localización..."
+              value={formData.precondiciones || ""}
+              onChange={(e) =>
+                handleInputChange("precondiciones", e.target.value)
+              }
+            />
+          </div>
+          <div>
+            <label className="block font-medium text-gray-700">Idioma</label>
+            <input
+              type="text"
+              className="border border-gray-300 rounded p-2 w-full
+                         focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Ej: es-ES, en-UK"
+              value={formData.idioma || ""}
+              onChange={(e) => handleInputChange("idioma", e.target.value)}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Versiones */}
-      <div className="space-y-2">
+      <div className="space-y-2 mt-6">
         <label className="block font-medium text-gray-700">Versiones</label>
         {formData.versions.map((version, idx) => (
-          <div key={idx} className="flex space-x-2">
+          <div key={idx} className="flex space-x-2 items-center relative">
+            {/* Campo appName */}
             <input
               type="text"
               className="border border-gray-300 rounded p-2 flex-1
@@ -447,6 +558,8 @@ export default function StepTwoForm({
               value={version.appName}
               onChange={(e) => handleVersionChange(idx, "appName", e.target.value)}
             />
+
+            {/* Campo appVersion */}
             <input
               type="text"
               className="border border-gray-300 rounded p-2 flex-1
@@ -454,10 +567,22 @@ export default function StepTwoForm({
                          focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Versión (ej. 1.25.02.1)"
               value={version.appVersion}
-              onChange={(e) => handleVersionChange(idx, "appVersion", e.target.value)}
+              onChange={(e) =>
+                handleVersionChange(idx, "appVersion", e.target.value)
+              }
             />
+
+            {/* Botón eliminar versión */}
+            <button
+              onClick={() => removeVersion(idx)}
+              className="text-red-600 font-bold px-2"
+              title="Eliminar esta versión"
+            >
+              ✕
+            </button>
           </div>
         ))}
+
         <button
           onClick={addVersion}
           className="mt-2 px-3 py-1 bg-green-500 text-white rounded
@@ -468,8 +593,7 @@ export default function StepTwoForm({
       </div>
 
       {/* Entorno de Pruebas */}
-      <div className="grid grid-cols-2 gap-4">
-        {/* Servidor de Pruebas */}
+      <div className="grid grid-cols-2 gap-4 mt-4">
         <div>
           <label className="block font-medium text-gray-700">Servidor de Pruebas</label>
           <input
@@ -482,7 +606,6 @@ export default function StepTwoForm({
             onChange={(e) => handleInputChange("serverPruebas", e.target.value)}
           />
         </div>
-        {/* IP */}
         <div>
           <label className="block font-medium text-gray-700">IP Máquina</label>
           <input
@@ -495,7 +618,6 @@ export default function StepTwoForm({
             onChange={(e) => handleInputChange("ipMaquina", e.target.value)}
           />
         </div>
-        {/* Navegador */}
         <div>
           <label className="block font-medium text-gray-700">Navegador Utilizado</label>
           <input
@@ -508,7 +630,6 @@ export default function StepTwoForm({
             onChange={(e) => handleInputChange("navegador", e.target.value)}
           />
         </div>
-        {/* BBDD */}
         <div>
           <label className="block font-medium text-gray-700">Base de Datos</label>
           <select
@@ -520,9 +641,9 @@ export default function StepTwoForm({
             <option value="">Seleccione...</option>
             <option value="SQL Server">SQL Server</option>
             <option value="Oracle">Oracle</option>
+            <option value="MongoDB">MongoDB</option>
           </select>
         </div>
-        {/* Maqueta */}
         <div>
           <label className="block font-medium text-gray-700">Maqueta Utilizada</label>
           <input
@@ -535,7 +656,6 @@ export default function StepTwoForm({
             onChange={(e) => handleInputChange("maquetaUtilizada", e.target.value)}
           />
         </div>
-        {/* Ambiente */}
         <div>
           <label className="block font-medium text-gray-700">Ambiente</label>
           <select
@@ -554,7 +674,7 @@ export default function StepTwoForm({
       </div>
 
       {/* Batería de Pruebas */}
-      <div className="space-y-2">
+      <div className="space-y-2 mt-6">
         <h3 className="font-semibold text-gray-800">Batería de Pruebas</h3>
         <p className="text-sm text-gray-500">
           (En esta sección se definen los casos de prueba realizados y sus resultados.)
@@ -583,9 +703,7 @@ export default function StepTwoForm({
                               ${isExample ? "text-gray-400 italic" : ""}`}
                   placeholder="Ejemplo: PR-001"
                   value={test.id}
-                  onChange={(e) =>
-                    handleBatteryTestChange(idx, "id", e.target.value)
-                  }
+                  onChange={(e) => handleBatteryTestChange(idx, "id", e.target.value)}
                 />
               </div>
               <div>
@@ -680,7 +798,6 @@ export default function StepTwoForm({
               Importar Fichero Excel
             </button>
 
-            {/* Tippy con ubicación "right" y un <span> que envuelve el icono */}
             <Tippy
               content={
                 <div style={{ whiteSpace: "pre-line" }}>
@@ -718,7 +835,6 @@ columna 6: Estado`}
             </Tippy>
           </div>
 
-          {/* Enlace sutil para descargar la Plantilla Excel */}
           <a
             href="/plantillas/plantilla_bateria_pruebas.xlsx"
             download

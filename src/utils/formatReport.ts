@@ -2,7 +2,7 @@ import { ParsedData } from "./parseJiraContent";
 
 interface BatteryTest {
   id: string;
-  description: string; // Asegurarnos de que existe esta propiedad
+  description: string;
   steps: string;
   expectedResult: string;
   obtainedResult: string;
@@ -23,6 +23,9 @@ interface Summary {
   observations: string;
 }
 
+/**
+ * Extendemos FormData con los nuevos campos si es App
+ */
 interface FormData {
   jiraCode: string;
   date: string;
@@ -41,11 +44,17 @@ interface FormData {
   hasIncidences: boolean;
   conclusion: string;
   datosDePrueba: string;
+
+  // Nuevos campos APP
+  isApp?: boolean;
+  endpoint?: string;
+  sistemaOperativo?: string;
+  dispositivoPruebas?: string;
+  precondiciones?: string;
+  idioma?: string;
 }
 
-/**
- * Convierte multiline en bullet points para la columna de Pasos.
- */
+/** Convierte multiline a bullet points para 'Pasos' */
 function formatStepsCell(steps: string): string {
   const lines = steps.split(/\r?\n/).filter((line) => line.trim() !== "");
   return lines.map((line) => `- ${line}`).join(" \\n ");
@@ -63,7 +72,7 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
     versionTable = "| (No hay versiones) | (N/A) |\n";
   }
 
-  // Batería de Pruebas: Añadimos la columna "Descripción"
+  // Batería de Pruebas (Descripción incluida)
   let batteryTable = `| ID Prueba | Descripción | Pasos | Resultado Esperado | Resultado Obtenido | Estado |\n`;
   batteryTable += `| --------- | ----------- | ----- | ------------------ | ------------------ | ------ |\n`;
   if (formData.batteryTests.length > 0) {
@@ -96,6 +105,22 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
     incidencesSection = "No se detectaron incidencias durante las pruebas.";
   }
 
+  // Si isApp === true => Sección "📱 Validación de Aplicación"
+  let appSection = "";
+  if (formData.isApp) {
+    appSection = `
+📱 **Validación de Aplicación**
+
+| **Campo**                    | **Detalle**                               |
+| --------------------------- | ----------------------------------------- |
+| Endpoint                    | ${formData.endpoint || "(N/A)"}           |
+| Sistema Operativo / Versión | ${formData.sistemaOperativo || "(N/A)"}   |
+| Dispositivo de Pruebas      | ${formData.dispositivoPruebas || "(N/A)"} |
+| Precondiciones              | ${formData.precondiciones || "(N/A)"}     |
+| Idioma                      | ${formData.idioma || "(N/A)"}             |
+`;
+  }
+
   // Reporte final
   return `
 📌 **Información General**
@@ -121,6 +146,8 @@ ${versionTable.trim()}
 | Base de Datos                  | ${formData.baseDatos}        |
 | Maqueta Utilizada              | ${formData.maquetaUtilizada} |
 | Ambiente                       | ${formData.ambiente}         |
+
+${appSection.trim()}
 
 ✅ **Batería de Pruebas**
 
