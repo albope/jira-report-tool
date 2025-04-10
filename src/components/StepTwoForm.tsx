@@ -88,6 +88,27 @@ const EXPECTED_HEADERS = [
   "Estado",
 ];
 
+/** Helper para incrementar un ID como "PR-001" => "PR-002" */
+function incrementCaseId(originalId: string): string {
+  // Intentamos extraer prefijo no numérico + parte numérica
+  const match = originalId.match(/^(\D*)(\d+)$/);
+  if (!match) {
+    // si no encaja, devolvemos con un " (copy)" para no romper
+    return originalId + " (copy)";
+  }
+  const prefix = match[1]; // ej. "PR-"
+  const numberStr = match[2]; // ej. "001"
+  const numLength = numberStr.length;
+
+  // Convertir a número y sumar 1
+  let numeric = parseInt(numberStr, 10);
+  numeric++;
+
+  // Volvemos a poner ceros a la izquierda
+  const newNumberPart = numeric.toString().padStart(numLength, "0");
+  return prefix + newNumberPart;
+}
+
 export default function StepTwoForm({
   parsedData,
   formData,
@@ -186,6 +207,26 @@ export default function StepTwoForm({
     const newTests = [...formData.batteryTests];
     newTests.splice(index, 1);
 
+    const updatedSummary = {
+      ...formData.summary,
+      totalTests: String(newTests.length),
+    };
+    setFormData({ ...formData, batteryTests: newTests, summary: updatedSummary });
+  };
+
+  /** DUPLICAR un caso de prueba */
+  const duplicateBatteryTest = (index: number) => {
+    const original = formData.batteryTests[index];
+    // Clonamos
+    const cloned: BatteryTest = { ...original };
+    // Incrementamos su ID (si tiene formato "PR-001", pasa a "PR-002")
+    cloned.id = incrementCaseId(original.id);
+
+    // Insertamos el clon justo después del original
+    const newTests = [...formData.batteryTests];
+    newTests.splice(index + 1, 0, cloned);
+
+    // Ajustamos total de pruebas
     const updatedSummary = {
       ...formData.summary,
       totalTests: String(newTests.length),
@@ -709,13 +750,25 @@ export default function StepTwoForm({
               key={idx}
               className="relative border border-gray-300 rounded p-2 space-y-2"
             >
-              <button
-                onClick={() => removeBatteryTest(idx)}
-                className="absolute top-2 right-2 text-red-600 font-bold"
-                title="Eliminar este caso de prueba"
-              >
-                X
-              </button>
+              {/* Botones de Acciones (Eliminar + Duplicar) */}
+              <div className="absolute top-2 right-2 flex space-x-2">
+                {/* Botón Eliminar */}
+                <button
+                  onClick={() => removeBatteryTest(idx)}
+                  className="text-red-600 font-bold"
+                  title="Eliminar este caso de prueba"
+                >
+                  X
+                </button>
+                {/* Botón Duplicar */}
+                <button
+                  onClick={() => duplicateBatteryTest(idx)}
+                  className="text-blue-600 font-bold"
+                  title="Duplicar este caso de prueba"
+                >
+                  ↻
+                </button>
+              </div>
 
               {/* ID Prueba */}
               <div>
@@ -727,9 +780,7 @@ export default function StepTwoForm({
                               ${isExample ? "text-gray-400 italic" : ""}`}
                   placeholder="Ejemplo: PR-001"
                   value={test.id}
-                  onChange={(e) =>
-                    handleBatteryTestChange(idx, "id", e.target.value)
-                  }
+                  onChange={(e) => handleBatteryTestChange(idx, "id", e.target.value)}
                 />
               </div>
 
