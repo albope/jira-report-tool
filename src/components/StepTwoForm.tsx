@@ -73,10 +73,11 @@ interface StepTwoFormProps {
   onGoBackToStep1: () => void;
 }
 
+/** Texto de ayuda para la Conclusión */
 const EXAMPLE_CONCLUSION = `Ejemplo de conclusión:
 ❌ Rechazado → El fallo bloquea la validación de la funcionalidad`;
 
-/** NUEVO: 7 columnas (añadimos "Versión" como la 6ª) */
+/** NUEVO: Esperamos 7 columnas, con la 6ª = Versión */
 const EXPECTED_HEADERS = [
   "ID Prueba",
   "Descripción",
@@ -109,12 +110,13 @@ export default function StepTwoForm({
   }, []);
 
   /**
-   * Manejador genérico para formData
+   * Manejador genérico para actualizar formData
    */
   const handleInputChange = (
     field: keyof FormData,
     value: string | boolean | Summary
   ) => {
+    // Si estamos actualizando 'summary' (objeto), validamos
     if (field === "summary" && typeof value === "object") {
       const newSummary = { ...formData.summary, ...value } as Summary;
       const total = parseInt(newSummary.totalTests || "0", 10);
@@ -133,15 +135,18 @@ export default function StepTwoForm({
       return;
     }
 
+    // Para el resto de campos, simplemente asignamos
     setFormData({ ...formData, [field]: value });
   };
 
   /**
    * 2) Ajuste de la batería de pruebas por defecto al montar
+   *    (e.g., modificar un test predeterminado)
    */
   useEffect(() => {
     const newTests = [...formData.batteryTests];
     newTests.forEach((test) => {
+      // Ejemplo de "ajuste" de un test PR-001
       if (
         test.id === "PR-001" &&
         !test.obtainedResult.includes("El sistema no procesó correctamente")
@@ -156,7 +161,6 @@ export default function StepTwoForm({
 
   /** Añadir un caso de prueba (manual) */
   const addBatteryTest = () => {
-    /** Se inicializa con testVersion vacío */
     const newTest: BatteryTest = {
       id: "PR-001",
       description: "",
@@ -174,7 +178,6 @@ export default function StepTwoForm({
       ...formData.summary,
       totalTests: String(newTests.length),
     };
-
     setFormData({ ...formData, batteryTests: newTests, summary: updatedSummary });
   };
 
@@ -187,11 +190,10 @@ export default function StepTwoForm({
       ...formData.summary,
       totalTests: String(newTests.length),
     };
-
     setFormData({ ...formData, batteryTests: newTests, summary: updatedSummary });
   };
 
-  /** Actualizar campos de un test */
+  /** Actualizar campos de un test individual */
   const handleBatteryTestChange = (
     index: number,
     field: keyof BatteryTest,
@@ -225,12 +227,15 @@ export default function StepTwoForm({
     setFormData({ ...formData, incidences: newInc });
   };
 
+  /**
+   * Si hasIncidences = true => agregamos 1 sola incidencia (si no hay).
+   * Si hasIncidences = false => borramos incidencias.
+   */
   useEffect(() => {
     if (formData.hasIncidences) {
       if (formData.incidences.length === 0) {
         addIncidence();
       } else if (formData.incidences.length > 1) {
-        // Solo dejamos 1 en este ejemplo
         const firstInc = formData.incidences[0];
         setFormData({ ...formData, incidences: [firstInc] });
       }
@@ -264,7 +269,7 @@ export default function StepTwoForm({
     setFormData({ ...formData, versions: newVersions });
   };
 
-  /** Para mostrar la conclusión de ejemplo en gris si coincide */
+  /** Estilizado especial si la conclusión es la de ejemplo */
   const isExampleConclusion = formData.conclusion === EXAMPLE_CONCLUSION;
 
   // ---------------------------------------------------------------------------------------------
@@ -288,7 +293,8 @@ export default function StepTwoForm({
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
 
-      const sheetData = XLSX.utils.sheet_to_json(sheet, {
+      // Convertimos la hoja en un array (matriz)
+      const sheetData = XLSX.utils.sheet_to_json<(string | number)[]>(sheet, {
         header: 1,
         blankrows: false,
       });
@@ -311,11 +317,12 @@ export default function StepTwoForm({
         return;
       }
 
-      // Filas
+      // Filas de datos, sin la cabecera
       const rows = sheetData.slice(1);
       const importedTests: BatteryTest[] = [];
 
-      rows.forEach((row: any) => {
+      rows.forEach((row) => {
+        // row es un array de strings|números|undefined
         if (!row || row.length < 7) return; // Ahora necesitamos 7 columnas
         const [
           id,
@@ -323,21 +330,22 @@ export default function StepTwoForm({
           steps,
           expResult,
           obtResult,
-          testVersion, // Nueva columna
+          testVersion, // Nueva columna (6ª)
           status,
         ] = row;
 
+        // Convertimos a string en caso de que vengan como número
         const newTest: BatteryTest = {
           id: id?.toString() || "",
           description: description?.toString() || "",
           steps: steps?.toString() || "",
           expectedResult: expResult?.toString() || "",
           obtainedResult: obtResult?.toString() || "",
-          testVersion: testVersion?.toString() || "", // Asignamos aquí
+          testVersion: testVersion?.toString() || "",
           testStatus: status?.toString() || "",
         };
 
-        // solo añadimos si ID no está vacío:
+        // Solo añadimos si "ID" no está vacío
         if (newTest.id.trim() !== "") {
           importedTests.push(newTest);
         }
@@ -350,7 +358,7 @@ export default function StepTwoForm({
         return;
       }
 
-      // Actualizar batteryTests y total
+      // Actualizar batteryTests
       const updatedTests = [...formData.batteryTests, ...importedTests];
       const updatedSummary = {
         ...formData.summary,
@@ -402,6 +410,7 @@ export default function StepTwoForm({
 
       {/* Datos básicos */}
       <div className="space-y-4">
+        {/* Título inmutable */}
         <div>
           <label className="block font-medium text-gray-700">Título</label>
           <p className="p-2 bg-gray-100 rounded text-gray-800">
@@ -409,6 +418,7 @@ export default function StepTwoForm({
           </p>
         </div>
 
+        {/* Código de JIRA */}
         <div>
           <label className="block font-medium text-gray-700">
             Código de JIRA <span className="text-red-500">*</span>
@@ -423,6 +433,7 @@ export default function StepTwoForm({
           />
         </div>
 
+        {/* Fecha de Prueba */}
         <div>
           <label className="block font-medium text-gray-700">Fecha de Prueba</label>
           <input
@@ -435,6 +446,7 @@ export default function StepTwoForm({
           />
         </div>
 
+        {/* Tester */}
         <div>
           <label className="block font-medium text-gray-700">Tester</label>
           <input
@@ -448,6 +460,7 @@ export default function StepTwoForm({
           />
         </div>
 
+        {/* Estado de la Prueba */}
         <div>
           <label className="block font-medium text-gray-700">
             Estado de la Prueba
@@ -465,12 +478,12 @@ export default function StepTwoForm({
         </div>
       </div>
 
-      {/* Nuevo Heading */}
+      {/* Heading: Entorno de Pruebas */}
       <h3 className="text-xl font-semibold text-gray-800 mt-8">
         Entorno de Pruebas y Configuración
       </h3>
 
-      {/* Toggle Validación APP */}
+      {/* Toggle: ¿Validación de APP? */}
       <div className="mt-4">
         <label className="block font-medium text-gray-700 mb-1">
           ¿Validación de una APP?
@@ -486,7 +499,7 @@ export default function StepTwoForm({
         </label>
       </div>
 
-      {/* Campos extra si isApp */}
+      {/* Campos extra si la validación es APP */}
       {formData.isApp && (
         <div className="mt-4 space-y-2 border border-gray-200 rounded p-3">
           <div>
@@ -582,6 +595,7 @@ export default function StepTwoForm({
               onChange={(e) => handleVersionChange(idx, "appVersion", e.target.value)}
             />
 
+            {/* Botón para eliminar versión individual */}
             <button
               onClick={() => removeVersion(idx)}
               className="text-red-600 font-bold px-2"
@@ -703,7 +717,7 @@ export default function StepTwoForm({
                 X
               </button>
 
-              {/* ID */}
+              {/* ID Prueba */}
               <div>
                 <label className="block font-medium text-gray-700">ID Prueba</label>
                 <input
@@ -713,7 +727,9 @@ export default function StepTwoForm({
                               ${isExample ? "text-gray-400 italic" : ""}`}
                   placeholder="Ejemplo: PR-001"
                   value={test.id}
-                  onChange={(e) => handleBatteryTestChange(idx, "id", e.target.value)}
+                  onChange={(e) =>
+                    handleBatteryTestChange(idx, "id", e.target.value)
+                  }
                 />
               </div>
 
@@ -741,7 +757,9 @@ export default function StepTwoForm({
                               ${isExample ? "text-gray-400 italic" : ""}`}
                   placeholder="Ejemplo: 1. Acceder a la acción de regulación..."
                   value={test.steps}
-                  onChange={(e) => handleBatteryTestChange(idx, "steps", e.target.value)}
+                  onChange={(e) =>
+                    handleBatteryTestChange(idx, "steps", e.target.value)
+                  }
                 />
               </div>
 
@@ -779,7 +797,7 @@ export default function StepTwoForm({
                 />
               </div>
 
-              {/* NUEVO: Campo Versión (entre Resultado Obtenido y Estado) */}
+              {/* Versión (nuevo campo) */}
               <div>
                 <label className="block font-medium text-gray-700">Versión</label>
                 <input
@@ -805,7 +823,9 @@ export default function StepTwoForm({
                               ${isExample ? "text-gray-400 italic" : ""}`}
                   placeholder="Ejemplo: FALLIDO"
                   value={test.testStatus}
-                  onChange={(e) => handleBatteryTestChange(idx, "testStatus", e.target.value)}
+                  onChange={(e) =>
+                    handleBatteryTestChange(idx, "testStatus", e.target.value)
+                  }
                 />
               </div>
             </div>
@@ -821,7 +841,7 @@ export default function StepTwoForm({
             + Añadir caso de prueba
           </button>
 
-          {/* Botón Importar con Tooltip */}
+          {/* Botón Importar Excel con tooltip */}
           <div className="relative inline-block">
             <button
               onClick={handleImportClick}
@@ -868,6 +888,7 @@ columna 7: Estado`}
             </Tippy>
           </div>
 
+          {/* Enlace para descargar plantilla */}
           <a
             href="/plantillas/plantilla_bateria_pruebas.xlsx"
             download
@@ -877,6 +898,7 @@ columna 7: Estado`}
           </a>
         </div>
 
+        {/* Input file oculto */}
         <input
           type="file"
           accept=".xls,.xlsx"
@@ -908,6 +930,7 @@ columna 7: Estado`}
         <p className="text-sm text-gray-500">
           (Número total de pruebas, las exitosas y las fallidas, y observaciones.)
         </p>
+
         <div>
           <label className="block font-medium text-gray-700">Total de Pruebas</label>
           <input
