@@ -10,12 +10,14 @@ import FooterNav from "@/components/FooterNav";
 import parseJiraContent, { ParsedData } from "@/utils/parseJiraContent";
 import formatReport from "@/utils/formatReport";
 
+
 interface BatteryTest {
   id: string;
   description: string;
   steps: string;
   expectedResult: string;
   obtainedResult: string;
+  testVersion: string; // <-- Añadido
   testStatus: string;
 }
 
@@ -33,9 +35,6 @@ interface Summary {
   observations: string;
 }
 
-/**
- * Estructura FormData actualizada con campo `datosDePrueba`.
- */
 interface FormData {
   jiraCode: string;
   date: string;
@@ -48,12 +47,12 @@ interface FormData {
   baseDatos: string;
   maquetaUtilizada: string;
   ambiente: string;
-  batteryTests: BatteryTest[];
+  batteryTests: BatteryTest[]; // ← Usa el nuevo tipo
   summary: Summary;
   incidences: Incidence[];
   hasIncidences: boolean;
   conclusion: string;
-  datosDePrueba: string; // <-- nuevo campo
+  datosDePrueba: string;
 }
 
 export default function Home() {
@@ -73,7 +72,7 @@ export default function Home() {
     baseDatos: "",
     maquetaUtilizada: "",
     ambiente: "",
-    batteryTests: [],
+    batteryTests: [], // ← sin cambios aquí
     summary: {
       totalTests: "",
       successfulTests: "",
@@ -83,7 +82,7 @@ export default function Home() {
     incidences: [],
     hasIncidences: false,
     conclusion: "",
-    datosDePrueba: "", // <-- valor inicial para nuevo campo
+    datosDePrueba: "",
   });
 
   const [report, setReport] = useState("");
@@ -126,7 +125,7 @@ export default function Home() {
       incidences: [],
       hasIncidences: false,
       conclusion: "",
-      datosDePrueba: "", // <-- también aquí
+      datosDePrueba: "",
     });
     setReport("");
     setStep(1);
