@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef} from "react";
 import { ParsedData } from "@/utils/parseJiraContent";
 import * as XLSX from "xlsx";
 import Tippy from "@tippyjs/react";
