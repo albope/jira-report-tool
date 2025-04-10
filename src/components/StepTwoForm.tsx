@@ -129,18 +129,6 @@ export default function StepTwoForm({
   onGoBackToStep1,
 }: StepTwoFormProps) {
   /**
-   * 1) Forzar fecha actual si no existe en formData
-   */
-  useEffect(() => {
-    if (!formData.date) {
-      setFormData({
-        ...formData,
-        date: new Date().toISOString().split("T")[0],
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   /**
    * Manejador genérico para actualizar formData
    */

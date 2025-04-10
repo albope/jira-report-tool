@@ -80,7 +80,7 @@ export default function Home() {
   // Estado principal de FormData
   const [formData, setFormData] = useState<FormData>({
     jiraCode: "",
-    date: "",
+    date: new Date().toISOString().split("T")[0],
     tester: "",
     testStatus: "",
     versions: [],
@@ -138,7 +138,7 @@ export default function Home() {
 
     setFormData({
       jiraCode: "",
-      date: "",
+      date: new Date().toISOString().split("T")[0],
       tester: "",
       testStatus: "",
       versions: [],
