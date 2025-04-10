@@ -1,16 +1,17 @@
 import { ParsedData } from "./parseJiraContent";
 
-/** Ajustamos la interface para reflejar la nueva propiedad */
+/** Estructura de la batería */
 interface BatteryTest {
   id: string;
   description: string;
   steps: string;
   expectedResult: string;
   obtainedResult: string;
-  testVersion: string; // <-- Nuevo campo
+  testVersion: string;
   testStatus: string;
 }
 
+/** Incidencias */
 interface Incidence {
   id: string;
   description: string;
@@ -18,6 +19,7 @@ interface Incidence {
   status: string;
 }
 
+/** Resumen */
 interface Summary {
   totalTests: string;
   successfulTests: string;
@@ -25,6 +27,7 @@ interface Summary {
   observations: string;
 }
 
+/** FormData */
 interface FormData {
   jiraCode: string;
   date: string;
@@ -44,7 +47,7 @@ interface FormData {
   conclusion: string;
   datosDePrueba: string;
 
-  // Nuevos campos APP
+  // APP
   isApp?: boolean;
   endpoint?: string;
   sistemaOperativo?: string;
@@ -53,16 +56,34 @@ interface FormData {
   idioma?: string;
 }
 
-/** Convierte multiline a bullet points para 'Pasos' */
+/** Campos ocultables */
+interface HiddenFields {
+  serverPruebas: boolean;
+  ipMaquina: boolean;
+  navegador: boolean;
+  baseDatos: boolean;
+  maquetaUtilizada: boolean;
+  ambiente: boolean;
+}
+
+/** Helper para formatear pasos multiline en bullet points */
 function formatStepsCell(steps: string): string {
   const lines = steps.split(/\r?\n/).filter((line) => line.trim() !== "");
   return lines.map((line) => `- ${line}`).join(" \\n ");
 }
 
-export default function formatReport(parsed: ParsedData, formData: FormData): string {
+/**
+ * Recibimos hiddenFields y omitimos del reporte
+ * los campos que estén ocultos en hiddenFields.
+ */
+export default function formatReport(
+  parsed: ParsedData,
+  formData: FormData,
+  hiddenFields: HiddenFields
+): string {
   const finalDate = formData.date || new Date().toISOString().split("T")[0];
 
-  // Sección Versiones
+  // 1) Versiones
   let versionTable = "";
   formData.versions.forEach((v) => {
     versionTable += `| ${v.appName.trim()} | ${v.appVersion.trim()} |\n`;
@@ -71,7 +92,7 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
     versionTable = "| (No hay versiones) | (N/A) |\n";
   }
 
-  // NUEVA TABLA con 7 columnas en Batería (columna "Versión" incluida)
+  // 2) Batería de Pruebas
   let batteryTable = `| ID Prueba | Descripción | Pasos | Resultado Esperado | Resultado Obtenido | Versión | Estado |\n`;
   batteryTable += `| --------- | ----------- | ----- | ------------------ | ------------------ | ------- | ------ |\n`;
   if (formData.batteryTests.length > 0) {
@@ -83,7 +104,7 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
     batteryTable += "| (Sin pruebas) | - | - | - | - | - | - |\n";
   }
 
-  // Resumen
+  // 3) Resumen de Resultados
   let summaryTable = `| **Total de Pruebas** | **Pruebas Exitosas** | **Pruebas Fallidas** | **Observaciones** |\n`;
   summaryTable += `| -------------------- | -------------------- | -------------------- | ----------------- |\n`;
   summaryTable += `| ${formData.summary.totalTests || "0"} | ${
@@ -92,7 +113,7 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
     formData.summary.observations || "(N/A)"
   } |\n`;
 
-  // Incidencias
+  // 4) Incidencias
   let incidencesSection = "";
   if (formData.hasIncidences && formData.incidences.length > 0) {
     incidencesSection += `| **ID Prueba** | **Descripción de la Incidencia** | **Impacto** | **Estado** |\n`;
@@ -104,7 +125,38 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
     incidencesSection = "No se detectaron incidencias durante las pruebas.";
   }
 
-  // Sección APP si isApp === true
+  // 5) Entorno => Listado en negrita “campo: valor”, para que Word no lo interprete como pseudo tabla
+  const entornoPairs: Array<[string, string]> = [];
+
+  if (!hiddenFields.serverPruebas && formData.serverPruebas.trim() !== "") {
+    entornoPairs.push(["Servidor de Pruebas", formData.serverPruebas]);
+  }
+  if (!hiddenFields.ipMaquina && formData.ipMaquina.trim() !== "") {
+    entornoPairs.push(["IP Máquina", formData.ipMaquina]);
+  }
+  if (!hiddenFields.navegador && formData.navegador.trim() !== "") {
+    entornoPairs.push(["Navegador Utilizado", formData.navegador]);
+  }
+  if (!hiddenFields.baseDatos && formData.baseDatos.trim() !== "") {
+    entornoPairs.push(["Base de Datos", formData.baseDatos]);
+  }
+  if (!hiddenFields.maquetaUtilizada && formData.maquetaUtilizada.trim() !== "") {
+    entornoPairs.push(["Maqueta Utilizada", formData.maquetaUtilizada]);
+  }
+  if (!hiddenFields.ambiente && formData.ambiente.trim() !== "") {
+    entornoPairs.push(["Ambiente", formData.ambiente]);
+  }
+
+  let entornoList = "";
+  if (entornoPairs.length > 0) {
+    entornoList = entornoPairs
+      .map(([key, val]) => `**${key.trim()}:** ${val.trim()}`)
+      .join("\n");
+  } else {
+    entornoList = "(Sin datos de entorno)";
+  }
+
+  // 6) Sección APP si isApp === true
   let appSection = "";
   if (formData.isApp) {
     appSection = `
@@ -120,6 +172,7 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
 `;
   }
 
+  // 7) Reporte final => Entorno se muestra como “campo: valor” en negrita
   return `
 📌 **Información General**
 **Título:** ${parsed.title}
@@ -135,15 +188,7 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
 ${versionTable.trim()}
 
 🖥️ **Entorno de Pruebas**
-
-| **Parámetros de Configuración** | **Detalle**                  |
-| ------------------------------- | ---------------------------- |
-| Servidor de Pruebas            | ${formData.serverPruebas}    |
-| IP Máquina                     | ${formData.ipMaquina}        |
-| Navegador Utilizado            | ${formData.navegador}        |
-| Base de Datos                  | ${formData.baseDatos}        |
-| Maqueta Utilizada              | ${formData.maquetaUtilizada} |
-| Ambiente                       | ${formData.ambiente}         |
+${entornoList.trim()}
 
 ${appSection.trim()}
 

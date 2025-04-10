@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ParsedData } from "@/utils/parseJiraContent";
 import * as XLSX from "xlsx";
 import Tippy from "@tippyjs/react";
@@ -13,7 +13,6 @@ interface BatteryTest {
   steps: string;
   expectedResult: string;
   obtainedResult: string;
-  /** NUEVO: campo adicional de Versión */
   testVersion: string;
   testStatus: string;
 }
@@ -34,7 +33,17 @@ interface Summary {
   observations: string;
 }
 
-/** FormData */
+/** Campos ocultables (true = oculto) */
+export interface HiddenFields {
+  serverPruebas: boolean;
+  ipMaquina: boolean;
+  navegador: boolean;
+  baseDatos: boolean;
+  maquetaUtilizada: boolean;
+  ambiente: boolean;
+}
+
+/** FormData principal */
 export interface FormData {
   jiraCode: string;
   date: string;
@@ -47,7 +56,7 @@ export interface FormData {
   baseDatos: string;
   maquetaUtilizada: string;
   ambiente: string;
-  /** NOTA: batteryTests ahora contiene BatteryTest con testVersion */
+
   batteryTests: BatteryTest[];
   summary: Summary;
   incidences: Incidence[];
@@ -68,6 +77,11 @@ interface StepTwoFormProps {
   parsedData: ParsedData;
   formData: FormData;
   setFormData: (val: FormData) => void;
+
+  // Ahora recibimos y seteamos la info de campos ocultos
+  hiddenFields: HiddenFields;
+  setHiddenFields: React.Dispatch<React.SetStateAction<HiddenFields>>;
+
   onGenerate: () => void;
   onReset: () => void;
   onGoBackToStep1: () => void;
@@ -77,7 +91,7 @@ interface StepTwoFormProps {
 const EXAMPLE_CONCLUSION = `Ejemplo de conclusión:
 ❌ Rechazado → El fallo bloquea la validación de la funcionalidad`;
 
-/** NUEVO: Esperamos 7 columnas, con la 6ª = Versión */
+/** Esperamos 7 columnas en el Excel (columna 6 = "Versión") */
 const EXPECTED_HEADERS = [
   "ID Prueba",
   "Descripción",
@@ -88,23 +102,18 @@ const EXPECTED_HEADERS = [
   "Estado",
 ];
 
-/** Helper para incrementar un ID como "PR-001" => "PR-002" */
+/** ID "PR-001" => "PR-002" */
 function incrementCaseId(originalId: string): string {
-  // Intentamos extraer prefijo no numérico + parte numérica
   const match = originalId.match(/^(\D*)(\d+)$/);
   if (!match) {
-    // si no encaja, devolvemos con un " (copy)" para no romper
     return originalId + " (copy)";
   }
-  const prefix = match[1]; // ej. "PR-"
-  const numberStr = match[2]; // ej. "001"
+  const prefix = match[1];
+  const numberStr = match[2];
   const numLength = numberStr.length;
 
-  // Convertir a número y sumar 1
   let numeric = parseInt(numberStr, 10);
   numeric++;
-
-  // Volvemos a poner ceros a la izquierda
   const newNumberPart = numeric.toString().padStart(numLength, "0");
   return prefix + newNumberPart;
 }
@@ -113,12 +122,14 @@ export default function StepTwoForm({
   parsedData,
   formData,
   setFormData,
+  hiddenFields,
+  setHiddenFields,
   onGenerate,
   onReset,
   onGoBackToStep1,
 }: StepTwoFormProps) {
   /**
-   * 1) Forzar fecha actual si no existe
+   * 1) Forzar fecha actual si no existe en formData
    */
   useEffect(() => {
     if (!formData.date) {
@@ -137,7 +148,7 @@ export default function StepTwoForm({
     field: keyof FormData,
     value: string | boolean | Summary
   ) => {
-    // Si estamos actualizando 'summary' (objeto), validamos
+    // Manejo especial para 'summary'
     if (field === "summary" && typeof value === "object") {
       const newSummary = { ...formData.summary, ...value } as Summary;
       const total = parseInt(newSummary.totalTests || "0", 10);
@@ -156,18 +167,15 @@ export default function StepTwoForm({
       return;
     }
 
-    // Para el resto de campos, simplemente asignamos
     setFormData({ ...formData, [field]: value });
   };
 
   /**
-   * 2) Ajuste de la batería de pruebas por defecto al montar
-   *    (e.g., modificar un test predeterminado)
+   * 2) Ajuste de la batería de pruebas al montar
    */
   useEffect(() => {
     const newTests = [...formData.batteryTests];
     newTests.forEach((test) => {
-      // Ejemplo de "ajuste" de un test PR-001
       if (
         test.id === "PR-001" &&
         !test.obtainedResult.includes("El sistema no procesó correctamente")
@@ -180,7 +188,9 @@ export default function StepTwoForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** Añadir un caso de prueba (manual) */
+  /**
+   * 3) Añadir / Eliminar / Duplicar Casos de Prueba
+   */
   const addBatteryTest = () => {
     const newTest: BatteryTest = {
       id: "PR-001",
@@ -190,7 +200,7 @@ export default function StepTwoForm({
         "El servicio se elimina correctamente añadiendo su viaje de retirada correspondiente.",
       obtainedResult:
         "❌ El sistema no procesó correctamente la eliminación del servicio con retirada, generando un error inesperado.",
-      testVersion: "", // Nuevo campo
+      testVersion: "",
       testStatus: "FALLIDO",
     };
 
@@ -202,11 +212,9 @@ export default function StepTwoForm({
     setFormData({ ...formData, batteryTests: newTests, summary: updatedSummary });
   };
 
-  /** Eliminar un caso de prueba */
   const removeBatteryTest = (index: number) => {
     const newTests = [...formData.batteryTests];
     newTests.splice(index, 1);
-
     const updatedSummary = {
       ...formData.summary,
       totalTests: String(newTests.length),
@@ -214,19 +222,14 @@ export default function StepTwoForm({
     setFormData({ ...formData, batteryTests: newTests, summary: updatedSummary });
   };
 
-  /** DUPLICAR un caso de prueba */
   const duplicateBatteryTest = (index: number) => {
     const original = formData.batteryTests[index];
-    // Clonamos
     const cloned: BatteryTest = { ...original };
-    // Incrementamos su ID (si tiene formato "PR-001", pasa a "PR-002")
     cloned.id = incrementCaseId(original.id);
 
-    // Insertamos el clon justo después del original
     const newTests = [...formData.batteryTests];
     newTests.splice(index + 1, 0, cloned);
 
-    // Ajustamos total de pruebas
     const updatedSummary = {
       ...formData.summary,
       totalTests: String(newTests.length),
@@ -234,7 +237,6 @@ export default function StepTwoForm({
     setFormData({ ...formData, batteryTests: newTests, summary: updatedSummary });
   };
 
-  /** Actualizar campos de un test individual */
   const handleBatteryTestChange = (
     index: number,
     field: keyof BatteryTest,
@@ -245,7 +247,9 @@ export default function StepTwoForm({
     setFormData({ ...formData, batteryTests: newTests });
   };
 
-  /** Incidencias */
+  /**
+   * 4) Incidencias
+   */
   const addIncidence = () => {
     if (formData.incidences.length === 0) {
       setFormData({
@@ -268,10 +272,7 @@ export default function StepTwoForm({
     setFormData({ ...formData, incidences: newInc });
   };
 
-  /**
-   * Si hasIncidences = true => agregamos 1 sola incidencia (si no hay).
-   * Si hasIncidences = false => borramos incidencias.
-   */
+  /** Manejo hasIncidences */
   useEffect(() => {
     if (formData.hasIncidences) {
       if (formData.incidences.length === 0) {
@@ -286,7 +287,9 @@ export default function StepTwoForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.hasIncidences]);
 
-  /** Manejo de versiones */
+  /**
+   * 5) Manejo de versiones
+   */
   const handleVersionChange = (
     index: number,
     field: "appName" | "appVersion",
@@ -310,12 +313,14 @@ export default function StepTwoForm({
     setFormData({ ...formData, versions: newVersions });
   };
 
-  /** Estilizado especial si la conclusión es la de ejemplo */
+  /**
+   * 6) Conclusión
+   */
   const isExampleConclusion = formData.conclusion === EXAMPLE_CONCLUSION;
 
-  // ---------------------------------------------------------------------------------------------
-  //  3) IMPORTAR FICHERO EXCEL
-  // ---------------------------------------------------------------------------------------------
+  /**
+   * 7) Importar Excel
+   */
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImportClick = () => {
@@ -334,7 +339,6 @@ export default function StepTwoForm({
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
 
-      // Convertimos la hoja en un array (matriz)
       const sheetData = XLSX.utils.sheet_to_json<(string | number)[]>(sheet, {
         header: 1,
         blankrows: false,
@@ -358,24 +362,15 @@ export default function StepTwoForm({
         return;
       }
 
-      // Filas de datos, sin la cabecera
+      // Filas
       const rows = sheetData.slice(1);
       const importedTests: BatteryTest[] = [];
 
       rows.forEach((row) => {
-        // row es un array de strings|números|undefined
-        if (!row || row.length < 7) return; // Ahora necesitamos 7 columnas
-        const [
-          id,
-          description,
-          steps,
-          expResult,
-          obtResult,
-          testVersion, // Nueva columna (6ª)
-          status,
-        ] = row;
+        if (!row || row.length < 7) return;
+        const [id, description, steps, expResult, obtResult, testVersion, status] =
+          row;
 
-        // Convertimos a string en caso de que vengan como número
         const newTest: BatteryTest = {
           id: id?.toString() || "",
           description: description?.toString() || "",
@@ -386,7 +381,6 @@ export default function StepTwoForm({
           testStatus: status?.toString() || "",
         };
 
-        // Solo añadimos si "ID" no está vacío
         if (newTest.id.trim() !== "") {
           importedTests.push(newTest);
         }
@@ -399,7 +393,6 @@ export default function StepTwoForm({
         return;
       }
 
-      // Actualizar batteryTests
       const updatedTests = [...formData.batteryTests, ...importedTests];
       const updatedSummary = {
         ...formData.summary,
@@ -417,9 +410,36 @@ export default function StepTwoForm({
       console.error("Error importando el Excel:", error);
       alert("Ocurrió un error al leer el Excel. Ver consola para más detalles.");
     } finally {
-      // limpiar input para permitir reimportar
+      // limpiar input
       e.target.value = "";
     }
+  };
+
+  /**
+   * 8) Ocultar completamente un campo de entorno
+   */
+  const hideField = (fieldKey: keyof HiddenFields) => {
+    setHiddenFields((prev) => ({
+      ...prev,
+      [fieldKey]: true,
+    }));
+  };
+
+  /**
+   * 9) Botón para restaurar todos los campos ocultos
+   *    - Aparece solo si al menos uno en hiddenFields === true
+   *    - Restaura hiddenFields a todos "false"
+   */
+  const anyFieldHidden = Object.values(hiddenFields).some((val) => val);
+  const restoreAllHiddenFields = () => {
+    setHiddenFields({
+      serverPruebas: false,
+      ipMaquina: false,
+      navegador: false,
+      baseDatos: false,
+      maquetaUtilizada: false,
+      ambiente: false,
+    });
   };
 
   return (
@@ -480,9 +500,8 @@ export default function StepTwoForm({
           <input
             type="date"
             className="border border-gray-300 rounded p-2 w-full
-                       placeholder:text-gray-400
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={formData.date || new Date().toISOString().split("T")[0]}
+            value={formData.date}
             onChange={(e) => handleInputChange("date", e.target.value)}
           />
         </div>
@@ -503,9 +522,7 @@ export default function StepTwoForm({
 
         {/* Estado de la Prueba */}
         <div>
-          <label className="block font-medium text-gray-700">
-            Estado de la Prueba
-          </label>
+          <label className="block font-medium text-gray-700">Estado de la Prueba</label>
           <select
             className="border border-gray-300 rounded p-2 w-full
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -519,12 +536,10 @@ export default function StepTwoForm({
         </div>
       </div>
 
-      {/* Heading: Entorno de Pruebas */}
+      {/* Sección APP */}
       <h3 className="text-xl font-semibold text-gray-800 mt-8">
         Entorno de Pruebas y Configuración
       </h3>
-
-      {/* Toggle: ¿Validación de APP? */}
       <div className="mt-4">
         <label className="block font-medium text-gray-700 mb-1">
           ¿Validación de una APP?
@@ -540,7 +555,6 @@ export default function StepTwoForm({
         </label>
       </div>
 
-      {/* Campos extra si la validación es APP */}
       {formData.isApp && (
         <div className="mt-4 space-y-2 border border-gray-200 rounded p-3">
           <div>
@@ -585,17 +599,13 @@ export default function StepTwoForm({
             />
           </div>
           <div>
-            <label className="block font-medium text-gray-700">
-              Precondiciones
-            </label>
+            <label className="block font-medium text-gray-700">Precondiciones</label>
             <textarea
               className="w-full border border-gray-300 rounded p-2
                          focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Ej: Usuario de pruebas dado de alta, permisos de localización..."
               value={formData.precondiciones || ""}
-              onChange={(e) =>
-                handleInputChange("precondiciones", e.target.value)
-              }
+              onChange={(e) => handleInputChange("precondiciones", e.target.value)}
             />
           </div>
           <div>
@@ -635,8 +645,6 @@ export default function StepTwoForm({
               value={version.appVersion}
               onChange={(e) => handleVersionChange(idx, "appVersion", e.target.value)}
             />
-
-            {/* Botón para eliminar versión individual */}
             <button
               onClick={() => removeVersion(idx)}
               className="text-red-600 font-bold px-2"
@@ -655,86 +663,181 @@ export default function StepTwoForm({
         </button>
       </div>
 
-      {/* Entorno de Pruebas */}
+      {/* Entorno de Pruebas (campos con Aspa) */}
       <div className="grid grid-cols-2 gap-4 mt-4">
-        <div>
-          <label className="block font-medium text-gray-700">Servidor de Pruebas</label>
-          <input
-            type="text"
-            className="border border-gray-300 rounded p-2 w-full
-                       placeholder:text-gray-400
-                       focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="MLOApps"
-            value={formData.serverPruebas}
-            onChange={(e) => handleInputChange("serverPruebas", e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="block font-medium text-gray-700">IP Máquina</label>
-          <input
-            type="text"
-            className="border border-gray-300 rounded p-2 w-full
-                       placeholder:text-gray-400
-                       focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="172.25.2.62"
-            value={formData.ipMaquina}
-            onChange={(e) => handleInputChange("ipMaquina", e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="block font-medium text-gray-700">Navegador Utilizado</label>
-          <input
-            type="text"
-            className="border border-gray-300 rounded p-2 w-full
-                       placeholder:text-gray-400
-                       focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Chrome"
-            value={formData.navegador}
-            onChange={(e) => handleInputChange("navegador", e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="block font-medium text-gray-700">Base de Datos</label>
-          <select
-            className="border border-gray-300 rounded p-2 w-full
-                       focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={formData.baseDatos}
-            onChange={(e) => handleInputChange("baseDatos", e.target.value)}
-          >
-            <option value="">Seleccione...</option>
-            <option value="SQL Server">SQL Server</option>
-            <option value="Oracle">Oracle</option>
-            <option value="MongoDB">MongoDB</option>
-          </select>
-        </div>
-        <div>
-          <label className="block font-medium text-gray-700">Maqueta Utilizada</label>
-          <input
-            type="text"
-            className="border border-gray-300 rounded p-2 w-full
-                       placeholder:text-gray-400
-                       focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Maqueta MLO - 172.31.27.16"
-            value={formData.maquetaUtilizada}
-            onChange={(e) => handleInputChange("maquetaUtilizada", e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="block font-medium text-gray-700">Ambiente</label>
-          <select
-            className="border border-gray-300 rounded p-2 w-full
-                       focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={formData.ambiente}
-            onChange={(e) => handleInputChange("ambiente", e.target.value)}
-          >
-            <option value="">Seleccione...</option>
-            <option value="Transferencia">Transferencia</option>
-            <option value="PRE">PRE</option>
-            <option value="PROD">PROD</option>
-            <option value="Desarrollo">Desarrollo</option>
-          </select>
-        </div>
+        {/* Servidor de Pruebas */}
+        {!hiddenFields.serverPruebas && (
+          <div className="relative">
+            <label className="block font-medium text-gray-700">
+              Servidor de Pruebas
+            </label>
+            <input
+              type="text"
+              className="border border-gray-300 rounded p-2 w-full
+                         placeholder:text-gray-400
+                         focus:outline-none focus:ring-2 focus:ring-blue-500
+                         pr-10"
+              placeholder="MLOApps"
+              value={formData.serverPruebas}
+              onChange={(e) => handleInputChange("serverPruebas", e.target.value)}
+            />
+            <button
+              type="button"
+              className="absolute top-8 right-2 text-red-500 font-bold"
+              title="Ocultar este campo"
+              onClick={() => hideField("serverPruebas")}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* IP Máquina */}
+        {!hiddenFields.ipMaquina && (
+          <div className="relative">
+            <label className="block font-medium text-gray-700">IP Máquina</label>
+            <input
+              type="text"
+              className="border border-gray-300 rounded p-2 w-full
+                         placeholder:text-gray-400 pr-10
+                         focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="172.25.2.62"
+              value={formData.ipMaquina}
+              onChange={(e) => handleInputChange("ipMaquina", e.target.value)}
+            />
+            <button
+              type="button"
+              className="absolute top-8 right-2 text-red-500 font-bold"
+              title="Ocultar este campo"
+              onClick={() => hideField("ipMaquina")}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* Navegador */}
+        {!hiddenFields.navegador && (
+          <div className="relative">
+            <label className="block font-medium text-gray-700">
+              Navegador Utilizado
+            </label>
+            <input
+              type="text"
+              className="border border-gray-300 rounded p-2 w-full
+                         placeholder:text-gray-400 pr-10
+                         focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Chrome"
+              value={formData.navegador}
+              onChange={(e) => handleInputChange("navegador", e.target.value)}
+            />
+            <button
+              type="button"
+              className="absolute top-8 right-2 text-red-500 font-bold"
+              title="Ocultar este campo"
+              onClick={() => hideField("navegador")}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* Base de Datos */}
+        {!hiddenFields.baseDatos && (
+          <div className="relative">
+            <label className="block font-medium text-gray-700">Base de Datos</label>
+            <select
+              className="border border-gray-300 rounded p-2 w-full
+                         focus:outline-none focus:ring-2 focus:ring-blue-500
+                         pr-10"
+              value={formData.baseDatos}
+              onChange={(e) => handleInputChange("baseDatos", e.target.value)}
+              style={{ paddingRight: "4rem" }} // Asegura espacio para la ❌
+            >
+              <option value="">Seleccione...</option>
+              <option value="SQL Server">SQL Server</option>
+              <option value="Oracle">Oracle</option>
+              <option value="MongoDB">MongoDB</option>
+            </select>
+            <button
+              type="button"
+              className="absolute top-[1.8rem] right-[-1rem] text-red-500 font-bold"
+              title="Ocultar este campo"
+              onClick={() => hideField("baseDatos")}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* Maqueta Utilizada */}
+        {!hiddenFields.maquetaUtilizada && (
+          <div className="relative">
+            <label className="block font-medium text-gray-700">
+              Maqueta Utilizada
+            </label>
+            <input
+              type="text"
+              className="border border-gray-300 rounded p-2 w-full
+                         placeholder:text-gray-400 pr-10
+                         focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Maqueta MLO - 172.31.27.16"
+              value={formData.maquetaUtilizada}
+              onChange={(e) => handleInputChange("maquetaUtilizada", e.target.value)}
+            />
+            <button
+              type="button"
+              className="absolute top-8 right-2 text-red-500 font-bold"
+              title="Ocultar este campo"
+              onClick={() => hideField("maquetaUtilizada")}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* Ambiente */}
+        {!hiddenFields.ambiente && (
+          <div className="relative">
+            <label className="block font-medium text-gray-700">Ambiente</label>
+            <select
+              className="border border-gray-300 rounded p-2 w-full
+                         focus:outline-none focus:ring-2 focus:ring-blue-500
+                         pr-10"
+              value={formData.ambiente}
+              onChange={(e) => handleInputChange("ambiente", e.target.value)}
+              style={{ paddingRight: "4rem" }} // Asegura espacio para la ❌
+            >
+              <option value="">Seleccione...</option>
+              <option value="Transferencia">Transferencia</option>
+              <option value="PRE">PRE</option>
+              <option value="PROD">PROD</option>
+              <option value="Desarrollo">Desarrollo</option>
+            </select>
+            <button
+              type="button"
+              className="absolute top-[1.8rem] right-[-1rem] text-red-500 font-bold"
+              title="Ocultar este campo"
+              onClick={() => hideField("ambiente")}
+            >
+              ✕
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Botón para recuperar TODOS los campos ocultos */}
+      {anyFieldHidden && (
+        <div className="mt-2">
+          <button
+            type="button"
+            className="inline-flex items-center px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition text-sm"
+            onClick={restoreAllHiddenFields}
+          >
+            🔁 Restaurar campos ocultos
+          </button>
+        </div>
+      )}
 
       {/* Batería de Pruebas */}
       <div className="space-y-2 mt-6">
@@ -750,9 +853,7 @@ export default function StepTwoForm({
               key={idx}
               className="relative border border-gray-300 rounded p-2 space-y-2"
             >
-              {/* Botones de Acciones (Eliminar + Duplicar) */}
               <div className="absolute top-2 right-2 flex space-x-2">
-                {/* Botón Eliminar */}
                 <button
                   onClick={() => removeBatteryTest(idx)}
                   className="text-red-600 font-bold"
@@ -760,7 +861,6 @@ export default function StepTwoForm({
                 >
                   X
                 </button>
-                {/* Botón Duplicar */}
                 <button
                   onClick={() => duplicateBatteryTest(idx)}
                   className="text-blue-600 font-bold"
@@ -770,12 +870,12 @@ export default function StepTwoForm({
                 </button>
               </div>
 
-              {/* ID Prueba */}
               <div>
                 <label className="block font-medium text-gray-700">ID Prueba</label>
                 <input
                   type="text"
-                  className={`border border-gray-300 rounded p-2 w-full placeholder:text-gray-400 
+                  className={`border border-gray-300 rounded p-2 w-full
+                              placeholder:text-gray-400
                               focus:outline-none focus:ring-2 focus:ring-blue-500
                               ${isExample ? "text-gray-400 italic" : ""}`}
                   placeholder="Ejemplo: PR-001"
@@ -784,11 +884,11 @@ export default function StepTwoForm({
                 />
               </div>
 
-              {/* Descripción */}
               <div>
                 <label className="block font-medium text-gray-700">Descripción</label>
                 <textarea
-                  className={`w-full border border-gray-300 rounded p-2 placeholder:text-gray-400
+                  className={`w-full border border-gray-300 rounded p-2
+                              placeholder:text-gray-400
                               focus:outline-none focus:ring-2 focus:ring-blue-500
                               ${isExample ? "text-gray-400 italic" : ""}`}
                   placeholder="Ejemplo: Muestra distancias en el mapa..."
@@ -799,11 +899,11 @@ export default function StepTwoForm({
                 />
               </div>
 
-              {/* Pasos */}
               <div>
                 <label className="block font-medium text-gray-700">Pasos</label>
                 <textarea
-                  className={`w-full border border-gray-300 rounded p-2 placeholder:text-gray-400
+                  className={`w-full border border-gray-300 rounded p-2
+                              placeholder:text-gray-400
                               focus:outline-none focus:ring-2 focus:ring-blue-500
                               ${isExample ? "text-gray-400 italic" : ""}`}
                   placeholder="Ejemplo: 1. Acceder a la acción de regulación..."
@@ -814,13 +914,13 @@ export default function StepTwoForm({
                 />
               </div>
 
-              {/* Resultado Esperado */}
               <div>
                 <label className="block font-medium text-gray-700">
                   Resultado Esperado
                 </label>
                 <textarea
-                  className={`w-full border border-gray-300 rounded p-2 placeholder:text-gray-400
+                  className={`w-full border border-gray-300 rounded p-2
+                              placeholder:text-gray-400
                               focus:outline-none focus:ring-2 focus:ring-blue-500
                               ${isExample ? "text-gray-400 italic" : ""}`}
                   placeholder="Ejemplo: El servicio se elimina correctamente..."
@@ -831,13 +931,13 @@ export default function StepTwoForm({
                 />
               </div>
 
-              {/* Resultado Obtenido */}
               <div>
                 <label className="block font-medium text-gray-700">
                   Resultado Obtenido
                 </label>
                 <textarea
-                  className={`w-full border border-gray-300 rounded p-2 placeholder:text-gray-400
+                  className={`w-full border border-gray-300 rounded p-2
+                              placeholder:text-gray-400
                               focus:outline-none focus:ring-2 focus:ring-blue-500
                               ${isExample ? "text-gray-400 italic" : ""}`}
                   placeholder="Ejemplo: ❌ El sistema no procesó correctamente..."
@@ -848,12 +948,12 @@ export default function StepTwoForm({
                 />
               </div>
 
-              {/* Versión (nuevo campo) */}
               <div>
                 <label className="block font-medium text-gray-700">Versión</label>
                 <input
                   type="text"
-                  className={`border border-gray-300 rounded p-2 w-full placeholder:text-gray-400
+                  className={`border border-gray-300 rounded p-2 w-full
+                              placeholder:text-gray-400
                               focus:outline-none focus:ring-2 focus:ring-blue-500
                               ${isExample ? "text-gray-400 italic" : ""}`}
                   placeholder="Ejemplo: v1.0.1"
@@ -864,12 +964,12 @@ export default function StepTwoForm({
                 />
               </div>
 
-              {/* Estado */}
               <div>
                 <label className="block font-medium text-gray-700">Estado</label>
                 <input
                   type="text"
-                  className={`border border-gray-300 rounded p-2 w-full placeholder:text-gray-400
+                  className={`border border-gray-300 rounded p-2 w-full
+                              placeholder:text-gray-400
                               focus:outline-none focus:ring-2 focus:ring-blue-500
                               ${isExample ? "text-gray-400 italic" : ""}`}
                   placeholder="Ejemplo: FALLIDO"
@@ -883,7 +983,7 @@ export default function StepTwoForm({
           );
         })}
 
-        {/* Botones para Añadir, Importar y Descarga de Plantilla */}
+        {/* Botones para Añadir / Importar Excel / Plantilla */}
         <div className="flex items-center gap-2 mt-2">
           <button
             onClick={addBatteryTest}
@@ -892,7 +992,6 @@ export default function StepTwoForm({
             + Añadir caso de prueba
           </button>
 
-          {/* Botón Importar Excel con tooltip */}
           <div className="relative inline-block">
             <button
               onClick={handleImportClick}
@@ -900,7 +999,6 @@ export default function StepTwoForm({
             >
               Importar Fichero Excel
             </button>
-
             <Tippy
               content={
                 <div style={{ whiteSpace: "pre-line" }}>
@@ -939,7 +1037,6 @@ columna 7: Estado`}
             </Tippy>
           </div>
 
-          {/* Enlace para descargar plantilla */}
           <a
             href="/plantillas/plantilla_bateria_pruebas.xlsx"
             download
@@ -949,7 +1046,6 @@ columna 7: Estado`}
           </a>
         </div>
 
-        {/* Input file oculto */}
         <input
           type="file"
           accept=".xls,.xlsx"
@@ -981,7 +1077,6 @@ columna 7: Estado`}
         <p className="text-sm text-gray-500">
           (Número total de pruebas, las exitosas y las fallidas, y observaciones.)
         </p>
-
         <div>
           <label className="block font-medium text-gray-700">Total de Pruebas</label>
           <input
@@ -999,7 +1094,6 @@ columna 7: Estado`}
             }
           />
         </div>
-
         <div>
           <label className="block font-medium text-gray-700">Pruebas Exitosas</label>
           <input
@@ -1017,7 +1111,6 @@ columna 7: Estado`}
             }
           />
         </div>
-
         <div>
           <label className="block font-medium text-gray-700">Pruebas Fallidas</label>
           <input
@@ -1035,7 +1128,6 @@ columna 7: Estado`}
             }
           />
         </div>
-
         <div>
           <label className="block font-medium text-gray-700">Observaciones</label>
           <textarea
@@ -1091,9 +1183,7 @@ columna 7: Estado`}
                   X
                 </button>
                 <div>
-                  <label className="block font-medium text-gray-700">
-                    ID Prueba
-                  </label>
+                  <label className="block font-medium text-gray-700">ID Prueba</label>
                   <input
                     type="text"
                     className={`border border-gray-300 rounded p-2 w-full
@@ -1145,9 +1235,7 @@ columna 7: Estado`}
                   />
                 </div>
                 <div>
-                  <label className="block font-medium text-gray-700">
-                    Estado
-                  </label>
+                  <label className="block font-medium text-gray-700">Estado</label>
                   <input
                     type="text"
                     className={`border border-gray-300 rounded p-2 w-full

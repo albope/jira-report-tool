@@ -10,14 +10,24 @@ import FooterNav from "@/components/FooterNav";
 import parseJiraContent, { ParsedData } from "@/utils/parseJiraContent";
 import formatReport from "@/utils/formatReport";
 
+/** Definimos la interfaz para ocultar campos de entorno. */
+interface HiddenFields {
+  serverPruebas: boolean;
+  ipMaquina: boolean;
+  navegador: boolean;
+  baseDatos: boolean;
+  maquetaUtilizada: boolean;
+  ambiente: boolean;
+}
 
+/** Tipos auxiliares para tu FormData, etc. */
 interface BatteryTest {
   id: string;
   description: string;
   steps: string;
   expectedResult: string;
   obtainedResult: string;
-  testVersion: string; // <-- Añadido
+  testVersion: string;
   testStatus: string;
 }
 
@@ -47,12 +57,19 @@ interface FormData {
   baseDatos: string;
   maquetaUtilizada: string;
   ambiente: string;
-  batteryTests: BatteryTest[]; // ← Usa el nuevo tipo
+  batteryTests: BatteryTest[];
   summary: Summary;
   incidences: Incidence[];
   hasIncidences: boolean;
   conclusion: string;
   datosDePrueba: string;
+  // Campos APP
+  isApp?: boolean;
+  endpoint?: string;
+  sistemaOperativo?: string;
+  dispositivoPruebas?: string;
+  precondiciones?: string;
+  idioma?: string;
 }
 
 export default function Home() {
@@ -60,6 +77,7 @@ export default function Home() {
   const [jiraContent, setJiraContent] = useState("");
   const [parsedData, setParsedData] = useState<ParsedData | null>(null);
 
+  // Estado principal de FormData
   const [formData, setFormData] = useState<FormData>({
     jiraCode: "",
     date: "",
@@ -72,7 +90,7 @@ export default function Home() {
     baseDatos: "",
     maquetaUtilizada: "",
     ambiente: "",
-    batteryTests: [], // ← sin cambios aquí
+    batteryTests: [],
     summary: {
       totalTests: "",
       successfulTests: "",
@@ -85,24 +103,39 @@ export default function Home() {
     datosDePrueba: "",
   });
 
+  // Estado para saber qué campos de entorno están ocultos (true = oculto)
+  const [hiddenFields, setHiddenFields] = useState<HiddenFields>({
+    serverPruebas: false,
+    ipMaquina: false,
+    navegador: false,
+    baseDatos: false,
+    maquetaUtilizada: false,
+    ambiente: false,
+  });
+
   const [report, setReport] = useState("");
 
+  // Paso 1 → 2
   const handleParseJira = () => {
     const result = parseJiraContent(jiraContent);
     setParsedData(result);
     setStep(2);
   };
 
+  // Generar reporte → Paso 3
   const handleGenerateReport = () => {
     if (!parsedData) return;
-    const finalReport = formatReport(parsedData, formData);
+    // Pasamos hiddenFields al formatReport
+    const finalReport = formatReport(parsedData, formData, hiddenFields);
     setReport(finalReport);
     setStep(3);
   };
 
+  // Reset total
   const handleReset = () => {
     setJiraContent("");
     setParsedData(null);
+
     setFormData({
       jiraCode: "",
       date: "",
@@ -127,6 +160,17 @@ export default function Home() {
       conclusion: "",
       datosDePrueba: "",
     });
+
+    // También reseteamos hiddenFields
+    setHiddenFields({
+      serverPruebas: false,
+      ipMaquina: false,
+      navegador: false,
+      baseDatos: false,
+      maquetaUtilizada: false,
+      ambiente: false,
+    });
+
     setReport("");
     setStep(1);
   };
@@ -152,6 +196,11 @@ export default function Home() {
             parsedData={parsedData}
             formData={formData}
             setFormData={setFormData}
+
+            /** Pasamos hiddenFields y setHiddenFields a StepTwoForm */
+            hiddenFields={hiddenFields}
+            setHiddenFields={setHiddenFields}
+
             onGenerate={handleGenerateReport}
             onReset={handleReset}
             onGoBackToStep1={goBackToStep1}

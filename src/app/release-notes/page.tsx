@@ -20,7 +20,10 @@ const ALL_RELEASES: ReleaseItem[] = [
       "Se implementa la posibilidad de eliminar versiones individualmente (aspa roja) en la sección 'Versiones'.",
       "Se incluye toggle para 'Validación de una APP' y nueva BD 'MongoDB' en el formulario.",
       "Se añade la columna 'Versión' a la Batería de Pruebas (importación Excel con 7 columnas).",
-      "Se añade el botón para duplicar un caso de prueba manual en la Batería de Pruebas, asignando un nuevo ID consecutivo."
+      "Se añade el botón para duplicar un caso de prueba manual en la Batería de Pruebas, asignando un nuevo ID consecutivo.",
+      "La tabla de 'Entorno de Pruebas' ahora se muestra como una lista legible en el Word exportado.",
+      "Se respeta la lógica de campos ocultos: los campos desmarcados no se incluyen en el reporte.",
+      "Se añade un salto de línea tras los títulos para mejorar la legibilidad en Word."
     ],
   },
   {
