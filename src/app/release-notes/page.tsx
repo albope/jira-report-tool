@@ -18,7 +18,8 @@ const ALL_RELEASES: ReleaseItem[] = [
     date: "9 Abril 2025",
     changes: [
       "Se implementa la posibilidad de eliminar versiones individualmente (aspa roja) en la sección 'Versiones'.",
-      "Se incluye toggle para 'Validación de una APP' y nueva BD 'MongoDB' en el formulario de Paso 2.",
+      "Se incluye toggle para 'Validación de una APP' y nueva BD 'MongoDB' en el formulario.",
+      "Se añade la columna 'Versión' a la Batería de Pruebas (importación Excel con 7 columnas).",
     ],
   },
   {

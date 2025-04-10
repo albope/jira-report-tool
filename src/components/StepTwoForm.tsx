@@ -13,6 +13,8 @@ interface BatteryTest {
   steps: string;
   expectedResult: string;
   obtainedResult: string;
+  /** NUEVO: campo adicional de Versión */
+  testVersion: string;
   testStatus: string;
 }
 
@@ -45,6 +47,7 @@ export interface FormData {
   baseDatos: string;
   maquetaUtilizada: string;
   ambiente: string;
+  /** NOTA: batteryTests ahora contiene BatteryTest con testVersion */
   batteryTests: BatteryTest[];
   summary: Summary;
   incidences: Incidence[];
@@ -73,12 +76,14 @@ interface StepTwoFormProps {
 const EXAMPLE_CONCLUSION = `Ejemplo de conclusión:
 ❌ Rechazado → El fallo bloquea la validación de la funcionalidad`;
 
+/** NUEVO: 7 columnas (añadimos "Versión" como la 6ª) */
 const EXPECTED_HEADERS = [
   "ID Prueba",
   "Descripción",
   "Pasos",
   "Resultado Esperado",
   "Resultado Obtenido",
+  "Versión",
   "Estado",
 ];
 
@@ -151,6 +156,7 @@ export default function StepTwoForm({
 
   /** Añadir un caso de prueba (manual) */
   const addBatteryTest = () => {
+    /** Se inicializa con testVersion vacío */
     const newTest: BatteryTest = {
       id: "PR-001",
       description: "",
@@ -159,6 +165,7 @@ export default function StepTwoForm({
         "El servicio se elimina correctamente añadiendo su viaje de retirada correspondiente.",
       obtainedResult:
         "❌ El sistema no procesó correctamente la eliminación del servicio con retirada, generando un error inesperado.",
+      testVersion: "", // Nuevo campo
       testStatus: "FALLIDO",
     };
 
@@ -251,7 +258,6 @@ export default function StepTwoForm({
     });
   };
 
-  // NUEVO: Función para eliminar una versión individual
   const removeVersion = (index: number) => {
     const newVersions = [...formData.versions];
     newVersions.splice(index, 1);
@@ -309,9 +315,17 @@ export default function StepTwoForm({
       const rows = sheetData.slice(1);
       const importedTests: BatteryTest[] = [];
 
-      (rows as unknown[][]).forEach((row) => {
-        if (!row || row.length < 6) return;
-        const [id, description, steps, expResult, obtResult, status] = row;
+      rows.forEach((row: any) => {
+        if (!row || row.length < 7) return; // Ahora necesitamos 7 columnas
+        const [
+          id,
+          description,
+          steps,
+          expResult,
+          obtResult,
+          testVersion, // Nueva columna
+          status,
+        ] = row;
 
         const newTest: BatteryTest = {
           id: id?.toString() || "",
@@ -319,6 +333,7 @@ export default function StepTwoForm({
           steps: steps?.toString() || "",
           expectedResult: expResult?.toString() || "",
           obtainedResult: obtResult?.toString() || "",
+          testVersion: testVersion?.toString() || "", // Asignamos aquí
           testStatus: status?.toString() || "",
         };
 
@@ -548,7 +563,6 @@ export default function StepTwoForm({
         <label className="block font-medium text-gray-700">Versiones</label>
         {formData.versions.map((version, idx) => (
           <div key={idx} className="flex space-x-2 items-center relative">
-            {/* Campo appName */}
             <input
               type="text"
               className="border border-gray-300 rounded p-2 flex-1
@@ -558,8 +572,6 @@ export default function StepTwoForm({
               value={version.appName}
               onChange={(e) => handleVersionChange(idx, "appName", e.target.value)}
             />
-
-            {/* Campo appVersion */}
             <input
               type="text"
               className="border border-gray-300 rounded p-2 flex-1
@@ -567,12 +579,9 @@ export default function StepTwoForm({
                          focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Versión (ej. 1.25.02.1)"
               value={version.appVersion}
-              onChange={(e) =>
-                handleVersionChange(idx, "appVersion", e.target.value)
-              }
+              onChange={(e) => handleVersionChange(idx, "appVersion", e.target.value)}
             />
 
-            {/* Botón eliminar versión */}
             <button
               onClick={() => removeVersion(idx)}
               className="text-red-600 font-bold px-2"
@@ -582,7 +591,6 @@ export default function StepTwoForm({
             </button>
           </div>
         ))}
-
         <button
           onClick={addVersion}
           className="mt-2 px-3 py-1 bg-green-500 text-white rounded
@@ -694,6 +702,8 @@ export default function StepTwoForm({
               >
                 X
               </button>
+
+              {/* ID */}
               <div>
                 <label className="block font-medium text-gray-700">ID Prueba</label>
                 <input
@@ -706,6 +716,8 @@ export default function StepTwoForm({
                   onChange={(e) => handleBatteryTestChange(idx, "id", e.target.value)}
                 />
               </div>
+
+              {/* Descripción */}
               <div>
                 <label className="block font-medium text-gray-700">Descripción</label>
                 <textarea
@@ -719,6 +731,8 @@ export default function StepTwoForm({
                   }
                 />
               </div>
+
+              {/* Pasos */}
               <div>
                 <label className="block font-medium text-gray-700">Pasos</label>
                 <textarea
@@ -727,11 +741,11 @@ export default function StepTwoForm({
                               ${isExample ? "text-gray-400 italic" : ""}`}
                   placeholder="Ejemplo: 1. Acceder a la acción de regulación..."
                   value={test.steps}
-                  onChange={(e) =>
-                    handleBatteryTestChange(idx, "steps", e.target.value)
-                  }
+                  onChange={(e) => handleBatteryTestChange(idx, "steps", e.target.value)}
                 />
               </div>
+
+              {/* Resultado Esperado */}
               <div>
                 <label className="block font-medium text-gray-700">
                   Resultado Esperado
@@ -747,6 +761,8 @@ export default function StepTwoForm({
                   }
                 />
               </div>
+
+              {/* Resultado Obtenido */}
               <div>
                 <label className="block font-medium text-gray-700">
                   Resultado Obtenido
@@ -762,6 +778,24 @@ export default function StepTwoForm({
                   }
                 />
               </div>
+
+              {/* NUEVO: Campo Versión (entre Resultado Obtenido y Estado) */}
+              <div>
+                <label className="block font-medium text-gray-700">Versión</label>
+                <input
+                  type="text"
+                  className={`border border-gray-300 rounded p-2 w-full placeholder:text-gray-400
+                              focus:outline-none focus:ring-2 focus:ring-blue-500
+                              ${isExample ? "text-gray-400 italic" : ""}`}
+                  placeholder="Ejemplo: v1.0.1"
+                  value={test.testVersion}
+                  onChange={(e) =>
+                    handleBatteryTestChange(idx, "testVersion", e.target.value)
+                  }
+                />
+              </div>
+
+              {/* Estado */}
               <div>
                 <label className="block font-medium text-gray-700">Estado</label>
                 <input
@@ -771,9 +805,7 @@ export default function StepTwoForm({
                               ${isExample ? "text-gray-400 italic" : ""}`}
                   placeholder="Ejemplo: FALLIDO"
                   value={test.testStatus}
-                  onChange={(e) =>
-                    handleBatteryTestChange(idx, "testStatus", e.target.value)
-                  }
+                  onChange={(e) => handleBatteryTestChange(idx, "testStatus", e.target.value)}
                 />
               </div>
             </div>
@@ -808,7 +840,8 @@ columna 2: Descripción
 columna 3: Pasos
 columna 4: Resultado Esperado
 columna 5: Resultado Obtenido
-columna 6: Estado`}
+columna 6: Versión
+columna 7: Estado`}
                 </div>
               }
               placement="right"

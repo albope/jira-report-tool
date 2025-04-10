@@ -1,11 +1,13 @@
 import { ParsedData } from "./parseJiraContent";
 
+/** Ajustamos la interface para reflejar la nueva propiedad */
 interface BatteryTest {
   id: string;
   description: string;
   steps: string;
   expectedResult: string;
   obtainedResult: string;
+  testVersion: string; // <-- Nuevo campo
   testStatus: string;
 }
 
@@ -23,9 +25,6 @@ interface Summary {
   observations: string;
 }
 
-/**
- * Extendemos FormData con los nuevos campos si es App
- */
 interface FormData {
   jiraCode: string;
   date: string;
@@ -72,16 +71,16 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
     versionTable = "| (No hay versiones) | (N/A) |\n";
   }
 
-  // Batería de Pruebas (Descripción incluida)
-  let batteryTable = `| ID Prueba | Descripción | Pasos | Resultado Esperado | Resultado Obtenido | Estado |\n`;
-  batteryTable += `| --------- | ----------- | ----- | ------------------ | ------------------ | ------ |\n`;
+  // NUEVA TABLA con 7 columnas en Batería (columna "Versión" incluida)
+  let batteryTable = `| ID Prueba | Descripción | Pasos | Resultado Esperado | Resultado Obtenido | Versión | Estado |\n`;
+  batteryTable += `| --------- | ----------- | ----- | ------------------ | ------------------ | ------- | ------ |\n`;
   if (formData.batteryTests.length > 0) {
     formData.batteryTests.forEach((bt) => {
       const stepsCell = formatStepsCell(bt.steps);
-      batteryTable += `| ${bt.id} | ${bt.description} | ${stepsCell} | ${bt.expectedResult} | ${bt.obtainedResult} | ${bt.testStatus} |\n`;
+      batteryTable += `| ${bt.id} | ${bt.description} | ${stepsCell} | ${bt.expectedResult} | ${bt.obtainedResult} | ${bt.testVersion} | ${bt.testStatus} |\n`;
     });
   } else {
-    batteryTable += "| (Sin pruebas) | - | - | - | - | - |\n";
+    batteryTable += "| (Sin pruebas) | - | - | - | - | - | - |\n";
   }
 
   // Resumen
@@ -105,7 +104,7 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
     incidencesSection = "No se detectaron incidencias durante las pruebas.";
   }
 
-  // Si isApp === true => Sección "📱 Validación de Aplicación"
+  // Sección APP si isApp === true
   let appSection = "";
   if (formData.isApp) {
     appSection = `
@@ -121,7 +120,6 @@ export default function formatReport(parsed: ParsedData, formData: FormData): st
 `;
   }
 
-  // Reporte final
   return `
 📌 **Información General**
 **Título:** ${parsed.title}
