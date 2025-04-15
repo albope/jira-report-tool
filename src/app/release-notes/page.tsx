@@ -14,6 +14,14 @@ interface ReleaseItem {
 /** Array con todas las versiones, de más reciente a más antigua */
 const ALL_RELEASES: ReleaseItem[] = [
   {
+    version: "1.3.0",
+    date: "15 Abril 2025",
+    changes: [
+      "Se implementa en el formulario la opción para añadir, editar y eliminar campos personalizados, que se reflejarán en el reporte.",
+      "Se modifica el formato del reporte para incluir los campos personalizados en el bloque de entorno."
+    ],
+  },
+  {
     version: "1.2.2",
     date: "9 Abril 2025",
     changes: [
@@ -30,7 +38,7 @@ const ALL_RELEASES: ReleaseItem[] = [
     version: "1.2.1",
     date: "8 Abril 2025",
     changes: [
-      "Se añade un enlace discreto para descargar la plantilla de Excel desde la sección de Batería de Pruebas, garantizando así el formato correcto de columnas.",
+      "Se añade un enlace discreto para descargar la plantilla de Excel desde la sección de Batería de Pruebas, garantizando así el formato correcto de columnas."
     ],
   },
   {
@@ -39,7 +47,7 @@ const ALL_RELEASES: ReleaseItem[] = [
     changes: [
       "Se añade la funcionalidad de importar Fichero Excel para añadir casos de prueba ya creados en un fichero Excel.",
       "Se incluye la columna Descripción en la Batería de Pruebas, reflejada en el reporte Markdown y en la exportación a Word.",
-      "Ajustes menores de validación y supresión de advertencias sobre referencias en React.",
+      "Ajustes menores de validación y supresión de advertencias sobre referencias en React."
     ],
   },
   {
@@ -49,7 +57,7 @@ const ALL_RELEASES: ReleaseItem[] = [
       "Se añade la nueva sección Datos de Prueba tras la Batería de Pruebas.",
       "La sección “Datos de Prueba” se incluye automáticamente en el reporte Markdown y en la exportación a Word.",
       "Validación lógica: Pruebas Exitosas/Fallidas no pueden superar el Total de Pruebas.",
-      "Refactor del componente de paso 2 para validación inteligente y mayor control de cambios.",
+      "Refactor del componente de paso 2 para validación inteligente y mayor control de cambios."
     ],
   },
   {
@@ -59,7 +67,7 @@ const ALL_RELEASES: ReleaseItem[] = [
       "Primera versión inicial del Generador de Reportes JIRA.",
       "Se añade el formulario de pasos (Paso 1, Paso 2 y Paso 3) con capacidad de generar reportes en Markdown y exportar a Word.",
       "Botón flotante de Feedback + Bugs para incidencias y sugerencias.",
-      "Se incluye la sección de Ayuda con instrucciones detalladas y esta página de Release Notes.",
+      "Se incluye la sección de Ayuda con instrucciones detalladas y esta página de Release Notes."
     ],
   },
 ];
