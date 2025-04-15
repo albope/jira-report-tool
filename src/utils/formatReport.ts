@@ -54,6 +54,9 @@ interface FormData {
   dispositivoPruebas?: string;
   precondiciones?: string;
   idioma?: string;
+
+  // ★ NUEVO: Campos personalizados del entorno
+  customEnvFields: Array<{ label: string; value: string }>;
 }
 
 /** Campos ocultables */
@@ -107,11 +110,7 @@ export default function formatReport(
   // 3) Resumen de Resultados
   let summaryTable = `| **Total de Pruebas** | **Pruebas Exitosas** | **Pruebas Fallidas** | **Observaciones** |\n`;
   summaryTable += `| -------------------- | -------------------- | -------------------- | ----------------- |\n`;
-  summaryTable += `| ${formData.summary.totalTests || "0"} | ${
-    formData.summary.successfulTests || "0"
-  } | ${formData.summary.failedTests || "0"} | ${
-    formData.summary.observations || "(N/A)"
-  } |\n`;
+  summaryTable += `| ${formData.summary.totalTests || "0"} | ${formData.summary.successfulTests || "0"} | ${formData.summary.failedTests || "0"} | ${formData.summary.observations || "(N/A)"} |\n`;
 
   // 4) Incidencias
   let incidencesSection = "";
@@ -125,7 +124,7 @@ export default function formatReport(
     incidencesSection = "No se detectaron incidencias durante las pruebas.";
   }
 
-  // 5) Entorno => Listado en negrita “campo: valor”, para que Word no lo interprete como pseudo tabla
+  // 5) Entorno => Listado en negrita “campo: valor”
   const entornoPairs: Array<[string, string]> = [];
 
   if (!hiddenFields.serverPruebas && formData.serverPruebas.trim() !== "") {
@@ -145,6 +144,15 @@ export default function formatReport(
   }
   if (!hiddenFields.ambiente && formData.ambiente.trim() !== "") {
     entornoPairs.push(["Ambiente", formData.ambiente]);
+  }
+
+  // ★ NUEVO: Agregar campos personalizados del entorno
+  if (formData.customEnvFields && formData.customEnvFields.length > 0) {
+    formData.customEnvFields.forEach((field) => {
+      if (field.label.trim() !== "" && field.value.trim() !== "") {
+        entornoPairs.push([field.label, field.value]);
+      }
+    });
   }
 
   let entornoList = "";

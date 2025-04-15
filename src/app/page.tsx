@@ -70,6 +70,8 @@ interface FormData {
   dispositivoPruebas?: string;
   precondiciones?: string;
   idioma?: string;
+  // ★ NUEVO: Campos personalizados del entorno
+  customEnvFields: Array<{ label: string; value: string }>;
 }
 
 export default function Home() {
@@ -101,6 +103,8 @@ export default function Home() {
     hasIncidences: false,
     conclusion: "",
     datosDePrueba: "",
+    // Agregamos el nuevo campo en el estado inicial
+    customEnvFields: [],
   });
 
   // Estado para saber qué campos de entorno están ocultos (true = oculto)
@@ -135,7 +139,6 @@ export default function Home() {
   const handleReset = () => {
     setJiraContent("");
     setParsedData(null);
-
     setFormData({
       jiraCode: "",
       date: new Date().toISOString().split("T")[0],
@@ -159,8 +162,9 @@ export default function Home() {
       hasIncidences: false,
       conclusion: "",
       datosDePrueba: "",
+      // También se resetea el nuevo campo
+      customEnvFields: [],
     });
-
     // También reseteamos hiddenFields
     setHiddenFields({
       serverPruebas: false,
@@ -170,7 +174,6 @@ export default function Home() {
       maquetaUtilizada: false,
       ambiente: false,
     });
-
     setReport("");
     setStep(1);
   };
@@ -196,11 +199,9 @@ export default function Home() {
             parsedData={parsedData}
             formData={formData}
             setFormData={setFormData}
-
             /** Pasamos hiddenFields y setHiddenFields a StepTwoForm */
             hiddenFields={hiddenFields}
             setHiddenFields={setHiddenFields}
-
             onGenerate={handleGenerateReport}
             onReset={handleReset}
             onGoBackToStep1={goBackToStep1}
