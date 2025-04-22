@@ -4,126 +4,127 @@ import {
   TableCell,
   TableRow,
   TextRun,
+  ImageRun,
   WidthType,
   AlignmentType,
 } from "docx";
 
 /**
- * Convierte un string con Markdown simplificado (report) a un array de docx.Paragraph y docx.Table nativos.
+ * Convierte un string Markdown en Paragraphs/Tables/ImageRuns docx.
+ * - Reconoce tablas completas y les aplica ancho 100%
+ * - Ignora la nota ℹ️ en Evidencias
+ * - Inserta imágenes en base64 usando ImageRun
  */
 export function markdownToDocx(report: string) {
-  const docElements = [];
+  const docElements: Array<Paragraph | Table> = [];
 
+  // Título centrado
   docElements.push(
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      children: [new TextRun({ text: "Reporte de Pruebas Realizadas", bold: true })],
+      children: [
+        new TextRun({ text: "Reporte de Pruebas Realizadas", bold: true }),
+      ],
     })
   );
   docElements.push(new Paragraph(""));
 
   const blocks = report.split("\n\n");
+  const imageRegex = /!\[.*\]\((data:image\/.+;base64,.+)\)/;
 
-  for (const block of blocks) {
-    const lines = block.split("\n").map((line) => line.trim());
+  for (let block of blocks) {
+    // Saltar la nota de evidencias (si por alguna razón quedase)
+    if (block.startsWith("> ℹ️")) continue;
 
-    if (lines.length >= 2 && lines[0].startsWith("|") && lines[1].startsWith("|")) {
-      const isEntorno = lines[0]
-        .replace(/\*/g, "")
-        .toLowerCase()
-        .includes("parametros de configuracion");
+    const lines = block.split("\n").map((l) => l.trim());
 
-      const tableOrParagraphs = buildDocxTable(lines, isEntorno);
-      if (Array.isArray(tableOrParagraphs)) {
-        docElements.push(...tableOrParagraphs);
-      } else {
-        docElements.push(tableOrParagraphs);
+    // ¿Es tabla?
+    if (lines[0].startsWith("|") && lines[1]?.startsWith("|")) {
+      // parsear encabezado
+      const headerCells = parseRow(lines[0]);
+      const headerRow = new TableRow({
+        children: headerCells.map((text) =>
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [new TextRun({ text, bold: true })],
+              }),
+            ],
+          })
+        ),
+      });
+
+      // parsear filas de datos
+      const dataRows: TableRow[] = [];
+      for (let i = 2; i < lines.length; i++) {
+        if (!lines[i].startsWith("|")) continue;
+        const cells = parseRow(lines[i]);
+        dataRows.push(
+          new TableRow({
+            children: cells.map((text) =>
+              new TableCell({
+                children: [new Paragraph(text)],
+              })
+            ),
+          })
+        );
       }
+
+      docElements.push(
+        new Table({
+          rows: [headerRow, ...dataRows],
+          width: { size: 100, type: WidthType.PERCENTAGE },
+        })
+      );
       docElements.push(new Paragraph(""));
-    } else {
-      for (const line of lines) {
-        if (
-          (line.startsWith("📌") ||
-            line.startsWith("🖥️") ||
-            line.startsWith("✅") ||
-            line.startsWith("📎") ||
-            line.startsWith("📝") ||
-            line.startsWith("📊") ||
-            line.startsWith("🛠️") ||
-            line.startsWith("📷") ||
-            line.startsWith("💾")) &&
-          line.includes("**")
-        ) {
-          const plainText = line.replace(/\*\*/g, "").trim();
-          docElements.push(
-            new Paragraph({
-              spacing: { after: 100 }, // ~7 puntos de espacio (TWIP)
-              children: [new TextRun({ text: plainText, bold: true })],
-            })
-          );
-          docElements.push(new Paragraph(""));
-        } else {
-          const textRuns = parseBoldText(line);
-          docElements.push(new Paragraph({ children: textRuns }));
-        }
-      }
-      docElements.push(new Paragraph(""));
+      continue;
     }
+
+    // Bloque normal (puede mezclar texto, negritas e imágenes)
+    for (let line of lines) {
+      // Imagen base64?
+      const imgMatch = line.match(imageRegex);
+      if (imgMatch) {
+        const b64 = imgMatch[1].split(",")[1];
+        const data = Buffer.from(b64, "base64");
+        docElements.push(
+          new Paragraph({
+            children: [
+              new ImageRun({
+                data,
+                transformation: { width: 400, height: 300 },
+              }),
+            ],
+          })
+        );
+        continue;
+      }
+
+      // Texto con **negrita**
+      const parts = line.split("**");
+      const runs: TextRun[] = parts.map((text, idx) =>
+        new TextRun({ text, bold: idx % 2 === 1 })
+      );
+      docElements.push(new Paragraph({ children: runs }));
+    }
+
+    docElements.push(new Paragraph(""));
   }
 
   return docElements;
 }
 
-function buildDocxTable(lines: string[], isEntorno: boolean): Table | Paragraph[] {
-  const dataLines = lines.slice(2);
-
-  if (isEntorno) {
-    return dataLines
-      .filter((line) => line.startsWith("|"))
-      .map((line) => {
-        const cells = parseTableRow(line);
-        return new Paragraph({
-          children: [
-            new TextRun({ text: `${cells[0]}: `, bold: true }),
-            new TextRun(cells[1] || ""),
-          ],
-        });
-      });
-  }
-
-  const headerCells = parseTableRow(lines[0]);
-  const tableRows: TableRow[] = [
-    new TableRow({
-      children: headerCells.map((text) =>
-        new TableCell({
-          children: [new Paragraph({ children: [new TextRun({ text, bold: true })] })],
-        })
-      ),
-    }),
-  ];
-
-  for (const line of dataLines) {
-    if (!line.startsWith("|")) continue;
-    const cells = parseTableRow(line);
-    const row = new TableRow({
-      children: cells.map((text) => {
-        const paragraphs = text.split("\\n").map((t) => new Paragraph({ children: [new TextRun(t.trim())] }));
-        return new TableCell({ children: paragraphs });
-      }),
-    });
-    tableRows.push(row);
-  }
-
-  return new Table({ rows: tableRows, width: { size: 100, type: WidthType.PERCENTAGE } });
-}
-
-function parseTableRow(line: string): string[] {
+/**
+ * Parseo de una línea de tabla Markdown:
+ * 1) split("|") genera ["", "a", "", "b", ""]
+ * 2) slice(1,-1) quita los bordes vacíos
+ * 3) trim() a cada celda
+ * 4) filtra sólo la fila separadora de guiones
+ */
+function parseRow(line: string): string[] {
   return line
     .split("|")
-    .map((cell) => cell.trim())
-    .filter((cell) => cell.length > 0 && !cell.startsWith("---"));
-}
-
-function parseBoldText(line: string): TextRun[] {
-  return line.split("**").map((text, idx) => new TextRun({ text, bold: idx % 2 === 1 }));
+    .slice(1, -1)
+    .map((c) => c.trim())
+    .filter((c) => !/^-+$/.test(c));
 }
