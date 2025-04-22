@@ -14,6 +14,7 @@ import {
  * - Reconoce tablas completas y les aplica ancho 100%
  * - Ignora la nota ℹ️ en Evidencias
  * - Inserta imágenes en base64 usando ImageRun
+ * - Añade un párrafo vacío después de cada imagen para separarlas
  */
 export function markdownToDocx(report: string) {
   const docElements: Array<Paragraph | Table> = [];
@@ -87,6 +88,8 @@ export function markdownToDocx(report: string) {
       if (imgMatch) {
         const b64 = imgMatch[1].split(",")[1];
         const data = Buffer.from(b64, "base64");
+
+        // Inserta la imagen
         docElements.push(
           new Paragraph({
             children: [
@@ -97,6 +100,9 @@ export function markdownToDocx(report: string) {
             ],
           })
         );
+        // …y un párrafo en blanco para separarlas
+        docElements.push(new Paragraph(""));
+
         continue;
       }
 
@@ -119,7 +125,7 @@ export function markdownToDocx(report: string) {
  * 1) split("|") genera ["", "a", "", "b", ""]
  * 2) slice(1,-1) quita los bordes vacíos
  * 3) trim() a cada celda
- * 4) filtra sólo la fila separadora de guiones
+ * 4) filtra solo la fila separadora de guiones
  */
 function parseRow(line: string): string[] {
   return line
