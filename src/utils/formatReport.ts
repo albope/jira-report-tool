@@ -1,5 +1,6 @@
-import { ParsedData } from "./parseJiraContent";
+import { ParsedData } from "./parseJiraContent"; // Ajusta la ruta si es necesario
 
+// --- Interfaces (Asegúrate que FormData incluye logsRelevantes) ---
 /** Estructura de la batería */
 interface BatteryTest {
   id: string;
@@ -57,6 +58,9 @@ export interface FormData {
   hasIncidences: boolean;
   conclusion: string;
   datosDePrueba: string;
+  // === Campo para Logs (Ya presente) ===
+  logsRelevantes?: string;
+  // =======================================
   isApp?: boolean;
   endpoint?: string;
   sistemaOperativo?: string;
@@ -65,13 +69,13 @@ export interface FormData {
   idioma?: string;
   customEnvFields: Array<{ label: string; value: string }>;
 }
+// --- Fin Interfaces ---
 
 /** Helper para formatear pasos multiline en bullet points */
 function formatStepsCell(steps: string): string {
   const lines = steps.split(/\r?\n/).filter((l) => l.trim());
-  // Escapar caracteres especiales de Markdown dentro de las celdas si es necesario
-  // y reemplazar saltos de línea literales con <br> o similar si el visor lo soporta en tablas.
-  // Aquí usamos \\n que algunos visores podrían interpretar. Ajustar si es necesario.
+  // Escapar barras verticales para que no rompan las tablas Markdown
+  // Usamos \\n para saltos de línea que algunos visores Markdown en tablas podrían interpretar
   return lines.map((l) => `- ${l.replace(/\|/g, '\\|')}`).join(" \\n ");
 }
 
@@ -85,7 +89,6 @@ export default function formatReport(
   // --- Versiones ---
   let versionTable = "";
   formData.versions.forEach((v) => {
-    // Asegurarse que el contenido no rompa la tabla
     const appName = v.appName.trim().replace(/\|/g, '\\|');
     const appVersion = v.appVersion.trim().replace(/\|/g, '\\|');
     versionTable += `| ${appName} | ${appVersion} |\n`;
@@ -99,15 +102,13 @@ export default function formatReport(
   batteryTable += `| --------- | ----------- | ----- | ------------------ | ------------------ | ------- | ------ |\n`;
   if (formData.batteryTests.length) {
     formData.batteryTests.forEach((bt) => {
-      // Limpiar y escapar contenido para la tabla
       const id = bt.id.trim().replace(/\|/g, '\\|');
       const description = bt.description.replace(/\|/g, '\\|');
-      const stepsFormatted = formatStepsCell(bt.steps); // formatStepsCell ya escapa "|"
+      const stepsFormatted = formatStepsCell(bt.steps);
       const expectedResult = bt.expectedResult.replace(/\|/g, '\\|');
       const obtainedResult = bt.obtainedResult.replace(/\|/g, '\\|');
       const testVersion = bt.testVersion.replace(/\|/g, '\\|');
       const testStatus = bt.testStatus.replace(/\|/g, '\\|');
-
       batteryTable += `| ${id} | ${description} | ${stepsFormatted} | ${expectedResult} | ${obtainedResult} | ${testVersion} | ${testStatus} |\n`;
     });
   } else {
@@ -117,34 +118,32 @@ export default function formatReport(
   // --- Datos de Prueba ---
   const datosDePrueba = formData.datosDePrueba?.trim() || "(Sin datos de prueba)";
 
-  // --- Evidencias (imágenes agrupadas por caso) ---
+  // --- Evidencias (ahora con salto de línea doble y asegurando TODOS los adjuntos) ---
   const evidenciaSection = formData.batteryTests
-    .filter((t) => t.images && t.images.length > 0) // Asegurar que el array existe y tiene elementos
+    .filter((t) => t.images && t.images.length > 0)
     .map((t) => {
-      const cleanId = t.id.trim(); // Limpiar ID una vez
-
-      // === CAMBIO 2: Título descriptivo + ID ===
+      const cleanId = t.id.trim();
       const header = `**Imágenes adjuntas del caso de prueba ${cleanId}**`;
-
-      const imgs = t.images! // Asumimos que t.images no es null/undefined por el filter
-        // === CAMBIO 3: Usar ID limpio en Alt Text ===
+      const imgs = t.images!
         .map((src, i) => `![${cleanId} – Evidencia ${i + 1}](${src})`)
-        .join("\n"); // Las imágenes se unen con un solo salto de línea
-
-      // === CAMBIO 1: Doble salto de línea entre título e imágenes ===
+        .join("\n\n"); // doble salto para separarlas
       return `${header}\n\n${imgs}`;
     })
-    .join("\n\n") // Los bloques de diferentes casos se unen con doble salto de línea
-    || '"(No hay evidencias adjuntas)"'; // Mensaje si no hay imágenes en ningún caso
+    .join("\n\n") // doble salto entre casos
+    || "(No hay evidencias adjuntas)";
 
   // --- Logs Relevantes ---
-  // Considerar si esto debería ser un campo de texto en el formulario
-  const logsSection = `"(Adjuntar logs del sistema o registros relevantes si aplica)"`;
+  let logsSection = "";
+  if (formData.logsRelevantes && formData.logsRelevantes.trim()) {
+    // Usamos bloque de código Markdown (```) para preservar formato
+    logsSection = "```log\n" + formData.logsRelevantes.trim() + "\n```";
+  } else {
+    logsSection = "(No se adjuntaron logs)";
+  }
 
   // --- Resumen de Resultados ---
   let summaryTable = `| **Total de Pruebas** | **Pruebas Exitosas** | **Pruebas Fallidas** | **Observaciones** |\n`;
   summaryTable += `| -------------------- | -------------------- | -------------------- | ----------------- |\n`;
-  // Escapar observaciones por si contienen "|"
   const observations = formData.summary.observations.replace(/\|/g, '\\|') || "(N/A)";
   summaryTable += `| ${formData.summary.totalTests || "0"} | ${formData.summary.successfulTests || "0"} | ${formData.summary.failedTests || "0"} | ${observations} |\n`;
 
@@ -154,7 +153,6 @@ export default function formatReport(
     incidSection += `| **ID Prueba** | **Descripción** | **Impacto** | **Estado** |\n`;
     incidSection += `| ------------- | --------------- | ----------- | ---------- |\n`;
     formData.incidences.forEach((inc) => {
-      // Limpiar y escapar contenido para la tabla
       const id = inc.id.trim().replace(/\|/g, '\\|');
       const description = inc.description.replace(/\|/g, '\\|');
       const impact = inc.impact.replace(/\|/g, '\\|');
@@ -167,51 +165,29 @@ export default function formatReport(
 
   // --- Entorno de Pruebas ---
   const entornoPairs: [string, string][] = [];
-  if (!hiddenFields.serverPruebas && formData.serverPruebas.trim()) {
-    entornoPairs.push(["Servidor de Pruebas", formData.serverPruebas]);
-  }
-  if (!hiddenFields.ipMaquina && formData.ipMaquina.trim()) {
-    entornoPairs.push(["IP Máquina", formData.ipMaquina]);
-  }
-  if (!hiddenFields.navegador && formData.navegador.trim()) {
-    entornoPairs.push(["Navegador", formData.navegador]);
-  }
-  if (!hiddenFields.baseDatos && formData.baseDatos.trim()) {
-    entornoPairs.push(["Base de Datos", formData.baseDatos]);
-  }
-  if (!hiddenFields.maquetaUtilizada && formData.maquetaUtilizada.trim()) {
-    entornoPairs.push(["Maqueta Utilizada", formData.maquetaUtilizada]);
-  }
-  if (!hiddenFields.ambiente && formData.ambiente.trim()) {
-    entornoPairs.push(["Ambiente", formData.ambiente]);
-  }
-  formData.customEnvFields.forEach((f) => {
-    if (f.label.trim() && f.value.trim()) {
-      // Escapar posible markdown en label/value si se quiere mostrar literal
-      entornoPairs.push([f.label.trim(), f.value.trim()]);
-    }
-  });
-  const entornoList = entornoPairs
-    .map(([k, v]) => `**${k}:** ${v}`) // Asume que k y v no necesitan más escape aquí
-    .join("\n");
+  if (!hiddenFields.serverPruebas && formData.serverPruebas.trim()) { entornoPairs.push(["Servidor de Pruebas", formData.serverPruebas]); }
+  if (!hiddenFields.ipMaquina && formData.ipMaquina.trim()) { entornoPairs.push(["IP Máquina", formData.ipMaquina]); }
+  if (!hiddenFields.navegador && formData.navegador.trim()) { entornoPairs.push(["Navegador", formData.navegador]); }
+  if (!hiddenFields.baseDatos && formData.baseDatos.trim()) { entornoPairs.push(["Base de Datos", formData.baseDatos]); }
+  if (!hiddenFields.maquetaUtilizada && formData.maquetaUtilizada.trim()) { entornoPairs.push(["Maqueta Utilizada", formData.maquetaUtilizada]); }
+  if (!hiddenFields.ambiente && formData.ambiente.trim()) { entornoPairs.push(["Ambiente", formData.ambiente]); }
+  formData.customEnvFields.forEach((f) => { if (f.label.trim() && f.value.trim()) { entornoPairs.push([f.label.trim(), f.value.trim()]); } });
+  const entornoList = entornoPairs.map(([k, v]) => `**${k}:** ${v}`).join("\n");
 
   // --- Sección APP ---
-  const appSection = formData.isApp
-    ? `
+  const appSection = formData.isApp ? `
 📱 **Validación de Aplicación**
 
 | **Campo** | **Detalle** |
-| ---------------------------- | --------------------------------------- |
-| Endpoint                     | ${formData.endpoint?.replace(/\|/g, '\\|') || "(N/A)"}       |
-| Sistema Operativo / Versión  | ${formData.sistemaOperativo?.replace(/\|/g, '\\|') || "(N/A)"} |
-| Dispositivo de Pruebas       | ${formData.dispositivoPruebas?.replace(/\|/g, '\\|') || "(N/A)"} |
-| Precondiciones               | ${formData.precondiciones?.replace(/\|/g, '\\|') || "(N/A)"}   |
-| Idioma                       | ${formData.idioma?.replace(/\|/g, '\\|') || "(N/A)"}         |
-`
-    : "";
+|---|---|
+| Endpoint | ${formData.endpoint?.replace(/\|/g, '\\|') || "(N/A)"} |
+| Sistema Operativo / Versión | ${formData.sistemaOperativo?.replace(/\|/g, '\\|') || "(N/A)"} |
+| Dispositivo de Pruebas | ${formData.dispositivoPruebas?.replace(/\|/g, '\\|') || "(N/A)"} |
+| Precondiciones | ${formData.precondiciones?.replace(/\|/g, '\\|') || "(N/A)"} |
+| Idioma | ${formData.idioma?.replace(/\|/g, '\\|') || "(N/A)"} |
+` : "";
 
   // --- Montaje final en el orden solicitado ---
-  // Usamos trim() en las secciones de tabla para quitar el último \n si existe
   return `
 📌 **Información General**
 **Título:** ${parsed.title}
@@ -220,40 +196,51 @@ export default function formatReport(
 **Tester:** ${formData.tester}
 **Estado de la Prueba:** ${formData.testStatus}
 
+
 📌 **Versiones del Sistema**
 
 | **Aplicativo** | **Versión** |
-| -------------- | ----------- |
+|---|---|
 ${versionTable.trim()}
 
+
 🖥️ **Entorno de Pruebas**
+
 ${entornoList}
 
-${appSection.trim()}
-
+${appSection.trim() ? '\n' + appSection.trim() + '\n' : ''}
 ✅ **Batería de Pruebas**
 
 ${batteryTable.trim()}
 
+
 💾 **Datos de Prueba**
+
 ${datosDePrueba}
+
 
 📎 **Evidencias**
 
-${''}
 ${evidenciaSection}
 
+
 📝 **Logs Relevantes**
+
 ${logsSection}
+
 
 📊 **Resumen de Resultados**
 
 ${summaryTable.trim()}
 
+
 🛠️ **Incidencias Detectadas**
-${incidSection.trim()}
+
+${incidSection.includes('|') ? '\n' + incidSection.trim() : incidSection}
+
 
 📌 **Conclusiones**
+
 ${formData.conclusion || "(Sin conclusiones)"}
 `;
 }
