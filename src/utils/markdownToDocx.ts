@@ -15,8 +15,14 @@ import {
  * - Ignora la nota ℹ️ en Evidencias
  * - Inserta imágenes en base64 usando ImageRun
  * - Añade un párrafo vacío después de cada imagen para separarlas
+ * - Elimina los fences ```log``` para que no aparezcan en el Word
  */
 export function markdownToDocx(report: string) {
+  // 1) Eliminar fences de logs (```log y ```)
+  const cleaned = report
+    .replace(/```log\s*\r?\n/, "")  // quita apertura del bloque de log
+    .replace(/\r?\n```/, "");        // quita cierre del bloque de log
+
   const docElements: Array<Paragraph | Table> = [];
 
   // Título centrado
@@ -30,7 +36,7 @@ export function markdownToDocx(report: string) {
   );
   docElements.push(new Paragraph(""));
 
-  const blocks = report.split("\n\n");
+  const blocks = cleaned.split("\n\n");
   const imageRegex = /!\[.*\]\((data:image\/.+;base64,.+)\)/;
 
   for (let block of blocks) {

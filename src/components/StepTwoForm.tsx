@@ -486,7 +486,7 @@ export default function StepTwoForm({
           onClick={onGoBackToStep1}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors" // Botón volver
         >
-          ← Volver (Paso 1)
+          ← Volver a la introducción del JIRA
         </button>
       </div>
 
@@ -871,25 +871,48 @@ export default function StepTwoForm({
 
         {/* Botones añadir/importar/plantilla */}
         <div className="flex items-center gap-3 mt-4 pt-4 border-t">
-          <button type="button" onClick={addBatteryTest} className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600">+ Añadir caso</button>
-          <div className="relative">
-            <button type="button" onClick={handleImportClick} className="px-3 py-1 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600">Importar Excel</button>
-            {/* === ICONO EXCEL MEJORADO === */}
-            <Tippy content={<div style={{ whiteSpace: "pre-line", textAlign: 'left', padding: '5px' }}>{`Importa casos desde Excel.\nColumnas: ${EXPECTED_HEADERS.join(', ')}`}</div>} placement="top">
-              <span className="inline-block ml-1 text-gray-600 hover:text-blue-600 cursor-help align-middle">
-                {/* Icono de signo de interrogación en círculo */}
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.79 4 4s-1.79 4-4 4c-1.742 0-3.223-.835-3.772-2M9 12l-2-2m2 2l2-2m-2 2v-2m0 4v-2" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.25h.01M12 15.75h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </span>
+          <button
+            type="button"
+            onClick={addBatteryTest}
+            className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600"
+          >
+            + Añadir caso
+          </button>
+
+          <div className="flex items-center">
+            <Tippy
+              content={`Importa casos desde Excel.\nColumnas: ${EXPECTED_HEADERS.join(
+                ", "
+              )}`}
+              placement="top"
+            >
+              <button
+                type="button"
+                onClick={handleImportClick}
+                className="px-3 py-1 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600"
+              >
+                Importar Excel
+              </button>
             </Tippy>
-            {/* ============================ */}
           </div>
-          <a href="/plantillas/plantilla_bateria_pruebas.xlsx" download className="text-sm text-blue-600 underline hover:text-blue-800">Descargar Plantilla Excel</a>
+          <a
+            href="/plantillas/plantilla_bateria_pruebas.xlsx"
+            download
+            className="inline-flex items-center text-sm text-gray-600 hover:text-gray-800 transition-colors"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-5 h-5 mr-1"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path d="M6 2h9a2 2 0 012 2v4h-2V4H6v16h6v2H6a2 2 0 01-2-2V4a2 2 0 012-2z" />
+              <path d="M13 12l3 3h-2v4h-2v-4h-2l3-3z" />
+            </svg>
+            Descargar Plantilla Excel
+          </a>
         </div>
         <input type="file" accept=".xls,.xlsx" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
-
       </div>
 
       {/* === NUEVO: Sección Logs Relevantes === */}
@@ -1007,7 +1030,7 @@ export default function StepTwoForm({
         <button
           type="button"
           onClick={onReset}
-          className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500 transition-colors"
+          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-gray-500 transition-colors"
         >
           Reiniciar Formulario
         </button>
