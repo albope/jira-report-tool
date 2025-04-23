@@ -67,8 +67,9 @@ export default function ReportOutput({
         : "Reporte_Prueba.docx";
       saveAs(blob, filename);
       exported = true;
-    } catch (e: any) {
-      alert("Error exportando Word: " + e.message);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Error desconocido";
+      alert("Error exportando Word: " + msg);
     }
 
     if (copied && exported) {
@@ -137,7 +138,7 @@ export default function ReportOutput({
       <div className="flex flex-wrap gap-4 justify-center pt-6 border-t mt-6">
         <button
           onClick={handleCopyAndExport}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors text-lg font-semibold flex items-center gap-2"
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors text-lg flex items-center gap-2"
         >
           {/* Icono Copiar */}
           <svg
@@ -158,7 +159,7 @@ export default function ReportOutput({
 
         <button
           onClick={onReset}
-          className="px-4 py-2 bg-red-500 text-white rounded-lg shadow hover:bg-red-600 transition-colors flex items-center gap-2"
+          className="px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-500 transition-colors flex items-center gap-2"
         >
           {/* Icono Reiniciar */}
           <svg

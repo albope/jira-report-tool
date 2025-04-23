@@ -39,7 +39,7 @@ export function markdownToDocx(report: string) {
   const blocks = cleaned.split("\n\n");
   const imageRegex = /!\[.*\]\((data:image\/.+;base64,.+)\)/;
 
-  for (let block of blocks) {
+  for (const block of blocks) {
     // Saltar la nota de evidencias (si por alguna razón quedase)
     if (block.startsWith("> ℹ️")) continue;
 
@@ -88,7 +88,7 @@ export function markdownToDocx(report: string) {
     }
 
     // Bloque normal (puede mezclar texto, negritas e imágenes)
-    for (let line of lines) {
+    for (const line of lines) {
       // Imagen base64?
       const imgMatch = line.match(imageRegex);
       if (imgMatch) {

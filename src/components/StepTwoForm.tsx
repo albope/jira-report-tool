@@ -112,7 +112,7 @@ const EXPECTED_HEADERS = [
 function incrementCaseId(originalId: string): string {
   const match = originalId.match(/^(\D*)(\d+)$/);
   if (!match) return originalId + " (copy)";
-  const [_, prefix, num] = match;
+  const [_unused, prefix, num] = match;
   const next = String(parseInt(num, 10) + 1).padStart(num.length, "0");
   return prefix + next;
 }
@@ -393,7 +393,7 @@ export default function StepTwoForm({
       const wb = XLSX.read(data, { type: "array" });
       const sh = wb.Sheets[wb.SheetNames[0]];
       if (!sh) throw new Error("Hoja no encontrada en el Excel");
-      const sd: any[][] = XLSX.utils.sheet_to_json(sh, {
+      const sd: unknown[][] = XLSX.utils.sheet_to_json(sh, {
         header: 1,
         blankrows: false,
       });
@@ -414,7 +414,7 @@ export default function StepTwoForm({
         return;
       }
       const imp: BatteryTest[] = [];
-      sd.slice(1).forEach((row: any[], rowIndex) => {
+      sd.slice(1).forEach((row: unknown[], rowIndex) => {
         // Permitir filas más cortas, pero asegurar que los índices existan
         const [id, d, steps, er, or, ver, st] = row;
         const nt: BatteryTest = {
@@ -796,7 +796,7 @@ export default function StepTwoForm({
 
                 {/* Evidencias */}
                 <div>
-                  <label className="block font-medium text-sm mb-1">Evidencias (Imágenes)</label>
+                  <label className="block font-medium text-sm mb-1">Evidencias (Capturas de pantalla)</label>
                   <input
                     type="file"
                     accept="image/*"
@@ -1023,14 +1023,14 @@ export default function StepTwoForm({
         <button
           type="button" // Cambiado a type="button" si no es el submit principal del form
           onClick={onGenerate} // Esta función debería ahora pasar al siguiente paso (ReportOutput)
-          className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-green-700 transition-colors text-lg font-semibold"
+          className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-green-700 transition-colors text-lg"
         >
-          Generar Reporte →
+          Generar Reporte
         </button>
         <button
           type="button"
           onClick={onReset}
-          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-gray-500 transition-colors"
+          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-500 transition-colors"
         >
           Reiniciar Formulario
         </button>

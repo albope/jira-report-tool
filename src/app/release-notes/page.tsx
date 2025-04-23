@@ -14,6 +14,15 @@ interface ReleaseItem {
 /** Array con todas las versiones, de más reciente a más antigua */
 const ALL_RELEASES: ReleaseItem[] = [
   {
+    version: "1.4.0",
+    date: "23 Abril 2025",
+    changes: [
+      "Se implementa la posibilidad de añadir imagenes en los casos de prueba.",
+      "Se añade al formulario la sección de Logs relevantes para añadir trazas de errores.",
+      "Rediseño del formulario aplicando mejoras de estetica y usabilidad."
+    ],
+  },
+  {
     version: "1.3.0",
     date: "15 Abril 2025",
     changes: [
