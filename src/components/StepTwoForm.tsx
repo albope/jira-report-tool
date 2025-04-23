@@ -112,7 +112,7 @@ const EXPECTED_HEADERS = [
 function incrementCaseId(originalId: string): string {
   const match = originalId.match(/^(\D*)(\d+)$/);
   if (!match) return originalId + " (copy)";
-  const [_unused, prefix, num] = match;
+  const [_, prefix, num] = match;
   const next = String(parseInt(num, 10) + 1).padStart(num.length, "0");
   return prefix + next;
 }
