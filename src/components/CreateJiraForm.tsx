@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import JiraPreview from "./JiraPreview";
 
-/* ───────────── Tipos auxiliares ───────────── */
+/* ──────────────────── Tipos ──────────────────── */
 type EnvHidden = {
   server: boolean;
   clientIP: boolean;
@@ -15,9 +15,11 @@ type EnvHidden = {
 
 type CustomField = { label: string; value: string };
 
-/* ───────────── Componente principal ───────────── */
+/* ────────────────── Componente ────────────────── */
 export default function CreateJiraForm() {
-  /* -------- 1. Estado principal -------- */
+  const router = useRouter();
+
+  /* 1. Estado principal */
   const [project, setProject] = useState("");
   const [tool, setTool] = useState("");
   const [errorDesc, setErrorDesc] = useState("");
@@ -28,6 +30,7 @@ export default function CreateJiraForm() {
   const [actual, setActual] = useState("");
   const [impact, setImpact] = useState("");
 
+  /* Entorno genérico */
   const [env, setEnv] = useState({
     server: "",
     clientIP: "",
@@ -35,8 +38,6 @@ export default function CreateJiraForm() {
     db: "",
     env: "",
   });
-
-  const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [hidden, setHidden] = useState<EnvHidden>({
     server: false,
     clientIP: false,
@@ -45,8 +46,18 @@ export default function CreateJiraForm() {
     env: false,
   });
 
-  /* -------- 2. Helpers -------- */
-  /** Convierte la herramienta a camelCase respetando diacríticos. */
+  /* Campos APP */
+  const [isApp, setIsApp] = useState(false);
+  const [endpoint, setEndpoint] = useState("");
+  const [os, setOs] = useState("");
+  const [device, setDevice] = useState("");
+  const [preconds, setPreconds] = useState("");
+  const [lang, setLang] = useState("");
+
+  /* Campos personalizados */
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
+
+  /* 2. Helpers */
   const toCamel = (s: string) =>
     s
       .replace(/[^a-zA-ZÀ-ÿ0-9 ]+/g, " ")
@@ -65,12 +76,12 @@ export default function CreateJiraForm() {
 
   const copyToClipboard = (txt: string) => navigator.clipboard.writeText(txt);
 
-  /** Construye el cuerpo del JIRA con subtítulos en negrita */
+  /* Genera el cuerpo con negritas */
   const buildContent = () => {
     const bold = (t: string) => `*${t}:*`;
-    const section = (t: string, c: string) =>
-      `${bold(t)}\n${c.trim() || "_"}`;
+    const sec = (t: string, c: string) => `${bold(t)}\n${c.trim() || "_"}`;
 
+    /* Entorno */
     const envLines = [
       !hidden.server && env.server && `- Servidor: ${env.server}`,
       !hidden.clientIP && env.clientIP && `- IP Cliente: ${env.clientIP}`,
@@ -82,33 +93,52 @@ export default function CreateJiraForm() {
       .filter(Boolean)
       .join("\n");
 
+    /* Detalles APP */
+    const appLines =
+      !isApp
+        ? ""
+        : [
+            endpoint && `- Endpoint: ${endpoint}`,
+            os && `- SO / Versión: ${os}`,
+            device && `- Dispositivo: ${device}`,
+            preconds && `- Precondiciones: ${preconds}`,
+            lang && `- Idioma: ${lang}`,
+          ]
+            .filter(Boolean)
+            .join("\n") || "_";
+
     return [
-      section("Descripción", problem),
-      section("Pasos para reproducir", steps),
-      section("Resultado esperado", expected),
-      section("Resultado real", actual),
-      section("Impacto", impact),
-      section("Entorno", envLines || "_"),
-    ].join("\n\n");
+      sec("Descripción", problem),
+      sec("Pasos para reproducir", steps),
+      sec("Resultado esperado", expected),
+      sec("Resultado real", actual),
+      sec("Impacto", impact),
+      sec("Entorno", envLines || "_"),
+      isApp ? sec("Detalles APP", appLines) : "",
+    ]
+      .filter(Boolean)
+      .join("\n\n");
   };
 
   const content = buildContent();
 
-  /* -------- 3. Render -------- */
+  /* 3. Render */
   return (
     <div className="max-w-3xl mx-auto space-y-8 bg-white p-6 rounded shadow">
-      {/* Cabecera + volver */}
+      {/* Cabecera */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Crear un nuevo JIRA</h2>
-        <Link
-          href="/"
-          className="text-blue-600 hover:text-blue-800 underline underline-offset-2"
+
+        {/* Botón volver a la landing (misma estética solicitada) */}
+        <button
+          onClick={() => router.push("/")}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors"
         >
-          ← Volver a la landing
-        </Link>
+          ← Volver a la página principal
+        </button>
       </div>
 
-      {/* ---------- Datos básicos ---------- */}
+      {/* ─────── Datos básicos + vista previa ─────── */}
       <section className="space-y-4">
         <div>
           <label className="block font-medium">Proyecto</label>
@@ -119,7 +149,6 @@ export default function CreateJiraForm() {
             placeholder="ATMV"
           />
         </div>
-
         <div>
           <label className="block font-medium">Herramienta</label>
           <input
@@ -129,7 +158,6 @@ export default function CreateJiraForm() {
             placeholder="ImportadorPlanificación"
           />
         </div>
-
         <div>
           <label className="block font-medium">
             Descripción breve del error
@@ -142,19 +170,28 @@ export default function CreateJiraForm() {
           />
         </div>
 
-        {/* Vista previa del título */}
+        {/* Vista previa título */}
         <JiraPreview title={title} />
 
-        {/* Botón copiar título */}
-        <button
-          onClick={() => copyToClipboard(title)}
-          className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
-        >
-          Copiar título
-        </button>
+        {/* Botones copiar (mismo estilo y alineados) */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => copyToClipboard(title)}
+            className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
+          >
+            Copiar título
+          </button>
+
+          <button
+            onClick={() => copyToClipboard(content)}
+            className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
+          >
+            Copiar contenido completo
+          </button>
+        </div>
       </section>
 
-      {/* ---------- Detalle del problema ---------- */}
+      {/* ─────── Detalle problema ─────── */}
       <section className="space-y-4">
         <textarea
           className="border p-2 rounded w-full"
@@ -193,7 +230,7 @@ export default function CreateJiraForm() {
         />
       </section>
 
-      {/* ---------- Entorno de pruebas ---------- */}
+      {/* ─────── Entorno de pruebas ─────── */}
       <section>
         <h3 className="font-semibold mb-2">Entorno de pruebas</h3>
 
@@ -262,7 +299,64 @@ export default function CreateJiraForm() {
           </button>
         )}
 
-        {/* ---------- Campos personalizados ---------- */}
+        {/* ─────── Checkbox APP ─────── */}
+        <div className="mt-6">
+          <label className="inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              className="form-checkbox h-5 w-5 text-blue-600 rounded"
+              checked={isApp}
+              onChange={(e) => setIsApp(e.target.checked)}
+            />
+            <span className="ml-2 text-gray-700">
+              ¿Es validación de una APP Móvil/Escritorio?
+            </span>
+          </label>
+        </div>
+
+        {/* ─────── Detalles APP ─────── */}
+        {isApp && (
+          <div className="mt-4 border p-3 rounded space-y-3 bg-blue-50 border-blue-200">
+            <h4 className="font-semibold text-blue-800">Detalles de la APP</h4>
+
+            <AppField
+              id="endpoint"
+              label="Endpoint (si aplica)"
+              placeholder="https://api.ejemplo.com"
+              value={endpoint}
+              setValue={setEndpoint}
+            />
+            <AppField
+              id="os"
+              label="Sistema Operativo / Versión"
+              placeholder="Android 13, iOS 16.5, Windows 11"
+              value={os}
+              setValue={setOs}
+            />
+            <AppField
+              id="device"
+              label="Dispositivo de Pruebas"
+              placeholder="Pixel 8, iPhone 14 Pro, PC..."
+              value={device}
+              setValue={setDevice}
+            />
+            <AppTextArea
+              id="preconds"
+              label="Precondiciones Específicas APP"
+              value={preconds}
+              setValue={setPreconds}
+            />
+            <AppField
+              id="lang"
+              label="Idioma Configurado"
+              placeholder="es-ES, en-US"
+              value={lang}
+              setValue={setLang}
+            />
+          </div>
+        )}
+
+        {/* ─────── Campos personalizados ─────── */}
         <div className="mt-6 space-y-2">
           <h4 className="font-medium">Campos personalizados</h4>
           {customFields.map((f, i) => (
@@ -307,21 +401,11 @@ export default function CreateJiraForm() {
           </button>
         </div>
       </section>
-
-      {/* ---------- Copiar contenido ---------- */}
-      <div className="text-right mt-8">
-        <button
-          onClick={() => copyToClipboard(content)} // ← solo cuerpo
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
-        >
-          Copiar contenido completo
-        </button>
-      </div>
     </div>
   );
 }
 
-/* ───────────── Campo reutilizable ───────────── */
+/* ───────────── Sub-componentes ───────────── */
 interface FieldProps {
   id: string;
   label: string;
@@ -329,7 +413,6 @@ interface FieldProps {
   setValue: (v: string) => void;
   onHide: () => void;
 }
-
 function Field({ id, label, value, setValue, onHide }: FieldProps) {
   return (
     <div className="relative group">
@@ -349,6 +432,64 @@ function Field({ id, label, value, setValue, onHide }: FieldProps) {
       >
         ✕
       </button>
+    </div>
+  );
+}
+
+/* Campos APP reutilizables */
+function AppField({
+  id,
+  label,
+  value,
+  setValue,
+  placeholder = "",
+}: {
+  id: string;
+  label: string;
+  value: string;
+  setValue: (v: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className="block font-medium text-sm">
+        {label}
+      </label>
+      <input
+        id={id}
+        type="text"
+        className="border p-2 rounded w-full text-sm"
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+      />
+    </div>
+  );
+}
+function AppTextArea({
+  id,
+  label,
+  value,
+  setValue,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  setValue: (v: string) => void;
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className="block font-medium text-sm">
+        {label}
+      </label>
+      <textarea
+        id={id}
+        rows={2}
+        className="w-full border p-2 rounded text-sm"
+        placeholder="Escribe aquí…"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+      />
     </div>
   );
 }
