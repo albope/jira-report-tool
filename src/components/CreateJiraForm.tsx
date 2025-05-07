@@ -76,9 +76,9 @@ export default function CreateJiraForm() {
 
   const copyToClipboard = (txt: string) => navigator.clipboard.writeText(txt);
 
-  /* Genera el cuerpo con negritas */
+  /* Genera el cuerpo con negrita (<strong> en Jira ⇒ **texto**) */
   const buildContent = () => {
-    const bold = (t: string) => `*${t}:*`;
+    const bold = (t: string) => `**${t}:**`;
     const sec = (t: string, c: string) => `${bold(t)}\n${c.trim() || "_"}`;
 
     /* Entorno */
@@ -129,7 +129,7 @@ export default function CreateJiraForm() {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Crear un nuevo JIRA</h2>
 
-        {/* Botón volver a la landing (misma estética solicitada) */}
+        {/* Botón volver a la landing (estética solicitada) */}
         <button
           onClick={() => router.push("/")}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors"
@@ -159,9 +159,7 @@ export default function CreateJiraForm() {
           />
         </div>
         <div>
-          <label className="block font-medium">
-            Descripción breve del error
-          </label>
+          <label className="block font-medium">Descripción breve del error</label>
           <input
             className="border p-2 rounded w-full"
             value={errorDesc}
@@ -170,64 +168,73 @@ export default function CreateJiraForm() {
           />
         </div>
 
-        {/* Vista previa título */}
         <JiraPreview title={title} />
 
-        {/* Botones copiar (mismo estilo y alineados) */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => copyToClipboard(title)}
-            className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
-          >
-            Copiar título
-          </button>
-
-          <button
-            onClick={() => copyToClipboard(content)}
-            className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
-          >
-            Copiar contenido completo
-          </button>
-        </div>
+        {/* Botón copiar título (solo este aquí) */}
+        <button
+          onClick={() => copyToClipboard(title)}
+          className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
+        >
+          Copiar título
+        </button>
       </section>
 
       {/* ─────── Detalle problema ─────── */}
       <section className="space-y-4">
-        <textarea
-          className="border p-2 rounded w-full"
-          rows={3}
-          value={problem}
-          onChange={(e) => setProblem(e.target.value)}
-          placeholder="Descripción detallada del problema"
-        />
-        <textarea
-          className="border p-2 rounded w-full"
-          rows={4}
-          value={steps}
-          onChange={(e) => setSteps(e.target.value)}
-          placeholder="Pasos para reproducir"
-        />
-        <textarea
-          className="border p-2 rounded w-full"
-          rows={2}
-          value={expected}
-          onChange={(e) => setExpected(e.target.value)}
-          placeholder="Resultado esperado"
-        />
-        <textarea
-          className="border p-2 rounded w-full"
-          rows={2}
-          value={actual}
-          onChange={(e) => setActual(e.target.value)}
-          placeholder="Resultado real"
-        />
-        <textarea
-          className="border p-2 rounded w-full"
-          rows={2}
-          value={impact}
-          onChange={(e) => setImpact(e.target.value)}
-          placeholder="Impacto del error"
-        />
+        <div>
+          <label className="block font-medium">Descripción del problema</label>
+          <textarea
+            className="border p-2 rounded w-full"
+            rows={3}
+            value={problem}
+            onChange={(e) => setProblem(e.target.value)}
+            placeholder="Descripción detallada del problema"
+          />
+        </div>
+
+        <div>
+          <label className="block font-medium">Pasos para reproducir</label>
+          <textarea
+            className="border p-2 rounded w-full"
+            rows={4}
+            value={steps}
+            onChange={(e) => setSteps(e.target.value)}
+            placeholder="1. …"
+          />
+        </div>
+
+        <div>
+          <label className="block font-medium">Resultado esperado</label>
+          <textarea
+            className="border p-2 rounded w-full"
+            rows={2}
+            value={expected}
+            onChange={(e) => setExpected(e.target.value)}
+            placeholder="Resultado esperado"
+          />
+        </div>
+
+        <div>
+          <label className="block font-medium">Resultado real</label>
+          <textarea
+            className="border p-2 rounded w-full"
+            rows={2}
+            value={actual}
+            onChange={(e) => setActual(e.target.value)}
+            placeholder="Resultado real"
+          />
+        </div>
+
+        <div>
+          <label className="block font-medium">Impacto del error</label>
+          <textarea
+            className="border p-2 rounded w-full"
+            rows={2}
+            value={impact}
+            onChange={(e) => setImpact(e.target.value)}
+            placeholder="Impacto del error"
+          />
+        </div>
       </section>
 
       {/* ─────── Entorno de pruebas ─────── */}
@@ -328,7 +335,7 @@ export default function CreateJiraForm() {
             />
             <AppField
               id="os"
-              label="Sistema Operativo / Versión"
+              label="SO / Versión"
               placeholder="Android 13, iOS 16.5, Windows 11"
               value={os}
               setValue={setOs}
@@ -336,7 +343,7 @@ export default function CreateJiraForm() {
             <AppField
               id="device"
               label="Dispositivo de Pruebas"
-              placeholder="Pixel 8, iPhone 14 Pro, PC..."
+              placeholder="Pixel 8, iPhone 14 Pro, PC…"
               value={device}
               setValue={setDevice}
             />
@@ -400,12 +407,22 @@ export default function CreateJiraForm() {
             + Añadir campo
           </button>
         </div>
+
+        {/* ─────── Botón copiar contenido ─────── */}
+        <div className="mt-6">
+          <button
+            onClick={() => copyToClipboard(content)}
+            className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
+          >
+            Copiar contenido del JIRA
+          </button>
+        </div>
       </section>
     </div>
   );
 }
 
-/* ───────────── Sub-componentes ───────────── */
+/* ───────────── Sub-componentes reutilizables ───────────── */
 interface FieldProps {
   id: string;
   label: string;
@@ -436,7 +453,7 @@ function Field({ id, label, value, setValue, onHide }: FieldProps) {
   );
 }
 
-/* Campos APP reutilizables */
+/* Campos APP */
 function AppField({
   id,
   label,
@@ -466,6 +483,7 @@ function AppField({
     </div>
   );
 }
+
 function AppTextArea({
   id,
   label,
