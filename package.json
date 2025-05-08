@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1",
     "@tippyjs/react": "^4.2.6",
     "@vercel/analytics": "^1.5.0",
     "date-fns": "^4.1.0",

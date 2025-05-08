@@ -2,6 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+} from "@hello-pangea/dnd";
 import JiraPreview from "./JiraPreview";
 
 /* ──────────────────── Tipos ──────────────────── */
@@ -24,7 +30,7 @@ export default function CreateJiraForm() {
   const [errorDesc, setErrorDesc] = useState("");
 
   const [problem, setProblem] = useState("");
-  const [steps, setSteps] = useState("");
+  const [steps, setSteps] = useState<string[]>([""]); // ahora array
   const [expected, setExpected] = useState("");
   const [actual, setActual] = useState("");
   const [impact, setImpact] = useState("");
@@ -63,7 +69,7 @@ export default function CreateJiraForm() {
     setTimeout(() => setToast(null), 2000);
   };
 
-  /* 2. Helpers */
+  /* 2. Helpers ------------------------------------------------------------ */
   const toCamel = (s: string) =>
     s
       .replace(/[^a-zA-ZÀ-ÿ0-9 ]+/g, " ")
@@ -72,20 +78,43 @@ export default function CreateJiraForm() {
       .map((w, i) =>
         i === 0
           ? w.toLowerCase()
-          : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+          : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(),
       )
       .join("");
 
   const title = `${project.trim().toUpperCase()} - ${toCamel(
-    tool.trim()
+    tool.trim(),
   )} - ${errorDesc.trim()}`;
 
   /** Copia texto al portapapeles y muestra toast */
-  const handleCopy = (txt: string, what: "Título copiado" | "Contenido copiado") => {
+  const handleCopy = (
+    txt: string,
+    what: "Título copiado" | "Contenido copiado",
+  ) => {
     navigator.clipboard.writeText(txt).then(() => showToast(what));
   };
 
-  /* Genera el cuerpo con negrita (**texto**) */
+  /* ---------- Pasos helpers ---------- */
+  const addStep = () => setSteps([...steps, ""]);
+  const changeStep = (idx: number, val: string) => {
+    const next = [...steps];
+    next[idx] = val;
+    setSteps(next);
+  };
+  const removeStep = (idx: number) =>
+    setSteps(steps.filter((_, i) => i !== idx));
+  const reorder = (list: string[], start: number, end: number) => {
+    const res = Array.from(list);
+    const [moved] = res.splice(start, 1);
+    res.splice(end, 0, moved);
+    return res;
+  };
+  const onDragEnd = (r: DropResult) => {
+    if (!r.destination) return;
+    setSteps(reorder(steps, r.source.index, r.destination.index));
+  };
+
+  /* ---------- Genera contenido JIRA ---------- */
   const buildContent = () => {
     const bold = (t: string) => `**${t}:**`;
     const sec = (t: string, c: string) => `${bold(t)}\n${c.trim() || "_"}`;
@@ -103,10 +132,9 @@ export default function CreateJiraForm() {
       .join("\n");
 
     /* Detalles APP */
-    const appLines =
-      !isApp
-        ? ""
-        : [
+    const appLines = !isApp
+      ? ""
+      : [
           endpoint && `- Endpoint: ${endpoint}`,
           os && `- SO / Versión: ${os}`,
           device && `- Dispositivo: ${device}`,
@@ -116,9 +144,14 @@ export default function CreateJiraForm() {
           .filter(Boolean)
           .join("\n") || "_";
 
+    const stepsBlock = steps
+      .filter((s) => s.trim())
+      .map((s, i) => `${i + 1}. ${s.trim()}`)
+      .join("\n");
+
     return [
       sec("Descripción", problem),
-      sec("Pasos para reproducir", steps),
+      sec("Pasos para reproducir", stepsBlock),
       sec("Resultado esperado", expected),
       sec("Resultado real", actual),
       sec("Impacto", impact),
@@ -131,12 +164,12 @@ export default function CreateJiraForm() {
 
   const content = buildContent();
 
-  /* 3. Render */
+  /* 3. Render ------------------------------------------------------------- */
   return (
     <>
-      {/* Toast global (solo cuando toast !== null) */}
+      {/* Toast global */}
       {toast && (
-        <div className="fixed top-5 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-2 rounded shadow transition-opacity animate-fadeIn z-50">
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-2 rounded shadow animate-fadeIn z-50">
           {toast}
         </div>
       )}
@@ -145,7 +178,6 @@ export default function CreateJiraForm() {
         {/* Cabecera */}
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">Crear un nuevo JIRA</h2>
-
           <button
             onClick={() => router.push("/")}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors"
@@ -154,39 +186,29 @@ export default function CreateJiraForm() {
           </button>
         </div>
 
-        {/* ─────── Datos básicos + vista previa ─────── */}
+        {/* Datos básicos + vista previa */}
         <section className="space-y-4">
-          <div>
-            <label className="block font-medium">Proyecto</label>
-            <input
-              className="border p-2 rounded w-full"
-              value={project}
-              onChange={(e) => setProject(e.target.value.toUpperCase())}
-              placeholder="ATMV"
-            />
-          </div>
-          <div>
-            <label className="block font-medium">Herramienta</label>
-            <input
-              className="border p-2 rounded w-full"
-              value={tool}
-              onChange={(e) => setTool(e.target.value)}
-              placeholder="ImportadorPlanificación"
-            />
-          </div>
-          <div>
-            <label className="block font-medium">Descripción breve del error</label>
-            <input
-              className="border p-2 rounded w-full"
-              value={errorDesc}
-              onChange={(e) => setErrorDesc(e.target.value)}
-              placeholder="Error al cargar datos..."
-            />
-          </div>
+          <Input
+            label="Proyecto"
+            value={project}
+            setValue={(v) => setProject(v.toUpperCase())}
+            placeholder="ATMV"
+          />
+          <Input
+            label="Herramienta"
+            value={tool}
+            setValue={setTool}
+            placeholder="ImportadorPlanificación"
+          />
+          <Input
+            label="Descripción breve del error"
+            value={errorDesc}
+            setValue={setErrorDesc}
+            placeholder="Error al cargar datos…"
+          />
 
           <JiraPreview title={title} />
 
-          {/* Botón copiar título */}
           <button
             onClick={() => handleCopy(title, "Título copiado")}
             className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
@@ -195,7 +217,7 @@ export default function CreateJiraForm() {
           </button>
         </section>
 
-        {/* ─────── Detalle problema ─────── */}
+        {/* Detalle problema */}
         <section className="space-y-4">
           <TextArea
             label="Descripción del problema"
@@ -204,13 +226,71 @@ export default function CreateJiraForm() {
             setValue={setProblem}
             placeholder="Descripción detallada del problema"
           />
-          <TextArea
-            label="Pasos para reproducir"
-            rows={4}
-            value={steps}
-            setValue={setSteps}
-            placeholder="1. …"
-          />
+
+          {/* NUEVA sección Pasos */}
+          <div>
+            <label className="block font-medium mb-1">
+              Pasos para reproducir
+            </label>
+
+            <DragDropContext onDragEnd={onDragEnd}>
+              <Droppable droppableId="steps">
+                {(provided) => (
+                  <ul
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="space-y-2"
+                  >
+                    {steps.map((s, i) => (
+                      <Draggable
+                        key={i}
+                        draggableId={`step-${i}`}
+                        index={i}
+                      >
+                        {(p) => (
+                          <li
+                            ref={p.innerRef}
+                            {...p.draggableProps}
+                            {...p.dragHandleProps}
+                            className="flex items-start gap-2"
+                          >
+                            <span className="w-6 text-right font-semibold select-none">
+                              {i + 1}.
+                            </span>
+                            <textarea
+                              rows={2}
+                              className="flex-1 border p-2 rounded text-sm"
+                              placeholder={`Paso ${i + 1}`}
+                              value={s}
+                              onChange={(e) =>
+                                changeStep(i, e.target.value)
+                              }
+                            />
+                            <button
+                              onClick={() => removeStep(i)}
+                              className="text-red-600 font-bold px-2"
+                              title="Eliminar paso"
+                            >
+                              ✕
+                            </button>
+                          </li>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </ul>
+                )}
+              </Droppable>
+            </DragDropContext>
+
+            <button
+              onClick={addStep}
+              className="mt-3 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
+            >
+              + Añadir Paso
+            </button>
+          </div>
+
           <TextArea
             label="Resultado esperado"
             rows={2}
@@ -256,7 +336,7 @@ export default function CreateJiraForm() {
           </div>
         </section>
 
-        {/* ─────── Entorno de pruebas ─────── */}
+        {/* Entorno de pruebas */}
         <section>
           <h3 className="font-semibold mb-2">Entorno de pruebas</h3>
 
@@ -478,7 +558,58 @@ function Field({
   );
 }
 
-/* Campos APP */
+function Input({
+  label,
+  value,
+  setValue,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  setValue: (v: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <div>
+      <label className="block font-medium">{label}</label>
+      <input
+        className="border p-2 rounded w-full"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder={placeholder}
+      />
+    </div>
+  );
+}
+
+function TextArea({
+  label,
+  rows,
+  value,
+  setValue,
+  placeholder,
+}: {
+  label: string;
+  rows: number;
+  value: string;
+  setValue: (v: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <div>
+      <label className="block font-medium">{label}</label>
+      <textarea
+        className="border p-2 rounded w-full"
+        rows={rows}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder={placeholder}
+      />
+    </div>
+  );
+}
+
+/* Campos APP -------------------------------------------------------------- */
 function AppField({
   id,
   label,
@@ -532,34 +663,6 @@ function AppTextArea({
         placeholder="Escribe aquí…"
         value={value}
         onChange={(e) => setValue(e.target.value)}
-      />
-    </div>
-  );
-}
-
-/* TextArea reutilizable para los cinco campos principales */
-function TextArea({
-  label,
-  rows,
-  value,
-  setValue,
-  placeholder,
-}: {
-  label: string;
-  rows: number;
-  value: string;
-  setValue: (v: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <div>
-      <label className="block font-medium">{label}</label>
-      <textarea
-        className="border p-2 rounded w-full"
-        rows={rows}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder={placeholder}
       />
     </div>
   );
