@@ -98,14 +98,14 @@ export default function CreateJiraForm() {
       !isApp
         ? ""
         : [
-            endpoint && `- Endpoint: ${endpoint}`,
-            os && `- SO / Versión: ${os}`,
-            device && `- Dispositivo: ${device}`,
-            preconds && `- Precondiciones: ${preconds}`,
-            lang && `- Idioma: ${lang}`,
-          ]
-            .filter(Boolean)
-            .join("\n") || "_";
+          endpoint && `- Endpoint: ${endpoint}`,
+          os && `- SO / Versión: ${os}`,
+          device && `- Dispositivo: ${device}`,
+          preconds && `- Precondiciones: ${preconds}`,
+          lang && `- Idioma: ${lang}`,
+        ]
+          .filter(Boolean)
+          .join("\n") || "_";
 
     return [
       sec("Descripción", problem),
@@ -226,15 +226,22 @@ export default function CreateJiraForm() {
         </div>
 
         <div>
-          <label className="block font-medium">Impacto del error</label>
-          <textarea
-            className="border p-2 rounded w-full"
-            rows={2}
-            value={impact}
-            onChange={(e) => setImpact(e.target.value)}
-            placeholder="Impacto del error"
-          />
-        </div>
+  <label htmlFor="impact" className="block font-medium">Impacto del error</label>
+  <select
+    id="impact"
+    className="border p-2 rounded w-full bg-white"
+    value={impact}
+    onChange={(e) => setImpact(e.target.value)}
+  >
+    <option value="" disabled>Selecciona el impacto del error...</option>
+    <option value="Crítico">Crítico - Bloquea completamente el uso del sistema</option>
+    <option value="Alto">Alto - Impacto significativo con alternativas</option>
+    <option value="Medio">Medio - Afecta algunas funciones</option>
+    <option value="Bajo">Bajo - Problema menor sin impacto principal</option>
+    <option value="Visual">Visual - Solo afecta apariencia o estilo</option>
+    <option value="Mejora">Mejora - Oportunidad para mejorar</option>
+  </select>
+</div>
       </section>
 
       {/* ─────── Entorno de pruebas ─────── */}
