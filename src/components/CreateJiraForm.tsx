@@ -10,13 +10,13 @@ import {
 } from "@hello-pangea/dnd";
 import JiraPreview from "./JiraPreview";
 
-/* ──────────────────── Tipos ──────────────────── */
+/* ─────────────────── Tipos ─────────────────── */
 type EnvHidden = {
   server: boolean;
   clientIP: boolean;
   browser: boolean;
   db: boolean;
-  env: boolean;
+  entorno: boolean;          // ← nuevo nombre
 };
 type CustomField = { label: string; value: string };
 
@@ -24,7 +24,7 @@ type CustomField = { label: string; value: string };
 export default function CreateJiraForm() {
   const router = useRouter();
 
-  /* 1. Estado principal */
+  /* ---------- 1. Estado principal ---------- */
   const [project, setProject] = useState("");
   const [tool, setTool] = useState("");
   const [errorDesc, setErrorDesc] = useState("");
@@ -41,14 +41,14 @@ export default function CreateJiraForm() {
     clientIP: "",
     browser: "",
     db: "",
-    env: "",
+    entorno: "",            // ← nuevo nombre
   });
   const [hidden, setHidden] = useState<EnvHidden>({
     server: false,
     clientIP: false,
     browser: false,
     db: false,
-    env: false,
+    entorno: false,         // ← nuevo nombre
   });
 
   /* Campos APP */
@@ -62,14 +62,14 @@ export default function CreateJiraForm() {
   /* Campos personalizados */
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
 
-  /* Toast de “copiado” */
+  /* Toast “copiado” */
   const [toast, setToast] = useState<string | null>(null);
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 2000);
   };
 
-  /* 2. Helpers ------------------------------------------------------------ */
+  /* ---------- 2. Helpers ---------- */
   const toCamel = (s: string) =>
     s
       .replace(/[^a-zA-ZÀ-ÿ0-9 ]+/g, " ")
@@ -86,7 +86,6 @@ export default function CreateJiraForm() {
     tool.trim(),
   )} - ${errorDesc.trim()}`;
 
-  /** Copia texto al portapapeles y muestra toast */
   const handleCopy = (
     txt: string,
     what: "Título copiado" | "Contenido copiado",
@@ -126,13 +125,13 @@ export default function CreateJiraForm() {
     setActual("");
     setImpact("");
 
-    setEnv({ server: "", clientIP: "", browser: "", db: "", env: "" });
+    setEnv({ server: "", clientIP: "", browser: "", db: "", entorno: "" });
     setHidden({
       server: false,
       clientIP: false,
       browser: false,
       db: false,
-      env: false,
+      entorno: false,
     });
 
     setIsApp(false);
@@ -145,32 +144,30 @@ export default function CreateJiraForm() {
     setCustomFields([]);
   };
 
-  /* ---------- Genera contenido JIRA ---------- */
+  /* ---------- Contenido JIRA ---------- */
   const buildContent = () => {
     const bold = (t: string) => `**${t}:**`;
     const sec = (t: string, c: string) => `${bold(t)}\n${c.trim() || "_"}`;
 
-    /* Entorno */
     const envLines = [
-      !hidden.server && env.server && `- Servidor: ${env.server}`,
-      !hidden.clientIP && env.clientIP && `- IP Cliente: ${env.clientIP}`,
-      !hidden.browser && env.browser && `- Navegador: ${env.browser}`,
-      !hidden.db && env.db && `- BD: ${env.db}`,
-      !hidden.env && env.env && `- Ambiente: ${env.env}`,
-      ...customFields.map((f) => `- ${f.label}: ${f.value}`),
+      !hidden.server   && env.server   && `- **Servidor de pruebas**: ${env.server}`,
+      !hidden.clientIP && env.clientIP && `- **IP Cliente**: ${env.clientIP}`,
+      !hidden.browser  && env.browser  && `- **Navegador**: ${env.browser}`,
+      !hidden.db       && env.db       && `- **Base de datos**: ${env.db}`,
+      !hidden.entorno  && env.entorno  && `- **Entorno**: ${env.entorno}`,
+      ...customFields.map((f) => `- **${f.label}**: ${f.value}`),
     ]
       .filter(Boolean)
       .join("\n");
 
-    /* Detalles APP */
     const appLines = !isApp
       ? ""
       : [
           endpoint && `- Endpoint: ${endpoint}`,
-          os && `- SO / Versión: ${os}`,
-          device && `- Dispositivo: ${device}`,
+          os       && `- SO / Versión: ${os}`,
+          device   && `- Dispositivo: ${device}`,
           preconds && `- Precondiciones: ${preconds}`,
-          lang && `- Idioma: ${lang}`,
+          lang     && `- Idioma: ${lang}`,
         ]
           .filter(Boolean)
           .join("\n") || "_";
@@ -180,6 +177,10 @@ export default function CreateJiraForm() {
       .map((s, i) => `${i + 1}. ${s.trim()}`)
       .join("\n");
 
+    /* ➜ Sección Evidencias añadida al final */
+    const evidencesSection =
+      "**Evidencias:**\nAñade aquí tus evidencias correspondientes, como capturas de pantalla, logs relevantes, vídeos o cualquier otro dato que facilite la comprensión del error reportado:";
+
     return [
       sec("Descripción", problem),
       sec("Pasos para reproducir", stepsBlock),
@@ -188,6 +189,7 @@ export default function CreateJiraForm() {
       sec("Impacto", impact),
       sec("Entorno", envLines || "_"),
       isApp ? sec("Detalles APP", appLines) : "",
+      evidencesSection,
     ]
       .filter(Boolean)
       .join("\n\n");
@@ -195,10 +197,10 @@ export default function CreateJiraForm() {
 
   const content = buildContent();
 
-  /* 3. Render ------------------------------------------------------------- */
+  /* ---------- 3. Render ---------- */
   return (
     <>
-      {/* Toast global */}
+      {/* Toast */}
       {toast && (
         <div className="fixed top-5 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-2 rounded shadow animate-fadeIn z-50">
           {toast}
@@ -217,7 +219,7 @@ export default function CreateJiraForm() {
           </button>
         </div>
 
-        {/* Datos básicos + vista previa */}
+        {/* Datos básicos */}
         <section className="space-y-4">
           <Input
             label="Proyecto"
@@ -258,11 +260,9 @@ export default function CreateJiraForm() {
             placeholder="Descripción detallada del problema"
           />
 
-          {/* Pasos para reproducir */}
+          {/* Pasos */}
           <div>
-            <label className="block font-medium mb-1">
-              Pasos para reproducir
-            </label>
+            <label className="block font-medium mb-1">Pasos para reproducir</label>
 
             <DragDropContext onDragEnd={onDragEnd}>
               <Droppable droppableId="steps">
@@ -273,11 +273,7 @@ export default function CreateJiraForm() {
                     className="space-y-2"
                   >
                     {steps.map((s, i) => (
-                      <Draggable
-                        key={i}
-                        draggableId={`step-${i}`}
-                        index={i}
-                      >
+                      <Draggable key={i} draggableId={`step-${i}`} index={i}>
                         {(p) => (
                           <li
                             ref={p.innerRef}
@@ -293,9 +289,7 @@ export default function CreateJiraForm() {
                               className="flex-1 border p-2 rounded text-sm"
                               placeholder={`Paso ${i + 1}`}
                               value={s}
-                              onChange={(e) =>
-                                changeStep(i, e.target.value)
-                              }
+                              onChange={(e) => changeStep(i, e.target.value)}
                             />
                             <button
                               onClick={() => removeStep(i)}
@@ -337,7 +331,7 @@ export default function CreateJiraForm() {
             placeholder="Resultado real"
           />
 
-          {/* Dropdown Impacto */}
+          {/* Impacto */}
           <div>
             <label htmlFor="impact" className="block font-medium">
               Impacto del error
@@ -400,21 +394,17 @@ export default function CreateJiraForm() {
               />
             )}
             {!hidden.db && (
-              <Field
-                id="db"
-                label="Base de datos"
+              <DbSelect
                 value={env.db}
                 setValue={(v) => setEnv({ ...env, db: v })}
                 onHide={() => setHidden({ ...hidden, db: true })}
               />
             )}
-            {!hidden.env && (
-              <Field
-                id="env"
-                label="Ambiente"
-                value={env.env}
-                setValue={(v) => setEnv({ ...env, env: v })}
-                onHide={() => setHidden({ ...hidden, env: true })}
+            {!hidden.entorno && (
+              <EnvSelect
+                value={env.entorno}
+                setValue={(v) => setEnv({ ...env, entorno: v })}
+                onHide={() => setHidden({ ...hidden, entorno: true })}
               />
             )}
           </div>
@@ -427,7 +417,7 @@ export default function CreateJiraForm() {
                   clientIP: false,
                   browser: false,
                   db: false,
-                  env: false,
+                  entorno: false,
                 })
               }
               className="text-sm text-gray-600 mt-3 underline"
@@ -538,9 +528,8 @@ export default function CreateJiraForm() {
             </button>
           </div>
 
-          {/* Botones finales ------------------------------------------------ */}
+          {/* Botones finales */}
           <div className="mt-6 flex justify-between">
-            {/* Copiar */}
             <button
               onClick={() => handleCopy(content, "Contenido copiado")}
               className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
@@ -548,7 +537,6 @@ export default function CreateJiraForm() {
               Copiar contenido del JIRA
             </button>
 
-            {/* Reiniciar */}
             <button
               onClick={resetForm}
               className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm"
@@ -562,7 +550,7 @@ export default function CreateJiraForm() {
   );
 }
 
-/* ───────────── Sub-componentes reutilizables ───────────── */
+/* ─────────── Sub-componentes reutilizables ─────────── */
 function Field({
   id,
   label,
@@ -598,6 +586,109 @@ function Field({
   );
 }
 
+/* Selector de Base de Datos */
+function DbSelect({
+  value,
+  setValue,
+  onHide,
+}: {
+  value: string;
+  setValue: (v: string) => void;
+  onHide: () => void;
+}) {
+  const PRESETS = [
+    "SQL Server",
+    "Oracle",
+    "MySQL",
+    "PostgreSQL",
+    "MongoDB",
+    "N/A",
+  ];
+
+  return (
+    <div className="relative group">
+      <label htmlFor="db" className="block font-medium text-sm">
+        Base de datos (si aplica)
+      </label>
+
+      <select
+        id="db"
+        className="border p-2 rounded w-full pr-8 text-sm bg-white appearance-none"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+      >
+        <option value="">Seleccione…</option>
+        {PRESETS.map((p) => (
+          <option key={p} value={p}>
+            {p}
+          </option>
+        ))}
+      </select>
+
+      <button
+        type="button"
+        onClick={onHide}
+        className="absolute top-6 right-1 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+        title="Ocultar este campo del reporte"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
+/* Selector de Entorno */
+function EnvSelect({
+  value,
+  setValue,
+  onHide,
+}: {
+  value: string;
+  setValue: (v: string) => void;
+  onHide: () => void;
+}) {
+  const OPTIONS = [
+    "Desarrollo",
+    "Integración",
+    "UAT",
+    "Transferencia",
+    "PRE",
+    "PROD",
+  ];
+
+  return (
+    <div className="relative group">
+      <label htmlFor="entorno" className="block font-medium text-sm">
+        Entorno
+      </label>
+
+      <select
+        id="entorno"
+        className="border p-2 rounded w-full pr-8 text-sm bg-white appearance-none"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+      >
+        <option value="">Seleccione…</option>
+        {OPTIONS.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+      </select>
+
+      <button
+        type="button"
+        onClick={onHide}
+        className="absolute top-6 right-1 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+        title="Ocultar este campo del reporte"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
+/* Input genérico */
 function Input({
   label,
   value,
