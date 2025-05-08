@@ -16,9 +16,10 @@ type EnvHidden = {
   clientIP: boolean;
   browser: boolean;
   db: boolean;
-  entorno: boolean;          // ← nuevo nombre
+  entorno: boolean;
 };
 type CustomField = { label: string; value: string };
+type Version = { appName: string; appVersion: string };
 
 /* ────────────────── Componente ────────────────── */
 export default function CreateJiraForm() {
@@ -41,15 +42,18 @@ export default function CreateJiraForm() {
     clientIP: "",
     browser: "",
     db: "",
-    entorno: "",            // ← nuevo nombre
+    entorno: "",
   });
   const [hidden, setHidden] = useState<EnvHidden>({
     server: false,
     clientIP: false,
     browser: false,
     db: false,
-    entorno: false,         // ← nuevo nombre
+    entorno: false,
   });
+
+  /* Versiones */
+  const [versions, setVersions] = useState<Version[]>([]);
 
   /* Campos APP */
   const [isApp, setIsApp] = useState(false);
@@ -113,6 +117,22 @@ export default function CreateJiraForm() {
     setSteps(reorder(steps, r.source.index, r.destination.index));
   };
 
+  /* ---------- Versiones helpers ---------- */
+  const handleVersionChange = (
+    idx: number,
+    field: keyof Version,
+    val: string,
+  ) => {
+    const next = versions.map((v, i) =>
+      i === idx ? { ...v, [field]: val } : v,
+    );
+    setVersions(next);
+  };
+  const addVersion = () =>
+    setVersions([...versions, { appName: "", appVersion: "" }]);
+  const removeVersion = (idx: number) =>
+    setVersions(versions.filter((_, i) => i !== idx));
+
   /* ---------- Reinicio completo ---------- */
   const resetForm = () => {
     setProject("");
@@ -133,6 +153,8 @@ export default function CreateJiraForm() {
       db: false,
       entorno: false,
     });
+
+    setVersions([]);
 
     setIsApp(false);
     setEndpoint("");
@@ -160,14 +182,19 @@ export default function CreateJiraForm() {
       .filter(Boolean)
       .join("\n");
 
+    const versionsLines = versions
+      .filter((v) => v.appName.trim() || v.appVersion.trim())
+      .map((v) => `- ${v.appName || "?"}: ${v.appVersion || "?"}`)
+      .join("\n");
+
     const appLines = !isApp
       ? ""
       : [
           endpoint && `- Endpoint: ${endpoint}`,
-          os       && `- SO / Versión: ${os}`,
-          device   && `- Dispositivo: ${device}`,
+          os && `- SO / Versión: ${os}`,
+          device && `- Dispositivo: ${device}`,
           preconds && `- Precondiciones: ${preconds}`,
-          lang     && `- Idioma: ${lang}`,
+          lang && `- Idioma: ${lang}`,
         ]
           .filter(Boolean)
           .join("\n") || "_";
@@ -177,7 +204,6 @@ export default function CreateJiraForm() {
       .map((s, i) => `${i + 1}. ${s.trim()}`)
       .join("\n");
 
-    /* ➜ Sección Evidencias añadida al final */
     const evidencesSection =
       "**Evidencias:**\nAñade aquí tus evidencias correspondientes, como capturas de pantalla, logs relevantes, vídeos o cualquier otro dato que facilite la comprensión del error reportado:";
 
@@ -188,6 +214,7 @@ export default function CreateJiraForm() {
       sec("Resultado real", actual),
       sec("Impacto", impact),
       sec("Entorno", envLines || "_"),
+      versionsLines && sec("Versiones de aplicativos/componentes", versionsLines),
       isApp ? sec("Detalles APP", appLines) : "",
       evidencesSection,
     ]
@@ -200,7 +227,6 @@ export default function CreateJiraForm() {
   /* ---------- 3. Render ---------- */
   return (
     <>
-      {/* Toast */}
       {toast && (
         <div className="fixed top-5 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-2 rounded shadow animate-fadeIn z-50">
           {toast}
@@ -525,6 +551,52 @@ export default function CreateJiraForm() {
               className="mt-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
             >
               + Añadir campo
+            </button>
+          </div>
+
+          {/* Versiones de aplicativos/componentes */}
+          <div className="mt-6 space-y-3">
+            <label className="block font-medium text-gray-700">
+              Versiones de Aplicativos/Componentes
+            </label>
+            {versions.map((v, i) => (
+              <div key={i} className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  aria-label={`Nombre aplicativo ${i + 1}`}
+                  className="border p-2 rounded flex-grow"
+                  placeholder="Nombre aplicativo"
+                  value={v.appName}
+                  onChange={(e) =>
+                    handleVersionChange(i, "appName", e.target.value)
+                  }
+                />
+                <input
+                  type="text"
+                  aria-label={`Versión aplicativo ${i + 1}`}
+                  className="border p-2 rounded flex-grow"
+                  placeholder="Versión"
+                  value={v.appVersion}
+                  onChange={(e) =>
+                    handleVersionChange(i, "appVersion", e.target.value)
+                  }
+                />
+                <button
+                  type="button"
+                  onClick={() => removeVersion(i)}
+                  className="text-red-600 hover:text-red-800 font-bold px-2 py-1"
+                  title="Eliminar esta versión"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addVersion}
+              className="mt-2 px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600"
+            >
+              + Añadir versión
             </button>
           </div>
 
