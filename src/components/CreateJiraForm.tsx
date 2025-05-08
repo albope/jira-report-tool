@@ -30,7 +30,7 @@ export default function CreateJiraForm() {
   const [errorDesc, setErrorDesc] = useState("");
 
   const [problem, setProblem] = useState("");
-  const [steps, setSteps] = useState<string[]>([""]); // ahora array
+  const [steps, setSteps] = useState<string[]>([""]);
   const [expected, setExpected] = useState("");
   const [actual, setActual] = useState("");
   const [impact, setImpact] = useState("");
@@ -112,6 +112,37 @@ export default function CreateJiraForm() {
   const onDragEnd = (r: DropResult) => {
     if (!r.destination) return;
     setSteps(reorder(steps, r.source.index, r.destination.index));
+  };
+
+  /* ---------- Reinicio completo ---------- */
+  const resetForm = () => {
+    setProject("");
+    setTool("");
+    setErrorDesc("");
+
+    setProblem("");
+    setSteps([""]);
+    setExpected("");
+    setActual("");
+    setImpact("");
+
+    setEnv({ server: "", clientIP: "", browser: "", db: "", env: "" });
+    setHidden({
+      server: false,
+      clientIP: false,
+      browser: false,
+      db: false,
+      env: false,
+    });
+
+    setIsApp(false);
+    setEndpoint("");
+    setOs("");
+    setDevice("");
+    setPreconds("");
+    setLang("");
+
+    setCustomFields([]);
   };
 
   /* ---------- Genera contenido JIRA ---------- */
@@ -227,7 +258,7 @@ export default function CreateJiraForm() {
             placeholder="Descripción detallada del problema"
           />
 
-          {/* NUEVA sección Pasos */}
+          {/* Pasos para reproducir */}
           <div>
             <label className="block font-medium mb-1">
               Pasos para reproducir
@@ -507,13 +538,22 @@ export default function CreateJiraForm() {
             </button>
           </div>
 
-          {/* Botón copiar contenido */}
-          <div className="mt-6">
+          {/* Botones finales ------------------------------------------------ */}
+          <div className="mt-6 flex justify-between">
+            {/* Copiar */}
             <button
               onClick={() => handleCopy(content, "Contenido copiado")}
               className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
             >
               Copiar contenido del JIRA
+            </button>
+
+            {/* Reiniciar */}
+            <button
+              onClick={resetForm}
+              className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm"
+            >
+              Reiniciar formulario
             </button>
           </div>
         </section>
