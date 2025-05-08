@@ -12,7 +12,6 @@ type EnvHidden = {
   db: boolean;
   env: boolean;
 };
-
 type CustomField = { label: string; value: string };
 
 /* ────────────────── Componente ────────────────── */
@@ -57,6 +56,13 @@ export default function CreateJiraForm() {
   /* Campos personalizados */
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
 
+  /* Toast de “copiado” */
+  const [toast, setToast] = useState<string | null>(null);
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2000);
+  };
+
   /* 2. Helpers */
   const toCamel = (s: string) =>
     s
@@ -74,9 +80,12 @@ export default function CreateJiraForm() {
     tool.trim()
   )} - ${errorDesc.trim()}`;
 
-  const copyToClipboard = (txt: string) => navigator.clipboard.writeText(txt);
+  /** Copia texto al portapapeles y muestra toast */
+  const handleCopy = (txt: string, what: "Título copiado" | "Contenido copiado") => {
+    navigator.clipboard.writeText(txt).then(() => showToast(what));
+  };
 
-  /* Genera el cuerpo con negrita (<strong> en Jira ⇒ **texto**) */
+  /* Genera el cuerpo con negrita (**texto**) */
   const buildContent = () => {
     const bold = (t: string) => `**${t}:**`;
     const sec = (t: string, c: string) => `${bold(t)}\n${c.trim() || "_"}`;
@@ -124,320 +133,329 @@ export default function CreateJiraForm() {
 
   /* 3. Render */
   return (
-    <div className="max-w-3xl mx-auto space-y-8 bg-white p-6 rounded shadow">
-      {/* Cabecera */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Crear un nuevo JIRA</h2>
-
-        {/* Botón volver a la landing (estética solicitada) */}
-        <button
-          onClick={() => router.push("/")}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors"
-        >
-          ← Volver a la página principal
-        </button>
-      </div>
-
-      {/* ─────── Datos básicos + vista previa ─────── */}
-      <section className="space-y-4">
-        <div>
-          <label className="block font-medium">Proyecto</label>
-          <input
-            className="border p-2 rounded w-full"
-            value={project}
-            onChange={(e) => setProject(e.target.value.toUpperCase())}
-            placeholder="ATMV"
-          />
+    <>
+      {/* Toast global (solo cuando toast !== null) */}
+      {toast && (
+        <div className="fixed top-5 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-2 rounded shadow transition-opacity animate-fadeIn z-50">
+          {toast}
         </div>
-        <div>
-          <label className="block font-medium">Herramienta</label>
-          <input
-            className="border p-2 rounded w-full"
-            value={tool}
-            onChange={(e) => setTool(e.target.value)}
-            placeholder="ImportadorPlanificación"
-          />
-        </div>
-        <div>
-          <label className="block font-medium">Descripción breve del error</label>
-          <input
-            className="border p-2 rounded w-full"
-            value={errorDesc}
-            onChange={(e) => setErrorDesc(e.target.value)}
-            placeholder="Error al cargar datos..."
-          />
-        </div>
+      )}
 
-        <JiraPreview title={title} />
+      <div className="max-w-3xl mx-auto space-y-8 bg-white p-6 rounded shadow">
+        {/* Cabecera */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">Crear un nuevo JIRA</h2>
 
-        {/* Botón copiar título (solo este aquí) */}
-        <button
-          onClick={() => copyToClipboard(title)}
-          className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
-        >
-          Copiar título
-        </button>
-      </section>
-
-      {/* ─────── Detalle problema ─────── */}
-      <section className="space-y-4">
-        <div>
-          <label className="block font-medium">Descripción del problema</label>
-          <textarea
-            className="border p-2 rounded w-full"
-            rows={3}
-            value={problem}
-            onChange={(e) => setProblem(e.target.value)}
-            placeholder="Descripción detallada del problema"
-          />
-        </div>
-
-        <div>
-          <label className="block font-medium">Pasos para reproducir</label>
-          <textarea
-            className="border p-2 rounded w-full"
-            rows={4}
-            value={steps}
-            onChange={(e) => setSteps(e.target.value)}
-            placeholder="1. …"
-          />
-        </div>
-
-        <div>
-          <label className="block font-medium">Resultado esperado</label>
-          <textarea
-            className="border p-2 rounded w-full"
-            rows={2}
-            value={expected}
-            onChange={(e) => setExpected(e.target.value)}
-            placeholder="Resultado esperado"
-          />
-        </div>
-
-        <div>
-          <label className="block font-medium">Resultado real</label>
-          <textarea
-            className="border p-2 rounded w-full"
-            rows={2}
-            value={actual}
-            onChange={(e) => setActual(e.target.value)}
-            placeholder="Resultado real"
-          />
-        </div>
-
-        <div>
-  <label htmlFor="impact" className="block font-medium">Impacto del error</label>
-  <select
-    id="impact"
-    className="border p-2 rounded w-full bg-white"
-    value={impact}
-    onChange={(e) => setImpact(e.target.value)}
-  >
-    <option value="" disabled>Selecciona el impacto del error...</option>
-    <option value="Crítico">Crítico - Bloquea completamente el uso del sistema</option>
-    <option value="Alto">Alto - Impacto significativo con alternativas</option>
-    <option value="Medio">Medio - Afecta algunas funciones</option>
-    <option value="Bajo">Bajo - Problema menor sin impacto principal</option>
-    <option value="Visual">Visual - Solo afecta apariencia o estilo</option>
-    <option value="Mejora">Mejora - Oportunidad para mejorar</option>
-  </select>
-</div>
-      </section>
-
-      {/* ─────── Entorno de pruebas ─────── */}
-      <section>
-        <h3 className="font-semibold mb-2">Entorno de pruebas</h3>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          {!hidden.server && (
-            <Field
-              id="server"
-              label="Servidor de pruebas"
-              value={env.server}
-              setValue={(v) => setEnv({ ...env, server: v })}
-              onHide={() => setHidden({ ...hidden, server: true })}
-            />
-          )}
-          {!hidden.clientIP && (
-            <Field
-              id="clientIP"
-              label="IP Cliente"
-              value={env.clientIP}
-              setValue={(v) => setEnv({ ...env, clientIP: v })}
-              onHide={() => setHidden({ ...hidden, clientIP: true })}
-            />
-          )}
-          {!hidden.browser && (
-            <Field
-              id="browser"
-              label="Navegador"
-              value={env.browser}
-              setValue={(v) => setEnv({ ...env, browser: v })}
-              onHide={() => setHidden({ ...hidden, browser: true })}
-            />
-          )}
-          {!hidden.db && (
-            <Field
-              id="db"
-              label="Base de datos"
-              value={env.db}
-              setValue={(v) => setEnv({ ...env, db: v })}
-              onHide={() => setHidden({ ...hidden, db: true })}
-            />
-          )}
-          {!hidden.env && (
-            <Field
-              id="env"
-              label="Ambiente"
-              value={env.env}
-              setValue={(v) => setEnv({ ...env, env: v })}
-              onHide={() => setHidden({ ...hidden, env: true })}
-            />
-          )}
-        </div>
-
-        {Object.values(hidden).some(Boolean) && (
           <button
-            onClick={() =>
-              setHidden({
-                server: false,
-                clientIP: false,
-                browser: false,
-                db: false,
-                env: false,
-              })
-            }
-            className="text-sm text-gray-600 mt-3 underline"
+            onClick={() => router.push("/")}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors"
           >
-            Mostrar todos los campos
+            ← Volver a la página principal
           </button>
-        )}
-
-        {/* ─────── Checkbox APP ─────── */}
-        <div className="mt-6">
-          <label className="inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              className="form-checkbox h-5 w-5 text-blue-600 rounded"
-              checked={isApp}
-              onChange={(e) => setIsApp(e.target.checked)}
-            />
-            <span className="ml-2 text-gray-700">
-              ¿Es validación de una APP Móvil/Escritorio?
-            </span>
-          </label>
         </div>
 
-        {/* ─────── Detalles APP ─────── */}
-        {isApp && (
-          <div className="mt-4 border p-3 rounded space-y-3 bg-blue-50 border-blue-200">
-            <h4 className="font-semibold text-blue-800">Detalles de la APP</h4>
-
-            <AppField
-              id="endpoint"
-              label="Endpoint (si aplica)"
-              placeholder="https://api.ejemplo.com"
-              value={endpoint}
-              setValue={setEndpoint}
-            />
-            <AppField
-              id="os"
-              label="SO / Versión"
-              placeholder="Android 13, iOS 16.5, Windows 11"
-              value={os}
-              setValue={setOs}
-            />
-            <AppField
-              id="device"
-              label="Dispositivo de Pruebas"
-              placeholder="Pixel 8, iPhone 14 Pro, PC…"
-              value={device}
-              setValue={setDevice}
-            />
-            <AppTextArea
-              id="preconds"
-              label="Precondiciones Específicas APP"
-              value={preconds}
-              setValue={setPreconds}
-            />
-            <AppField
-              id="lang"
-              label="Idioma Configurado"
-              placeholder="es-ES, en-US"
-              value={lang}
-              setValue={setLang}
+        {/* ─────── Datos básicos + vista previa ─────── */}
+        <section className="space-y-4">
+          <div>
+            <label className="block font-medium">Proyecto</label>
+            <input
+              className="border p-2 rounded w-full"
+              value={project}
+              onChange={(e) => setProject(e.target.value.toUpperCase())}
+              placeholder="ATMV"
             />
           </div>
-        )}
+          <div>
+            <label className="block font-medium">Herramienta</label>
+            <input
+              className="border p-2 rounded w-full"
+              value={tool}
+              onChange={(e) => setTool(e.target.value)}
+              placeholder="ImportadorPlanificación"
+            />
+          </div>
+          <div>
+            <label className="block font-medium">Descripción breve del error</label>
+            <input
+              className="border p-2 rounded w-full"
+              value={errorDesc}
+              onChange={(e) => setErrorDesc(e.target.value)}
+              placeholder="Error al cargar datos..."
+            />
+          </div>
 
-        {/* ─────── Campos personalizados ─────── */}
-        <div className="mt-6 space-y-2">
-          <h4 className="font-medium">Campos personalizados</h4>
-          {customFields.map((f, i) => (
-            <div key={i} className="flex gap-2">
-              <input
-                className="border p-2 rounded w-1/2 text-sm"
-                placeholder="Nombre"
-                value={f.label}
-                onChange={(e) => {
-                  const n = [...customFields];
-                  n[i].label = e.target.value;
-                  setCustomFields(n);
-                }}
-              />
-              <input
-                className="border p-2 rounded w-1/2 text-sm"
-                placeholder="Valor"
-                value={f.value}
-                onChange={(e) => {
-                  const n = [...customFields];
-                  n[i].value = e.target.value;
-                  setCustomFields(n);
-                }}
-              />
-              <button
-                className="text-red-600 font-bold"
-                onClick={() =>
-                  setCustomFields(customFields.filter((_, j) => j !== i))
-                }
-              >
-                ✕
-              </button>
-            </div>
-          ))}
-          <button
-            onClick={() =>
-              setCustomFields([...customFields, { label: "", value: "" }])
-            }
-            className="mt-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
-          >
-            + Añadir campo
-          </button>
-        </div>
+          <JiraPreview title={title} />
 
-        {/* ─────── Botón copiar contenido ─────── */}
-        <div className="mt-6">
+          {/* Botón copiar título */}
           <button
-            onClick={() => copyToClipboard(content)}
+            onClick={() => handleCopy(title, "Título copiado")}
             className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
           >
-            Copiar contenido del JIRA
+            Copiar título
           </button>
-        </div>
-      </section>
-    </div>
+        </section>
+
+        {/* ─────── Detalle problema ─────── */}
+        <section className="space-y-4">
+          <TextArea
+            label="Descripción del problema"
+            rows={3}
+            value={problem}
+            setValue={setProblem}
+            placeholder="Descripción detallada del problema"
+          />
+          <TextArea
+            label="Pasos para reproducir"
+            rows={4}
+            value={steps}
+            setValue={setSteps}
+            placeholder="1. …"
+          />
+          <TextArea
+            label="Resultado esperado"
+            rows={2}
+            value={expected}
+            setValue={setExpected}
+            placeholder="Resultado esperado"
+          />
+          <TextArea
+            label="Resultado real"
+            rows={2}
+            value={actual}
+            setValue={setActual}
+            placeholder="Resultado real"
+          />
+
+          {/* Dropdown Impacto */}
+          <div>
+            <label htmlFor="impact" className="block font-medium">
+              Impacto del error
+            </label>
+            <select
+              id="impact"
+              className="border p-2 rounded w-full bg-white"
+              value={impact}
+              onChange={(e) => setImpact(e.target.value)}
+            >
+              <option value="" disabled>
+                Selecciona el impacto del error…
+              </option>
+              <option value="Crítico">
+                Crítico – Bloquea completamente el uso del sistema
+              </option>
+              <option value="Alto">
+                Alto – Impacto significativo con alternativas
+              </option>
+              <option value="Medio">Medio – Afecta algunas funciones</option>
+              <option value="Bajo">
+                Bajo – Problema menor sin impacto principal
+              </option>
+              <option value="Visual">Visual – Solo apariencia/estilo</option>
+              <option value="Mejora">Mejora – Oportunidad de mejora</option>
+            </select>
+          </div>
+        </section>
+
+        {/* ─────── Entorno de pruebas ─────── */}
+        <section>
+          <h3 className="font-semibold mb-2">Entorno de pruebas</h3>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            {!hidden.server && (
+              <Field
+                id="server"
+                label="Servidor de pruebas"
+                value={env.server}
+                setValue={(v) => setEnv({ ...env, server: v })}
+                onHide={() => setHidden({ ...hidden, server: true })}
+              />
+            )}
+            {!hidden.clientIP && (
+              <Field
+                id="clientIP"
+                label="IP Cliente"
+                value={env.clientIP}
+                setValue={(v) => setEnv({ ...env, clientIP: v })}
+                onHide={() => setHidden({ ...hidden, clientIP: true })}
+              />
+            )}
+            {!hidden.browser && (
+              <Field
+                id="browser"
+                label="Navegador"
+                value={env.browser}
+                setValue={(v) => setEnv({ ...env, browser: v })}
+                onHide={() => setHidden({ ...hidden, browser: true })}
+              />
+            )}
+            {!hidden.db && (
+              <Field
+                id="db"
+                label="Base de datos"
+                value={env.db}
+                setValue={(v) => setEnv({ ...env, db: v })}
+                onHide={() => setHidden({ ...hidden, db: true })}
+              />
+            )}
+            {!hidden.env && (
+              <Field
+                id="env"
+                label="Ambiente"
+                value={env.env}
+                setValue={(v) => setEnv({ ...env, env: v })}
+                onHide={() => setHidden({ ...hidden, env: true })}
+              />
+            )}
+          </div>
+
+          {Object.values(hidden).some(Boolean) && (
+            <button
+              onClick={() =>
+                setHidden({
+                  server: false,
+                  clientIP: false,
+                  browser: false,
+                  db: false,
+                  env: false,
+                })
+              }
+              className="text-sm text-gray-600 mt-3 underline"
+            >
+              Mostrar todos los campos
+            </button>
+          )}
+
+          {/* Checkbox APP */}
+          <div className="mt-6">
+            <label className="inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="form-checkbox h-5 w-5 text-blue-600 rounded"
+                checked={isApp}
+                onChange={(e) => setIsApp(e.target.checked)}
+              />
+              <span className="ml-2 text-gray-700">
+                ¿Es validación de una APP Móvil/Escritorio?
+              </span>
+            </label>
+          </div>
+
+          {/* Detalles APP */}
+          {isApp && (
+            <div className="mt-4 border p-3 rounded space-y-3 bg-blue-50 border-blue-200">
+              <h4 className="font-semibold text-blue-800">Detalles de la APP</h4>
+
+              <AppField
+                id="endpoint"
+                label="Endpoint (si aplica)"
+                placeholder="https://api.ejemplo.com"
+                value={endpoint}
+                setValue={setEndpoint}
+              />
+              <AppField
+                id="os"
+                label="SO / Versión"
+                placeholder="Android 13, iOS 16.5, Windows 11"
+                value={os}
+                setValue={setOs}
+              />
+              <AppField
+                id="device"
+                label="Dispositivo de Pruebas"
+                placeholder="Pixel 8, iPhone 14 Pro, PC…"
+                value={device}
+                setValue={setDevice}
+              />
+              <AppTextArea
+                id="preconds"
+                label="Precondiciones Específicas APP"
+                value={preconds}
+                setValue={setPreconds}
+              />
+              <AppField
+                id="lang"
+                label="Idioma Configurado"
+                placeholder="es-ES, en-US"
+                value={lang}
+                setValue={setLang}
+              />
+            </div>
+          )}
+
+          {/* Campos personalizados */}
+          <div className="mt-6 space-y-2">
+            <h4 className="font-medium">Campos personalizados</h4>
+            {customFields.map((f, i) => (
+              <div key={i} className="flex gap-2">
+                <input
+                  className="border p-2 rounded w-1/2 text-sm"
+                  placeholder="Nombre"
+                  value={f.label}
+                  onChange={(e) => {
+                    const n = [...customFields];
+                    n[i].label = e.target.value;
+                    setCustomFields(n);
+                  }}
+                />
+                <input
+                  className="border p-2 rounded w-1/2 text-sm"
+                  placeholder="Valor"
+                  value={f.value}
+                  onChange={(e) => {
+                    const n = [...customFields];
+                    n[i].value = e.target.value;
+                    setCustomFields(n);
+                  }}
+                />
+                <button
+                  className="text-red-600 font-bold"
+                  onClick={() =>
+                    setCustomFields(customFields.filter((_, j) => j !== i))
+                  }
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() =>
+                setCustomFields([...customFields, { label: "", value: "" }])
+              }
+              className="mt-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
+            >
+              + Añadir campo
+            </button>
+          </div>
+
+          {/* Botón copiar contenido */}
+          <div className="mt-6">
+            <button
+              onClick={() => handleCopy(content, "Contenido copiado")}
+              className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
+            >
+              Copiar contenido del JIRA
+            </button>
+          </div>
+        </section>
+      </div>
+    </>
   );
 }
 
 /* ───────────── Sub-componentes reutilizables ───────────── */
-interface FieldProps {
+function Field({
+  id,
+  label,
+  value,
+  setValue,
+  onHide,
+}: {
   id: string;
   label: string;
   value: string;
   setValue: (v: string) => void;
   onHide: () => void;
-}
-function Field({ id, label, value, setValue, onHide }: FieldProps) {
+}) {
   return (
     <div className="relative group">
       <label htmlFor={id} className="block text-sm font-medium">
@@ -514,6 +532,34 @@ function AppTextArea({
         placeholder="Escribe aquí…"
         value={value}
         onChange={(e) => setValue(e.target.value)}
+      />
+    </div>
+  );
+}
+
+/* TextArea reutilizable para los cinco campos principales */
+function TextArea({
+  label,
+  rows,
+  value,
+  setValue,
+  placeholder,
+}: {
+  label: string;
+  rows: number;
+  value: string;
+  setValue: (v: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <div>
+      <label className="block font-medium">{label}</label>
+      <textarea
+        className="border p-2 rounded w-full"
+        rows={rows}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder={placeholder}
       />
     </div>
   );
