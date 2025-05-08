@@ -555,7 +555,7 @@ export default function CreateJiraForm() {
           </div>
 
           {/* Versiones de aplicativos/componentes */}
-          <div className="mt-6 space-y-3">
+          <div className="mt-6 mb-8 space-y-3">
             <label className="block font-medium text-gray-700">
               Versiones de Aplicativos/Componentes
             </label>
