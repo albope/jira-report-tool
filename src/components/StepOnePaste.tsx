@@ -1,5 +1,8 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { Home } from "lucide-react";           // ⬅️  Icono lucide-react
+
 interface StepOnePasteProps {
   jiraContent: string;
   setJiraContent: (value: string) => void;
@@ -11,25 +14,46 @@ export default function StepOnePaste({
   setJiraContent,
   onParse,
 }: StepOnePasteProps) {
+  const router = useRouter();
+
   return (
     <div
       className="
+        relative z-10                         /* Para posicionar el botón flotante */
         max-w-3xl mx-auto
         bg-gradient-to-br from-white via-blue-50 to-white
-        shadow-lg rounded-lg p-8 space-y-6 relative z-10
+        shadow-lg rounded-lg p-8 space-y-6
       "
     >
+      {/* ───────── Botón “Inicio” (icono casa) ───────── */}
+      <button
+        onClick={() => router.push("/")}
+        title="Volver al inicio"
+        className="
+          absolute top-4 right-4
+          inline-flex items-center justify-center
+          h-9 w-9 rounded-full
+          bg-gray-100 text-gray-700
+          hover:bg-blue-600 hover:text-white
+          transition-colors duration-150
+          focus:outline-none focus:ring-2 focus:ring-blue-500
+        "
+      >
+        <Home className="h-5 w-5" />
+      </button>
+
       {/* Encabezado principal */}
       <div className="space-y-3">
         <h1 className="text-3xl font-bold text-gray-800">
           Generador de reportes
         </h1>
         <p className="text-gray-600 text-lg">
-          Esta herramienta te permite crear reportes profesionales a partir del contenido de tu JIRA de forma rápida y sencilla.
+          Esta herramienta te permite crear reportes profesionales a partir del
+          contenido de tu JIRA de forma rápida y sencilla.
         </p>
       </div>
 
-      {/* Encabezado del Paso 1 con ícono + título + subtítulo */}
+      {/* Encabezado del Paso 1 */}
       <div className="mb-6">
         <div className="flex items-center mb-2 space-x-2">
           {/* Ícono circular */}
@@ -44,35 +68,23 @@ export default function StepOnePaste({
             </svg>
           </div>
 
-          <h2 className="text-xl font-bold text-gray-800">
-            Paso 1
-          </h2>
+          <h2 className="text-xl font-bold text-gray-800">Paso 1</h2>
         </div>
 
-        <p className="text-gray-600 ml-10">
-          Ingresa el contenido del JIRA
-        </p>
+        <p className="text-gray-600 ml-10">Ingresa el contenido del JIRA</p>
 
         {/* Línea divisoria */}
         <hr className="mt-3 border-gray-200" />
       </div>
 
-      {/* Área para pegar el contenido del JIRA */}
+      {/* Área de pegado */}
       <div className="space-y-2">
         <textarea
           id="jira-input"
           className="
-            w-full
-            h-40
-            border
-            border-gray-300
-            rounded-lg
-            p-2
+            w-full h-40 border border-gray-300 rounded-lg p-2
             placeholder:text-gray-400
-            focus:outline-none
-            focus:ring-2
-            focus:ring-blue-500
-            focus:border-transparent
+            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
             shadow-inner
           "
           placeholder="Pega aquí el contenido del JIRA para el cual quieras generar un reporte."
@@ -81,23 +93,16 @@ export default function StepOnePaste({
         />
       </div>
 
-      {/* Botón para pasar al siguiente paso */}
+      {/* Botón siguiente paso */}
       <div className="pt-2">
         <button
           onClick={onParse}
           className="
-            bg-blue-600
-            text-white
-            py-2
-            px-6
-            rounded-lg
+            bg-blue-600 text-white
+            py-2 px-6 rounded-lg
             hover:bg-blue-700
-            transition
-            duration-200
-            focus:outline-none
-            focus:ring-2
-            focus:ring-blue-500
-            focus:ring-offset-2
+            transition duration-200
+            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
           "
         >
           Siguiente Paso
