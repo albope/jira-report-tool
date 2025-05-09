@@ -9,6 +9,7 @@ import {
   DropResult,
 } from "@hello-pangea/dnd";
 import JiraPreview from "./JiraPreview";
+import { Home } from "lucide-react";
 
 /* ─────────────────── Tipos ─────────────────── */
 type EnvHidden = {
@@ -172,11 +173,11 @@ export default function CreateJiraForm() {
     const sec = (t: string, c: string) => `${bold(t)}\n${c.trim() || "_"}`;
 
     const envLines = [
-      !hidden.server   && env.server   && `- **Servidor de pruebas**: ${env.server}`,
+      !hidden.server && env.server && `- **Servidor de pruebas**: ${env.server}`,
       !hidden.clientIP && env.clientIP && `- **IP Cliente**: ${env.clientIP}`,
-      !hidden.browser  && env.browser  && `- **Navegador**: ${env.browser}`,
-      !hidden.db       && env.db       && `- **Base de datos**: ${env.db}`,
-      !hidden.entorno  && env.entorno  && `- **Entorno**: ${env.entorno}`,
+      !hidden.browser && env.browser && `- **Navegador**: ${env.browser}`,
+      !hidden.db && env.db && `- **Base de datos**: ${env.db}`,
+      !hidden.entorno && env.entorno && `- **Entorno**: ${env.entorno}`,
       ...customFields.map((f) => `- **${f.label}**: ${f.value}`),
     ]
       .filter(Boolean)
@@ -190,14 +191,14 @@ export default function CreateJiraForm() {
     const appLines = !isApp
       ? ""
       : [
-          endpoint && `- Endpoint: ${endpoint}`,
-          os && `- SO / Versión: ${os}`,
-          device && `- Dispositivo: ${device}`,
-          preconds && `- Precondiciones: ${preconds}`,
-          lang && `- Idioma: ${lang}`,
-        ]
-          .filter(Boolean)
-          .join("\n") || "_";
+        endpoint && `- Endpoint: ${endpoint}`,
+        os && `- SO / Versión: ${os}`,
+        device && `- Dispositivo: ${device}`,
+        preconds && `- Precondiciones: ${preconds}`,
+        lang && `- Idioma: ${lang}`,
+      ]
+        .filter(Boolean)
+        .join("\n") || "_";
 
     const stepsBlock = steps
       .filter((s) => s.trim())
@@ -234,19 +235,47 @@ export default function CreateJiraForm() {
       )}
 
       <div className="max-w-3xl mx-auto space-y-8 bg-white p-6 rounded shadow">
-        {/* Cabecera */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Crear un nuevo JIRA</h2>
-          <button
-            onClick={() => router.push("/")}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors"
-          >
-            ← Volver a la página principal
-          </button>
-        </div>
 
+        <>
+          {/* Cabecera */}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold">Crear un nuevo JIRA</h2>
+              <p className="text-gray-600 text-sm mt-2">
+                Completa los campos para crear un JIRA detallado, desde la descripción del problema hasta las versiones del sistema.
+              </p>
+            </div>
+
+            {/* envuelve tu header en `relative` y añade: */}
+            <button
+              onClick={() => router.push("/")}
+              title="Volver al inicio"
+              className="
+    inline-flex items-center justify-center
+    px-2.5 py-1.5
+    rounded-full
+    border border-gray-300
+    text-gray-600
+    hover:bg-blue-600 hover:text-white
+    transition-colors duration-150
+    relative
+    -mt-20
+  "
+            >
+              <Home className="h-5 w-5" />
+            </button>
+          </div>
+        </>
         {/* Datos básicos */}
-        <section className="space-y-4">
+        {/* ---------- Sección Título del JIRA ---------- */}
+        <section className="space-y-2">
+          <h3 className="text-xl font-semibold text-gray-900">
+            Configura el título del JIRA
+          </h3>
+          <p className="text-sm text-gray-600">
+            Introduce los datos clave para generar automáticamente el título del ticket.
+          </p>
+
           <Input
             label="Proyecto"
             value={project}
@@ -270,12 +299,21 @@ export default function CreateJiraForm() {
 
           <button
             onClick={() => handleCopy(title, "Título copiado")}
-            className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
+            className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm mt-2"
           >
             Copiar título
           </button>
         </section>
 
+{/* ---------- Sección Detalles del Problema y Entorno ---------- */}
+<section className="space-y-3 mb-8">
+  <h3 className="text-xl font-semibold text-gray-900">
+    Configura el contenido del JIRA
+  </h3>
+  <p className="text-sm text-gray-500 leading-relaxed max-w-xl">
+    Describe el problema de forma clara y precisa, incluyendo los pasos para reproducirlo, el resultado esperado y el entorno en el que ocurrió para facilitar su diagnóstico.
+  </p>
+</section>
         {/* Detalle problema */}
         <section className="space-y-4">
           <TextArea
