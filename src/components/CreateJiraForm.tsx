@@ -56,6 +56,9 @@ export default function CreateJiraForm() {
   /* Versiones */
   const [versions, setVersions] = useState<Version[]>([]);
 
+  /* Evidencias (Data-URI) */
+  const [evidences, setEvidences] = useState<string[]>([]);
+
   /* Campos APP */
   const [isApp, setIsApp] = useState(false);
   const [endpoint, setEndpoint] = useState("");
@@ -81,9 +84,7 @@ export default function CreateJiraForm() {
       .split(" ")
       .filter(Boolean)
       .map((w, i) =>
-        i === 0
-          ? w.toLowerCase()
-          : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(),
+        i === 0 ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(),
       )
       .join("");
 
@@ -105,8 +106,7 @@ export default function CreateJiraForm() {
     next[idx] = val;
     setSteps(next);
   };
-  const removeStep = (idx: number) =>
-    setSteps(steps.filter((_, i) => i !== idx));
+  const removeStep = (idx: number) => setSteps(steps.filter((_, i) => i !== idx));
   const reorder = (list: string[], start: number, end: number) => {
     const res = Array.from(list);
     const [moved] = res.splice(start, 1);
@@ -134,6 +134,29 @@ export default function CreateJiraForm() {
   const removeVersion = (idx: number) =>
     setVersions(versions.filter((_, i) => i !== idx));
 
+  /* ---------- Evidencias helpers ---------- */
+  const readFileAsBase64 = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  const addEvidenceFiles = async (files: FileList | null) => {
+    if (!files?.length) return;
+    try {
+      const b64s = await Promise.all(Array.from(files).map(readFileAsBase64));
+      setEvidences((prev) => [...prev, ...b64s]);
+    } catch (err) {
+      console.error("Error leyendo evidencias:", err);
+      alert("Hubo un error al cargar una o más imágenes.");
+    }
+  };
+
+  const removeEvidence = (idx: number) =>
+    setEvidences((prev) => prev.filter((_, i) => i !== idx));
+
   /* ---------- Reinicio completo ---------- */
   const resetForm = () => {
     setProject("");
@@ -156,6 +179,7 @@ export default function CreateJiraForm() {
     });
 
     setVersions([]);
+    setEvidences([]);
 
     setIsApp(false);
     setEndpoint("");
@@ -188,25 +212,31 @@ export default function CreateJiraForm() {
       .map((v) => `- ${v.appName || "?"}: ${v.appVersion || "?"}`)
       .join("\n");
 
-    const appLines = !isApp
-      ? ""
-      : [
-        endpoint && `- Endpoint: ${endpoint}`,
-        os && `- SO / Versión: ${os}`,
-        device && `- Dispositivo: ${device}`,
-        preconds && `- Precondiciones: ${preconds}`,
-        lang && `- Idioma: ${lang}`,
-      ]
-        .filter(Boolean)
-        .join("\n") || "_";
+    const appLines =
+      !isApp
+        ? ""
+        : [
+          endpoint && `- Endpoint: ${endpoint}`,
+          os && `- SO / Versión: ${os}`,
+          device && `- Dispositivo: ${device}`,
+          preconds && `- Precondiciones: ${preconds}`,
+          lang && `- Idioma: ${lang}`,
+        ]
+          .filter(Boolean)
+          .join("\n") || "_";
 
     const stepsBlock = steps
       .filter((s) => s.trim())
       .map((s, i) => `${i + 1}. ${s.trim()}`)
       .join("\n");
 
-    const evidencesSection =
-      "**Evidencias:**\nAñade aquí tus evidencias correspondientes, como capturas de pantalla, logs relevantes, vídeos o cualquier otro dato que facilite la comprensión del error reportado:";
+    const evidencesHeader =
+      "**Evidencias:**"
+    /* ------------- CAMBIO CLAVE ------------- */
+    const evidencesLines =
+      evidences.length > 0
+        ? evidences.map((src, i) => `![Evidencia ${i + 1}](${src})`).join("\n")
+        : "_Sin evidencias adjuntas_";
 
     return [
       sec("Descripción", problem),
@@ -215,9 +245,10 @@ export default function CreateJiraForm() {
       sec("Resultado real", actual),
       sec("Impacto", impact),
       sec("Entorno", envLines || "_"),
-      versionsLines && sec("Versiones de aplicativos/componentes", versionsLines),
+      versionsLines &&
+      sec("Versiones de aplicativos/componentes", versionsLines),
       isApp ? sec("Detalles APP", appLines) : "",
-      evidencesSection,
+      `${evidencesHeader}\n${evidencesLines}`,
     ]
       .filter(Boolean)
       .join("\n\n");
@@ -235,45 +266,33 @@ export default function CreateJiraForm() {
       )}
 
       <div className="max-w-3xl mx-auto space-y-8 bg-white p-6 rounded shadow">
-
-        <>
-          {/* Cabecera */}
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-bold">Crear un nuevo JIRA</h2>
-              <p className="text-gray-600 text-sm mt-2">
-                Completa los campos para crear un JIRA detallado, desde la descripción del problema hasta las versiones del sistema.
-              </p>
-            </div>
-
-            {/* envuelve tu header en `relative` y añade: */}
-            <button
-              onClick={() => router.push("/")}
-              title="Volver al inicio"
-              className="
-    inline-flex items-center justify-center
-    px-2.5 py-1.5
-    rounded-full
-    border border-gray-300
-    text-gray-600
-    hover:bg-blue-600 hover:text-white
-    transition-colors duration-150
-    relative
-    -mt-20
-  "
-            >
-              <Home className="h-5 w-5" />
-            </button>
+        {/* Cabecera */}
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold">Crear un nuevo JIRA</h2>
+            <p className="text-gray-600 text-sm mt-1">
+              Completa los campos para crear un JIRA detallado, desde la
+              descripción del problema hasta las versiones del sistema.
+            </p>
           </div>
-        </>
-        {/* Datos básicos */}
+
+          <button
+            onClick={() => router.push("/")}
+            title="Volver al inicio"
+            className="inline-flex items-center justify-center px-2.5 py-1.5 rounded-full border border-gray-300 text-gray-600 hover:bg-blue-600 hover:text-white transition-colors duration-150 transform -translate-y-4"
+          >
+            <Home className="h-5 w-5" />
+          </button>
+        </div>
+
         {/* ---------- Sección Título del JIRA ---------- */}
         <section className="space-y-2">
           <h3 className="text-xl font-semibold text-gray-900">
             Configura el título del JIRA
           </h3>
           <p className="text-sm text-gray-600">
-            Introduce los datos clave para generar automáticamente el título del ticket.
+            Introduce los datos clave para generar automáticamente el título del
+            ticket.
           </p>
 
           <Input
@@ -305,16 +324,7 @@ export default function CreateJiraForm() {
           </button>
         </section>
 
-{/* ---------- Sección Detalles del Problema y Entorno ---------- */}
-<section className="space-y-3 mb-8">
-  <h3 className="text-xl font-semibold text-gray-900">
-    Configura el contenido del JIRA
-  </h3>
-  <p className="text-sm text-gray-500 leading-relaxed max-w-xl">
-    Describe el problema de forma clara y precisa, incluyendo los pasos para reproducirlo, el resultado esperado y el entorno en el que ocurrió para facilitar su diagnóstico.
-  </p>
-</section>
-        {/* Detalle problema */}
+        {/* ---------- Sección Detalles del Problema ---------- */}
         <section className="space-y-4">
           <TextArea
             label="Descripción del problema"
@@ -416,16 +426,14 @@ export default function CreateJiraForm() {
                 Alto – Impacto significativo con alternativas
               </option>
               <option value="Medio">Medio – Afecta algunas funciones</option>
-              <option value="Bajo">
-                Bajo – Problema menor sin impacto principal
-              </option>
+              <option value="Bajo">Bajo – Problema menor sin impacto principal</option>
               <option value="Visual">Visual – Solo apariencia/estilo</option>
               <option value="Mejora">Mejora – Oportunidad de mejora</option>
             </select>
           </div>
         </section>
 
-        {/* Entorno de pruebas */}
+        {/* ---------- Entorno de pruebas ---------- */}
         <section>
           <h3 className="font-semibold mb-2">Entorno de pruebas</h3>
 
@@ -546,114 +554,162 @@ export default function CreateJiraForm() {
               />
             </div>
           )}
+        </section>
 
-          {/* Campos personalizados */}
-          <div className="mt-6 space-y-2">
-            <h4 className="font-medium">Campos personalizados</h4>
-            {customFields.map((f, i) => (
-              <div key={i} className="flex gap-2">
-                <input
-                  className="border p-2 rounded w-1/2 text-sm"
-                  placeholder="Nombre"
-                  value={f.label}
-                  onChange={(e) => {
-                    const n = [...customFields];
-                    n[i].label = e.target.value;
-                    setCustomFields(n);
-                  }}
-                />
-                <input
-                  className="border p-2 rounded w-1/2 text-sm"
-                  placeholder="Valor"
-                  value={f.value}
-                  onChange={(e) => {
-                    const n = [...customFields];
-                    n[i].value = e.target.value;
-                    setCustomFields(n);
-                  }}
-                />
-                <button
-                  className="text-red-600 font-bold"
-                  onClick={() =>
-                    setCustomFields(customFields.filter((_, j) => j !== i))
-                  }
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-            <button
-              onClick={() =>
-                setCustomFields([...customFields, { label: "", value: "" }])
-              }
-              className="mt-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
-            >
-              + Añadir campo
-            </button>
-          </div>
+        {/* ---------- Campos personalizados ---------- */}
+        <section className="mt-6 space-y-2">
+          <h4 className="font-medium">Campos personalizados</h4>
+          {customFields.map((f, i) => (
+            <div key={i} className="flex gap-2">
+              <input
+                className="border p-2 rounded w-1/2 text-sm"
+                placeholder="Nombre"
+                value={f.label}
+                onChange={(e) => {
+                  const n = [...customFields];
+                  n[i].label = e.target.value;
+                  setCustomFields(n);
+                }}
+              />
+              <input
+                className="border p-2 rounded w-1/2 text-sm"
+                placeholder="Valor"
+                value={f.value}
+                onChange={(e) => {
+                  const n = [...customFields];
+                  n[i].value = e.target.value;
+                  setCustomFields(n);
+                }}
+              />
+              <button
+                className="text-red-600 font-bold"
+                onClick={() =>
+                  setCustomFields(customFields.filter((_, j) => j !== i))
+                }
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+          <button
+            onClick={() =>
+              setCustomFields([...customFields, { label: "", value: "" }])
+            }
+            className="mt-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
+          >
+            + Añadir campo
+          </button>
+        </section>
 
-          {/* Versiones de aplicativos/componentes */}
-          <div className="mt-6 mb-8 space-y-3">
-            <label className="block font-medium text-gray-700">
-              Versiones de Aplicativos/Componentes
-            </label>
-            {versions.map((v, i) => (
-              <div key={i} className="flex items-center space-x-2">
-                <input
-                  type="text"
-                  aria-label={`Nombre aplicativo ${i + 1}`}
-                  className="border p-2 rounded flex-grow"
-                  placeholder="Nombre aplicativo"
-                  value={v.appName}
-                  onChange={(e) =>
-                    handleVersionChange(i, "appName", e.target.value)
-                  }
-                />
-                <input
-                  type="text"
-                  aria-label={`Versión aplicativo ${i + 1}`}
-                  className="border p-2 rounded flex-grow"
-                  placeholder="Versión"
-                  value={v.appVersion}
-                  onChange={(e) =>
-                    handleVersionChange(i, "appVersion", e.target.value)
-                  }
+        {/* ---------- Versiones de aplicativos/componentes ---------- */}
+        <section className="mt-6 space-y-3">
+          <label className="block font-medium text-black-700">
+            Versiones de Aplicativos/Componentes
+          </label>
+          {versions.map((v, i) => (
+            <div key={i} className="flex items-center space-x-2">
+              <input
+                type="text"
+                aria-label={`Nombre aplicativo ${i + 1}`}
+                className="border p-2 rounded flex-grow"
+                placeholder="Nombre aplicativo"
+                value={v.appName}
+                onChange={(e) =>
+                  handleVersionChange(i, "appName", e.target.value)
+                }
+              />
+              <input
+                type="text"
+                aria-label={`Versión aplicativo ${i + 1}`}
+                className="border p-2 rounded flex-grow"
+                placeholder="Versión"
+                value={v.appVersion}
+                onChange={(e) =>
+                  handleVersionChange(i, "appVersion", e.target.value)
+                }
+              />
+              <button
+                type="button"
+                onClick={() => removeVersion(i)}
+                className="text-red-600 hover:text-red-800 font-bold px-2 py-1"
+                title="Eliminar esta versión"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addVersion}
+            className="mt-2 px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600"
+          >
+            + Añadir versión
+          </button>
+        </section>
+
+        {/* ---------- Evidencias ---------- */}
+        <section className="mt-6 space-y-3">
+          <label className="block font-medium text-black-700">
+            Evidencias
+          </label>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            className="mb-2 text-sm"
+            onChange={(e) => {
+              addEvidenceFiles(e.target.files);
+              if (e.target) e.target.value = "";
+            }}
+          />
+
+          <div className="flex flex-wrap gap-2 mt-2">
+            {evidences.map((src, i) => (
+              <div
+                key={i}
+                className="relative w-20 h-20 rounded overflow-hidden border group"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={src}
+                  alt={`Evidencia ${i + 1}`}
+                  className="w-full h-full object-contain"
                 />
                 <button
                   type="button"
-                  onClick={() => removeVersion(i)}
-                  className="text-red-600 hover:text-red-800 font-bold px-2 py-1"
-                  title="Eliminar esta versión"
+                  onClick={() => removeEvidence(i)}
+                  className="absolute top-0 right-0 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Eliminar esta imagen"
                 >
                   ✕
                 </button>
               </div>
             ))}
-            <button
-              type="button"
-              onClick={addVersion}
-              className="mt-2 px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600"
-            >
-              + Añadir versión
-            </button>
           </div>
+        </section>
 
-          {/* Botones finales */}
-          <div className="mt-6 flex justify-between">
-            <button
-              onClick={() => handleCopy(content, "Contenido copiado")}
-              className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
-            >
-              Copiar contenido del JIRA
-            </button>
+        {/* ---------- Botones finales ---------- */}
+        {/* ---------- Botones finales ---------- */}
+        <section className="mt-8 flex justify-between">
+          {/* Botón «Reiniciar formulario» ahora a la izquierda con confirmación */}
+          <button
+            onClick={() => {
+              if (confirm("¿Estás seguro de que quieres reiniciar todo el formulario?")) {
+                resetForm();
+              }
+            }}
+            className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm"
+          >
+            Reiniciar formulario
+          </button>
 
-            <button
-              onClick={resetForm}
-              className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm"
-            >
-              Reiniciar formulario
-            </button>
-          </div>
+          {/* Botón «Copiar contenido del JIRA» a la derecha */}
+          <button
+            onClick={() => handleCopy(content, "Contenido copiado")}
+            className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
+          >
+            Copiar contenido del JIRA
+          </button>
         </section>
       </div>
     </>
@@ -712,7 +768,6 @@ function DbSelect({
     "MySQL",
     "PostgreSQL",
     "MongoDB",
-    "N/A",
   ];
 
   return (
