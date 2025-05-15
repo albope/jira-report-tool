@@ -31,13 +31,12 @@ export default function StepOnePaste({
     try {
       const res = await fetch(`/api/jira-summary?key=${encodeURIComponent(jiraKey.trim())}`);
       if (!res.ok) {
-        // Intenta obtener más detalles del error si es posible
         let errorMsg = "No se pudo obtener el JIRA";
         try {
-            const errorData = await res.json();
-            errorMsg = errorData.error || errorMsg;
-        } catch (_e) {
-            // No hacer nada si el cuerpo del error no es JSON
+          const errorData = await res.json();
+          errorMsg = errorData.error || errorMsg;
+        } catch { // Variable _e eliminada ya que no se usa
+          // No hacer nada si el cuerpo del error no es JSON
         }
         throw new Error(errorMsg);
       }
@@ -51,11 +50,11 @@ export default function StepOnePaste({
         setJiraTitle(null);
         setJiraContent("");
       }
-    } catch (err: unknown) { // Cambiado 'any' a 'unknown'
-      console.error("Error en fetchSummary:", err); // Usar la variable 'err'
+    } catch (err: unknown) {
+      console.error("Error en fetchSummary:", err);
       let message = "Error consultando el JIRA. Puedes pegar el contenido manualmente.";
       if (err instanceof Error) {
-        message = err.message; // Usar el mensaje de error real si está disponible
+        message = err.message;
       }
       setFetchError(message);
       setJiraTitle(null);
@@ -130,7 +129,7 @@ export default function StepOnePaste({
       {fetchError && (
         <div className="text-red-500 text-sm mb-2">{fetchError}</div>
       )}
-      {fetchError && ( // Solo mostrar textarea si hubo error Y no se obtuvo título.
+      {fetchError && ( 
         <div className="space-y-2">
           <textarea
             id="jira-input"
