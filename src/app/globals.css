@@ -62,3 +62,17 @@ body {
 }
 
 /* --- Fin de Nuevas animaciones --- */
+@keyframes modalOpen {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px); /* Puedes ajustar el translateY */
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-modalOpen {
+  animation: modalOpen 0.2s ease-out forwards; /* Ajusta la duración como prefieras */
+}

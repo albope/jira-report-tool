@@ -1,247 +1,246 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { Lightbulb, X, CheckSquare, Square, Trash2, MessageSquarePlus } from 'lucide-react'; // Importar iconos
+import { format, parseISO } from 'date-fns'; // Para formatear fechas
+import { es } from 'date-fns/locale'; // Para formato en español
 
 /**
  * Estructura de cada feedback guardado.
  */
 interface FeedbackMessage {
+  id: string; // Cambiado de timestamp a id para más flexibilidad
   name: string;
   description: string;
-  timestamp: string;
+  timestamp: string; // Sigue siendo ISO string para almacenamiento
   done: boolean;
 }
 
 export default function Feedback() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // Campos del formulario
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-
-  // Lista de feedbacks (cargada desde localStorage)
   const [feedbackList, setFeedbackList] = useState<FeedbackMessage[]>([]);
 
+  // Refs para manejar el foco
+  const modalRef = useRef<HTMLDivElement>(null);
+  const openButtonRef = useRef<HTMLButtonElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
   /**
-   * Al montar, cargamos la lista de feedback de localStorage (si existe).
+   * Al montar, cargamos la lista de feedback de localStorage.
    */
   useEffect(() => {
-    const storedFeedback = localStorage.getItem("feedbackMessages");
-    if (storedFeedback) {
-      setFeedbackList(JSON.parse(storedFeedback));
+    try {
+      const storedFeedback = localStorage.getItem("feedbackMessages");
+      if (storedFeedback) {
+        setFeedbackList(JSON.parse(storedFeedback));
+      }
+    } catch (error) {
+      console.error("Error al cargar feedback de localStorage:", error);
+      // Opcional: limpiar localStorage si está corrupto
+      // localStorage.removeItem("feedbackMessages");
     }
   }, []);
 
   /**
-   * Función para persistir la lista de feedback en localStorage.
+   * Efecto para manejar el foco cuando el modal se abre/cierra.
    */
+  useEffect(() => {
+    if (isModalOpen) {
+      nameInputRef.current?.focus(); // Foco en el primer campo
+    } else {
+      openButtonRef.current?.focus(); // Devolver foco al botón que abrió el modal
+    }
+  }, [isModalOpen]);
+
+
   const saveFeedbackToStorage = (messages: FeedbackMessage[]) => {
-    localStorage.setItem("feedbackMessages", JSON.stringify(messages));
+    try {
+      localStorage.setItem("feedbackMessages", JSON.stringify(messages));
+    } catch (error) {
+      console.error("Error al guardar feedback en localStorage:", error);
+      // Aquí podrías notificar al usuario que no se pudo guardar, etc.
+    }
   };
 
-  /**
-   * Manejar el envío de un nuevo feedback.
-   */
   const handleSubmit = () => {
-    // Validar campos obligatorios
-    if (!name.trim() || !description.trim()) return;
+    if (!name.trim() || !description.trim()) {
+      alert("Por favor, completa todos los campos obligatorios."); // Feedback más directo
+      return;
+    }
 
     const newFeedback: FeedbackMessage = {
+      id: new Date().toISOString(), // Usar timestamp como ID simple y único
       name: name.trim(),
       description: description.trim(),
       timestamp: new Date().toISOString(),
       done: false,
     };
 
-    const updatedFeedback = [...feedbackList, newFeedback];
+    // Actualización inmutable
+    const updatedFeedback = [newFeedback, ...feedbackList]; // Añadir al principio para ver los más nuevos primero
     setFeedbackList(updatedFeedback);
     saveFeedbackToStorage(updatedFeedback);
 
-    // Limpiar campos
     setName("");
     setDescription("");
+    // Opcional: Cerrar el modal después de enviar
+    // setIsModalOpen(false); 
+    alert("¡Gracias por tu feedback!"); // O un toast más elegante
   };
 
-  /**
-   * Marcar/desmarcar como realizado.
-   */
-  const handleToggleDone = (index: number) => {
-    const updatedFeedback = [...feedbackList];
-    updatedFeedback[index].done = !updatedFeedback[index].done;
+  const handleToggleDone = (id: string) => {
+    const updatedFeedback = feedbackList.map(fb =>
+      fb.id === id ? { ...fb, done: !fb.done } : fb
+    );
     setFeedbackList(updatedFeedback);
     saveFeedbackToStorage(updatedFeedback);
   };
 
-  /**
-   * Eliminar un feedback.
-   */
-  const handleDeleteFeedback = (index: number) => {
-    const updatedFeedback = [...feedbackList];
-    updatedFeedback.splice(index, 1);
-    setFeedbackList(updatedFeedback);
-    saveFeedbackToStorage(updatedFeedback);
+  const handleDeleteFeedback = (id: string) => {
+    if (window.confirm("¿Estás seguro de que quieres eliminar este feedback?")) {
+      const updatedFeedback = feedbackList.filter(fb => fb.id !== id);
+      setFeedbackList(updatedFeedback);
+      saveFeedbackToStorage(updatedFeedback);
+    }
+  };
+
+  // Formatear fecha para mostrar
+  const formatTimestamp = (isoString: string) => {
+    try {
+      return format(parseISO(isoString), "d MMM yyyy, HH:mm", { locale: es });
+    } catch (error) {
+      return "Fecha inválida";
+    }
   };
 
   return (
     <>
-      {/* Botón flotante (siempre visible) */}
       <button
+        ref={openButtonRef}
         onClick={() => setIsModalOpen(true)}
-        className="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg hover:bg-blue-500 transition z-50"
+        className="fixed bottom-6 right-6 bg-blue-600 text-white p-3.5 rounded-full shadow-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-50 transition-transform hover:scale-105 z-50 flex items-center"
+        aria-label="Enviar Feedback o Reportar Bug"
       >
-        💡 Feedback + Bugs
+        <MessageSquarePlus size={24} className="mr-0 sm:mr-2"/> {/* Icono Ajustado */}
+        <span className="hidden sm:inline">Feedback + Bugs</span>
       </button>
 
-      {/* Modal emergente */}
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-          {/* Overlay semitransparente para cerrar */}
+        <div 
+          className="fixed inset-0 flex items-center justify-center z-[60] p-4" // z-index aumentado
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="feedback-modal-title"
+        >
           <div
-            className="absolute inset-0 bg-black opacity-50"
+            className="absolute inset-0 bg-black bg-opacity-60 backdrop-blur-sm" // Overlay con blur
             onClick={() => setIsModalOpen(false)}
           ></div>
 
-          {/* Contenedor del modal */}
-          <div className="relative bg-white rounded-lg p-6 w-full max-w-md z-10">
-            {/* Botón aspa (X) en esquina superior derecha */}
+          <div 
+            ref={modalRef}
+            className="relative bg-white rounded-xl shadow-2xl p-6 sm:p-8 w-full max-w-lg z-[70] transform transition-all duration-300 ease-out scale-95 opacity-0 animate-modalOpen" // Estilo y animación
+            // Animación simple (requiere definir keyframes en CSS global)
+            // @keyframes modalOpen { to { scale: 1; opacity: 1; } } .animate-modalOpen { animation: modalOpen 0.3s forwards; }
+          >
             <button
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-2 right-2 text-gray-600 hover:text-gray-900"
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
               title="Cerrar"
+              aria-label="Cerrar modal"
             >
-              {/* Ícono de aspa */}
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
+              <X size={24} />
+            </button>
+
+            <h2 id="feedback-modal-title" className="text-2xl font-semibold text-gray-800 mb-6">Enviar Feedback / Reportar Bug</h2>
+
+            <div className="space-y-5"> {/* Aumentado space-y */}
+              <div>
+                <label htmlFor="feedback-name" className="block text-sm font-medium text-gray-700 mb-1">
+                  Nombre <span className="text-red-500">*</span>
+                </label>
+                <input
+                  ref={nameInputRef}
+                  id="feedback-name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className={`w-full border rounded-md p-2.5 shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                    name.trim() === "" && description.length > 0 ? "border-red-400" : "border-gray-300" // Valida solo si se interactuó
+                  }`}
+                  placeholder="Tu nombre"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="feedback-description" className="block text-sm font-medium text-gray-700 mb-1">
+                  Descripción <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  id="feedback-description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className={`w-full border rounded-md p-2.5 shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                    description.trim() === "" && name.length > 0 ? "border-red-400" : "border-gray-300"
+                  }`}
+                  placeholder="Describe tu feedback o bug detalladamente..."
+                  rows={5} // Aumentadas filas
+                />
+              </div>
+            </div>
+
+            <div className="mt-8 flex flex-col sm:flex-row-reverse gap-3"> {/* Botones alineados y con gap */}
+              <button
+                onClick={handleSubmit}
+                disabled={name.trim() === "" || description.trim() === ""}
+                className="w-full sm:w-auto inline-flex justify-center items-center px-6 py-2.5 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            <h2 className="text-xl font-bold mb-4">Enviar Feedback / Reportar Bug</h2>
-
-            {/* Campo Nombre */}
-            <div className="mb-4">
-              <label htmlFor="feedback-name" className="block font-medium mb-1">
-                Nombre *
-              </label>
-              <input
-                id="feedback-name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className={`w-full border rounded p-2 ${
-                  name.trim() === "" ? "border-red-500" : "border-gray-300"
-                }`}
-                placeholder="Tu nombre"
-              />
+                Enviar Feedback
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="w-full sm:w-auto inline-flex justify-center items-center px-6 py-2.5 border border-gray-300 text-base font-medium rounded-lg shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              >
+                Cancelar
+              </button>
             </div>
-
-            {/* Campo Descripción */}
-            <div className="mb-4">
-              <label htmlFor="feedback-description" className="block font-medium mb-1">
-                Descripción *
-              </label>
-              <textarea
-                id="feedback-description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className={`w-full border rounded p-2 ${
-                  description.trim() === "" ? "border-red-500" : "border-gray-300"
-                }`}
-                placeholder="Describe tu feedback o bug"
-                rows={4}
-              />
-            </div>
-
-            {/* Botón Enviar */}
-            <button
-              onClick={handleSubmit}
-              disabled={name.trim() === "" || description.trim() === ""}
-              className={`w-full bg-blue-600 text-white py-2 rounded mb-4 ${
-                name.trim() === "" || description.trim() === ""
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:bg-blue-600"
-              }`}
-            >
-              Enviar
-            </button>
-
-            {/* Lista de feedbacks */}
+            
             {feedbackList.length > 0 && (
-              <div className="mt-2">
-                <h3 className="text-lg font-bold mb-2">Feedback Enviado</h3>
-                <ul className="max-h-48 overflow-y-auto space-y-2">
-                  {feedbackList.map((item, index) => (
-                    <li key={index} className="border-b py-2">
-                      {/* Encabezado con nombre y timestamp */}
-                      <div className="flex items-center justify-between">
-                        <p className="font-semibold">
-                          {item.name} - {new Date(item.timestamp).toLocaleString()}
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-700 mb-3">Feedback Registrado</h3>
+                <ul className="max-h-60 overflow-y-auto space-y-4 pr-2"> {/* Scrollbar estilizado (necesitaría tailwind-scrollbar plugin o CSS custom) */}
+                  {feedbackList.map((item) => (
+                    <li key={item.id} className={`p-4 rounded-lg shadow transition-colors ${item.done ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'} border`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <p className={`font-semibold ${item.done ? 'text-green-700' : 'text-gray-800'}`}>
+                          {item.name}
                         </p>
+                        <span className={`text-xs ${item.done ? 'text-green-600' : 'text-gray-500'}`}>
+                          {formatTimestamp(item.timestamp)}
+                        </span>
                       </div>
-
-                      {/* Descripción */}
-                      <p className="text-sm mb-2">{item.description}</p>
-
-                      {/* Acciones: marcar como realizado y borrar */}
+                      <p className={`text-sm ${item.done ? 'text-green-800 line-through' : 'text-gray-700'} mb-3 whitespace-pre-wrap`}>{item.description}</p>
                       <div className="flex items-center space-x-3">
-                        {/* Botón para marcar/desmarcar como realizado */}
                         <button
-                          onClick={() => handleToggleDone(index)}
-                          className="inline-flex items-center px-2 py-1 text-sm rounded border border-gray-300 hover:border-gray-400"
+                          onClick={() => handleToggleDone(item.id)}
+                          className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md border transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1
+                            ${item.done 
+                              ? 'border-gray-300 text-gray-600 hover:bg-gray-100 focus:ring-gray-400' 
+                              : 'border-green-500 bg-green-500 text-white hover:bg-green-600 focus:ring-green-400'}`}
                         >
-                          {item.done ? (
-                            <>
-                              {/* Ícono check en verde */}
-                              <svg
-                                className="w-4 h-4 text-green-600 mr-1"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                viewBox="0 0 24 24"
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                              </svg>
-                              <span className="text-green-700 font-semibold">Hecho</span>
-                            </>
-                          ) : (
-                            <>
-                              {/* Ícono check en gris/azul */}
-                              <svg
-                                className="w-4 h-4 text-gray-500 mr-1"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                viewBox="0 0 24 24"
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                              </svg>
-                              <span className="text-gray-700">Marcar</span>
-                            </>
-                          )}
+                          {item.done ? <Square size={14} className="mr-1.5" /> : <CheckSquare size={14} className="mr-1.5" />}
+                          {item.done ? "Marcar Pendiente" : "Marcar Hecho"}
                         </button>
-
-                        {/* Botón para borrar */}
                         <button
-                          onClick={() => handleDeleteFeedback(index)}
-                          className="inline-flex items-center px-2 py-1 text-sm rounded border border-red-300 hover:border-red-400"
+                          onClick={() => handleDeleteFeedback(item.id)}
+                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md border border-red-300 text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-400 transition-colors"
                           title="Borrar feedback"
                         >
-                          {/* Ícono de papelera */}
-                          <svg
-                            className="w-4 h-4 text-red-600 mr-1"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.136 21H7.864a2 2 0 01-1.997-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v2m1 0h6" />
-                          </svg>
-                          <span className="text-red-700">Borrar</span>
+                          <Trash2 size={14} className="mr-1.5" />
+                          Borrar
                         </button>
                       </div>
                     </li>
@@ -249,14 +248,6 @@ export default function Feedback() {
                 </ul>
               </div>
             )}
-
-            {/* Botón cerrar (extra, por si no se quiere usar la X) */}
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="mt-4 w-full bg-gray-400 text-white py-2 rounded hover:bg-gray-300 transition"
-            >
-              Cerrar
-            </button>
           </div>
         </div>
       )}
