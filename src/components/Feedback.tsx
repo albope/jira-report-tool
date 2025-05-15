@@ -1,18 +1,19 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Lightbulb, X, CheckSquare, Square, Trash2, MessageSquarePlus } from 'lucide-react'; // Importar iconos
-import { format, parseISO } from 'date-fns'; // Para formatear fechas
-import { es } from 'date-fns/locale'; // Para formato en español
+// Lightbulb eliminado de los imports ya que no se usa.
+import { X, CheckSquare, Square, Trash2, MessageSquarePlus } from 'lucide-react'; 
+import { format, parseISO } from 'date-fns'; 
+import { es } from 'date-fns/locale'; 
 
 /**
  * Estructura de cada feedback guardado.
  */
 interface FeedbackMessage {
-  id: string; // Cambiado de timestamp a id para más flexibilidad
+  id: string; 
   name: string;
   description: string;
-  timestamp: string; // Sigue siendo ISO string para almacenamiento
+  timestamp: string; 
   done: boolean;
 }
 
@@ -22,35 +23,26 @@ export default function Feedback() {
   const [description, setDescription] = useState("");
   const [feedbackList, setFeedbackList] = useState<FeedbackMessage[]>([]);
 
-  // Refs para manejar el foco
   const modalRef = useRef<HTMLDivElement>(null);
   const openButtonRef = useRef<HTMLButtonElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  /**
-   * Al montar, cargamos la lista de feedback de localStorage.
-   */
   useEffect(() => {
     try {
       const storedFeedback = localStorage.getItem("feedbackMessages");
       if (storedFeedback) {
         setFeedbackList(JSON.parse(storedFeedback));
       }
-    } catch (error) {
+    } catch (error) { // 'error' se usa aquí en console.error
       console.error("Error al cargar feedback de localStorage:", error);
-      // Opcional: limpiar localStorage si está corrupto
-      // localStorage.removeItem("feedbackMessages");
     }
   }, []);
 
-  /**
-   * Efecto para manejar el foco cuando el modal se abre/cierra.
-   */
   useEffect(() => {
     if (isModalOpen) {
-      nameInputRef.current?.focus(); // Foco en el primer campo
+      nameInputRef.current?.focus(); 
     } else {
-      openButtonRef.current?.focus(); // Devolver foco al botón que abrió el modal
+      openButtonRef.current?.focus(); 
     }
   }, [isModalOpen]);
 
@@ -58,36 +50,32 @@ export default function Feedback() {
   const saveFeedbackToStorage = (messages: FeedbackMessage[]) => {
     try {
       localStorage.setItem("feedbackMessages", JSON.stringify(messages));
-    } catch (error) {
+    } catch (error) { // 'error' se usa aquí en console.error
       console.error("Error al guardar feedback en localStorage:", error);
-      // Aquí podrías notificar al usuario que no se pudo guardar, etc.
     }
   };
 
   const handleSubmit = () => {
     if (!name.trim() || !description.trim()) {
-      alert("Por favor, completa todos los campos obligatorios."); // Feedback más directo
+      alert("Por favor, completa todos los campos obligatorios."); 
       return;
     }
 
     const newFeedback: FeedbackMessage = {
-      id: new Date().toISOString(), // Usar timestamp como ID simple y único
+      id: new Date().toISOString(), 
       name: name.trim(),
       description: description.trim(),
       timestamp: new Date().toISOString(),
       done: false,
     };
 
-    // Actualización inmutable
-    const updatedFeedback = [newFeedback, ...feedbackList]; // Añadir al principio para ver los más nuevos primero
+    const updatedFeedback = [newFeedback, ...feedbackList]; 
     setFeedbackList(updatedFeedback);
     saveFeedbackToStorage(updatedFeedback);
 
     setName("");
     setDescription("");
-    // Opcional: Cerrar el modal después de enviar
-    // setIsModalOpen(false); 
-    alert("¡Gracias por tu feedback!"); // O un toast más elegante
+    alert("¡Gracias por tu feedback!"); 
   };
 
   const handleToggleDone = (id: string) => {
@@ -106,11 +94,10 @@ export default function Feedback() {
     }
   };
 
-  // Formatear fecha para mostrar
   const formatTimestamp = (isoString: string) => {
     try {
-      return format(parseISO(isoString), "d MMM yyyy, HH:mm", { locale: es });
-    } catch (error) {
+      return format(parseISO(isoString), "d MMM yyyy, HH:mm", { locale: es }); // Corregido el formato de año a yyyy
+    } catch { // Variable 'error' eliminada ya que no se usa
       return "Fecha inválida";
     }
   };
@@ -123,27 +110,26 @@ export default function Feedback() {
         className="fixed bottom-6 right-6 bg-blue-600 text-white p-3.5 rounded-full shadow-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-50 transition-transform hover:scale-105 z-50 flex items-center"
         aria-label="Enviar Feedback o Reportar Bug"
       >
-        <MessageSquarePlus size={24} className="mr-0 sm:mr-2"/> {/* Icono Ajustado */}
+        <MessageSquarePlus size={24} className="mr-0 sm:mr-2"/> 
         <span className="hidden sm:inline">Feedback + Bugs</span>
       </button>
 
       {isModalOpen && (
         <div 
-          className="fixed inset-0 flex items-center justify-center z-[60] p-4" // z-index aumentado
+          className="fixed inset-0 flex items-center justify-center z-[60] p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="feedback-modal-title"
         >
           <div
-            className="absolute inset-0 bg-black bg-opacity-60 backdrop-blur-sm" // Overlay con blur
+            className="absolute inset-0 bg-black bg-opacity-60 backdrop-blur-sm" 
             onClick={() => setIsModalOpen(false)}
           ></div>
 
           <div 
             ref={modalRef}
-            className="relative bg-white rounded-xl shadow-2xl p-6 sm:p-8 w-full max-w-lg z-[70] transform transition-all duration-300 ease-out scale-95 opacity-0 animate-modalOpen" // Estilo y animación
-            // Animación simple (requiere definir keyframes en CSS global)
-            // @keyframes modalOpen { to { scale: 1; opacity: 1; } } .animate-modalOpen { animation: modalOpen 0.3s forwards; }
+            className="relative bg-white rounded-xl shadow-2xl p-6 sm:p-8 w-full max-w-lg z-[70] transform transition-all duration-300 ease-out scale-95 opacity-0 animate-modalOpen"
+            // Para la animación animate-modalOpen, asegúrate de tener los keyframes en tu globals.css
           >
             <button
               onClick={() => setIsModalOpen(false)}
@@ -156,7 +142,7 @@ export default function Feedback() {
 
             <h2 id="feedback-modal-title" className="text-2xl font-semibold text-gray-800 mb-6">Enviar Feedback / Reportar Bug</h2>
 
-            <div className="space-y-5"> {/* Aumentado space-y */}
+            <div className="space-y-5"> 
               <div>
                 <label htmlFor="feedback-name" className="block text-sm font-medium text-gray-700 mb-1">
                   Nombre <span className="text-red-500">*</span>
@@ -168,7 +154,7 @@ export default function Feedback() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className={`w-full border rounded-md p-2.5 shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                    name.trim() === "" && description.length > 0 ? "border-red-400" : "border-gray-300" // Valida solo si se interactuó
+                    name.trim() === "" && description.length > 0 ? "border-red-400" : "border-gray-300" 
                   }`}
                   placeholder="Tu nombre"
                 />
@@ -186,12 +172,12 @@ export default function Feedback() {
                     description.trim() === "" && name.length > 0 ? "border-red-400" : "border-gray-300"
                   }`}
                   placeholder="Describe tu feedback o bug detalladamente..."
-                  rows={5} // Aumentadas filas
+                  rows={5} 
                 />
               </div>
             </div>
 
-            <div className="mt-8 flex flex-col sm:flex-row-reverse gap-3"> {/* Botones alineados y con gap */}
+            <div className="mt-8 flex flex-col sm:flex-row-reverse gap-3"> 
               <button
                 onClick={handleSubmit}
                 disabled={name.trim() === "" || description.trim() === ""}
@@ -211,7 +197,7 @@ export default function Feedback() {
             {feedbackList.length > 0 && (
               <div className="mt-8 pt-6 border-t border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-700 mb-3">Feedback Registrado</h3>
-                <ul className="max-h-60 overflow-y-auto space-y-4 pr-2"> {/* Scrollbar estilizado (necesitaría tailwind-scrollbar plugin o CSS custom) */}
+                <ul className="max-h-60 overflow-y-auto space-y-4 pr-2"> 
                   {feedbackList.map((item) => (
                     <li key={item.id} className={`p-4 rounded-lg shadow transition-colors ${item.done ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'} border`}>
                       <div className="flex items-center justify-between mb-1">
