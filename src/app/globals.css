@@ -6,6 +6,8 @@
 :root {
   --background: #f9fafb; /* Ejemplo de color claro */
   --foreground: #111827; /* Texto oscuro */
+
+  /* Animación existente */
   @keyframes fadeInOut {
     0% { opacity: 0; }
     10% { opacity: 1; }
@@ -20,5 +22,43 @@
 
 body {
   @apply bg-[var(--background)] text-[var(--foreground)];
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"; /* Añadida una pila de fuentes más completa */
 }
+
+/* --- Nuevas animaciones para Landing Page (Estilo Apple) --- */
+
+/* Keyframes para la animación de aparición suave hacia arriba */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px); /* Comienza 20px abajo */
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0); /* Termina en su posición original */
+  }
+}
+
+/* Clase de utilidad para aplicar la animación */
+.animate-fadeInUp {
+  animation: fadeInUp 0.6s ease-out forwards; /* Duración de 0.6s, curva ease-out, mantiene el estado final */
+}
+
+/* Clases de utilidad para delays escalonados en las animaciones */
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }
+/* Puedes añadir más delays si los necesitas (e.g., .delay-500) */
+
+/*
+  Regla importante:
+  Asegura que los elementos que usarán .animate-fadeInUp
+  comiencen invisibles antes de que la animación se active.
+  Esto previene un "flash" del contenido antes de animarse.
+*/
+[class*="animate-fadeInUp"] {
+  opacity: 0; /* Comienzan invisibles */
+}
+
+/* --- Fin de Nuevas animaciones --- */
