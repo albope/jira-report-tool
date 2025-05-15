@@ -20,7 +20,6 @@ interface HiddenFields {
   ambiente: boolean;
 }
 
-/** Tipos auxiliares para tu FormData, etc. */
 interface BatteryTest {
   id: string;
   description: string;
@@ -63,14 +62,12 @@ interface FormData {
   hasIncidences: boolean;
   conclusion: string;
   datosDePrueba: string;
-  // Campos APP
   isApp?: boolean;
   endpoint?: string;
   sistemaOperativo?: string;
   dispositivoPruebas?: string;
   precondiciones?: string;
   idioma?: string;
-  // ★ NUEVO: Campos personalizados del entorno
   customEnvFields: Array<{ label: string; value: string }>;
 }
 
@@ -79,7 +76,6 @@ export default function Home() {
   const [jiraContent, setJiraContent] = useState("");
   const [parsedData, setParsedData] = useState<ParsedData | null>(null);
 
-  // Estado principal de FormData
   const [formData, setFormData] = useState<FormData>({
     jiraCode: "",
     date: new Date().toISOString().split("T")[0],
@@ -103,11 +99,12 @@ export default function Home() {
     hasIncidences: false,
     conclusion: "",
     datosDePrueba: "",
-    // Agregamos el nuevo campo en el estado inicial
     customEnvFields: [],
   });
 
-  // Estado para saber qué campos de entorno están ocultos (true = oculto)
+  // Estado para bloquear el campo código de JIRA si viene por API
+  const [jiraCodeLocked, setJiraCodeLocked] = useState(false);
+
   const [hiddenFields, setHiddenFields] = useState<HiddenFields>({
     serverPruebas: false,
     ipMaquina: false,
@@ -119,23 +116,31 @@ export default function Home() {
 
   const [report, setReport] = useState("");
 
-  // Paso 1 → 2
-  const handleParseJira = () => {
+  /**
+   * Manejo de cambio de paso y sincronización del key de JIRA.
+   */
+  const handleParseJira = (jiraKey?: string) => {
     const result = parseJiraContent(jiraContent);
     setParsedData(result);
+    if (jiraKey) {
+      setFormData((prev) => ({
+        ...prev,
+        jiraCode: jiraKey,
+      }));
+      setJiraCodeLocked(true);
+    } else {
+      setJiraCodeLocked(false);
+    }
     setStep(2);
   };
 
-  // Generar reporte → Paso 3
   const handleGenerateReport = () => {
     if (!parsedData) return;
-    // Pasamos hiddenFields al formatReport
     const finalReport = formatReport(parsedData, formData, hiddenFields);
     setReport(finalReport);
     setStep(3);
   };
 
-  // Reset total
   const handleReset = () => {
     setJiraContent("");
     setParsedData(null);
@@ -162,10 +167,8 @@ export default function Home() {
       hasIncidences: false,
       conclusion: "",
       datosDePrueba: "",
-      // También se resetea el nuevo campo
       customEnvFields: [],
     });
-    // También reseteamos hiddenFields
     setHiddenFields({
       serverPruebas: false,
       ipMaquina: false,
@@ -176,6 +179,7 @@ export default function Home() {
     });
     setReport("");
     setStep(1);
+    setJiraCodeLocked(false);
   };
 
   const goBackToStep1 = () => setStep(1);
@@ -199,12 +203,12 @@ export default function Home() {
             parsedData={parsedData}
             formData={formData}
             setFormData={setFormData}
-            /** Pasamos hiddenFields y setHiddenFields a StepTwoForm */
             hiddenFields={hiddenFields}
             setHiddenFields={setHiddenFields}
             onGenerate={handleGenerateReport}
             onReset={handleReset}
             onGoBackToStep1={goBackToStep1}
+            jiraCodeLocked={jiraCodeLocked}
           />
         )}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import * as XLSX from "xlsx";
 import Tippy from "@tippyjs/react";
 import JSZip from "jszip";
@@ -84,13 +84,12 @@ interface StepTwoFormProps {
   parsedData: ParsedData;
   formData: FormData;
   setFormData: (val: FormData) => void;
-
   hiddenFields: HiddenFields;
   setHiddenFields: React.Dispatch<React.SetStateAction<HiddenFields>>;
-
-  onGenerate: () => void; // Esta función ahora se llamará desde ReportOutput
+  onGenerate: () => void;
   onReset: () => void;
   onGoBackToStep1: () => void;
+  jiraCodeLocked?: boolean; // <--- Añadido aquí
 }
 
 /** Ayuda para la conclusión */
@@ -157,10 +156,14 @@ export default function StepTwoForm({
   setFormData,
   hiddenFields,
   setHiddenFields,
-  onGenerate, // onGenerate se pasará al siguiente paso (ReportOutput)
+  onGenerate,
   onReset,
   onGoBackToStep1,
+  jiraCodeLocked = false, // <--- Añadido aquí
 }: StepTwoFormProps) {
+  // Nuevo estado para desbloquear la edición manualmente
+  const [forceUnlock, setForceUnlock] = React.useState(false);
+
   // Actualiza formData
   const handleInputChange = (
     field: keyof FormData,
@@ -499,6 +502,8 @@ export default function StepTwoForm({
           <label className="block font-medium text-gray-700">Título JIRA</label>
           <p className="p-2 bg-gray-100 rounded text-gray-800 text-sm">{parsedData.title}</p>
         </div>
+
+
         {/* Código de JIRA */}
         <div>
           <label htmlFor="jiraCode" className="block font-medium text-gray-700">
@@ -511,8 +516,19 @@ export default function StepTwoForm({
             placeholder="Ej: SAENEXTBUS-1411"
             value={formData.jiraCode}
             onChange={(e) => handleInputChange("jiraCode", e.target.value)}
-            required // HTML5 validation
+            required
+            disabled={jiraCodeLocked && !forceUnlock}
+            style={jiraCodeLocked && !forceUnlock ? { backgroundColor: "#f3f4f6", color: "#888", cursor: "not-allowed" } : {}}
           />
+          {jiraCodeLocked && !forceUnlock && (
+            <button
+              type="button"
+              className="text-xs text-blue-700 underline mt-1"
+              onClick={() => setForceUnlock(true)}
+            >
+              ¿El código del JIRA no es correcto? Pulsa aquí para cambiarlo.
+            </button>
+          )}
         </div>
         {/* Fecha */}
         <div>
