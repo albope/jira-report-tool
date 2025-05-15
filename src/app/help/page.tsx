@@ -2,16 +2,13 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
-import React, { useState, useEffect } from "react"; // Import useState y useEffect
+import Image from "next/image"; // Asegúrate que Image de next/image esté importado
+import React, { useState, useEffect } from "react";
 import HeaderNav from "@/components/HeaderNav";
-// Asumiendo que tienes Lucide Icons instalado y configurado para iconos
 import { Search, AlertTriangle, CheckCircle, Info, ArrowUpCircle, ExternalLink } from 'lucide-react';
 
+/* ... (resto de tus imports y código inicial de HelpPage) ... */
 
-/* -------------------------------------------------------------------------- */
-/* Página Help                                 */
-/* -------------------------------------------------------------------------- */
 export default function HelpPage() {
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -38,37 +35,36 @@ export default function HelpPage() {
       <HeaderNav />
 
       <main className="pt-24 pb-20 px-4 sm:px-6 min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto space-y-16"> {/* Aumentado space-y */}
+        <div className="max-w-4xl mx-auto space-y-16">
 
-          {/* ---------- Hero + CTA rápidas -------------------------------- */}
-          <section className="text-center space-y-8"> {/* Aumentado space-y */}
-            <h1 className="text-5xl font-bold text-gray-900 tracking-tight"> {/* Aumentado tamaño */}
+          {/* Hero + CTA rápidas */}
+          <section className="text-center space-y-8">
+            <h1 className="text-5xl font-bold text-gray-900 tracking-tight">
               Centro de Ayuda
             </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto"> {/* Aumentado tamaño y limitado ancho */}
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Encuentra guías, respuestas y consejos para sacar el máximo provecho a nuestra herramienta.
             </p>
-
-            <div className="grid gap-8 sm:grid-cols-2"> {/* Aumentado gap */}
+            <div className="grid gap-8 sm:grid-cols-2">
               <QuickStartCard
                 title="Crear un JIRA"
                 desc="Aprende a generar tickets JIRA estructurados y completos desde cero."
                 href="/create-jira"
-                icon={<Info size={28} className="text-blue-500" />} // Icono en lugar de emoji
+                icon={<Info size={28} className="text-blue-500" />}
               />
               <QuickStartCard
                 title="Generar Reporte de Pruebas"
                 desc="Descubre cómo crear reportes detallados a partir del contenido de un JIRA existente."
                 href="/generate-report"
-                icon={<CheckCircle size={28} className="text-green-500" />} // Icono en lugar de emoji
+                icon={<CheckCircle size={28} className="text-green-500" />}
               />
             </div>
           </section>
 
-          {/* ---------- Tabla de contenidos -------------------------------- */}
-          <nav aria-label="Tabla de contenidos" className="p-6 bg-white rounded-xl shadow-lg"> {/* Estilo de card */}
+          {/* Tabla de contenidos */}
+          <nav aria-label="Tabla de contenidos" className="p-6 bg-white rounded-xl shadow-lg">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
-              <Search size={24} className="mr-3 text-blue-600"/> {/* Icono para el título */}
+              <Search size={24} className="mr-3 text-blue-600"/>
               Índice Detallado
             </h2>
             <ul className="space-y-2">
@@ -87,15 +83,12 @@ export default function HelpPage() {
             </ul>
           </nav>
 
-          {/* ================================================================= */}
-          {/* A. CREAR UN JIRA                             */}
-          {/* ================================================================= */}
+          {/* A. CREAR UN JIRA */}
           <HelpSection id="jira-guide" title="A. Crear un JIRA desde cero">
-            <p className="text-gray-700 text-lg"> {/* Texto más grande */}
+            <p className="text-gray-700 text-lg">
               Usa este formulario cuando la incidencia aún no existe en JIRA y
               necesitas documentarla completamente.
             </p>
-
             <SubStep number={1} title="Datos básicos">
               <FieldBullet name="Proyecto" note="Nombre del proyecto (i.e ATMV, MLO...)." />
               <FieldBullet name="Herramienta" note="Aplicativo o herramienta afectada." />
@@ -106,8 +99,8 @@ export default function HelpPage() {
                 campos: <em>PROYECTO – Herramienta – Descripción</em>.
               </Tip>
             </SubStep>
-
-            <SubStep number={2} title="Detalle del problema">
+            {/* ... más SubSteps para Crear un JIRA ... */}
+             <SubStep number={2} title="Detalle del problema">
               <FieldBullet name="Descripción del problema" note="Detallar el problema/error identificado de forma detallada." />
               <FieldBullet name="Pasos para reproducir" note="Describir los pasos llevados a cabo para reproducir el error." />
               <FieldBullet name="Resultado esperado" note="Describir lo que se esperaría si el comportamiento del aplicativo fuese correcto." />
@@ -145,22 +138,18 @@ export default function HelpPage() {
             </SubStep>
           </HelpSection>
 
-          {/* ================================================================= */}
-          {/* B. REPORTE DE PRUEBAS                             */}
-          {/* ================================================================= */}
+          {/* B. REPORTE DE PRUEBAS */}
           <HelpSection id="report-guide" title="B. Reporte de pruebas (JIRA existente)">
             <p className="text-gray-700 text-lg">
               Empléalo cuando el ticket ya existe en JIRA y quieres documentar
               las pruebas realizadas.
             </p>
-
             <SubStep number={1} title="Pegar contenido del JIRA">
               <p className="text-gray-700">
-                Copia todo el cuerpo del ticket y pégalo en el cuadro “Paso 1”. También puedes introducir el código del JIRA para obtener el título automáticamente.
+                Copia todo el cuerpo del ticket y pégalo en el cuadro <em>Paso 1</em>. También puedes introducir el código del JIRA para obtener el título automáticamente. {/* Cambio aquí */}
               </p>
               <ImageShow src="/help/report-paste.png" alt="Reporte Paso 1" onImageClick={setLightboxImage} />
             </SubStep>
-
             <SubStep number={2} title="Completar información de pruebas">
               <FieldBullet name="Fecha de prueba" />
               <FieldBullet name="Tester" />
@@ -172,7 +161,6 @@ export default function HelpPage() {
                 para auditorías y facilita a desarrollo la identificación de errores.
               </Tip>
             </SubStep>
-
             <SubStep number={3} title="Generar y exportar">
               <p className="text-gray-700">
                 Verifica el Markdown y usa el botón <strong>Copiar y Exportar a Word</strong>. Esto te proporcionará:
@@ -185,8 +173,7 @@ export default function HelpPage() {
             </SubStep>
           </HelpSection>
 
-          {/* ================================================================= */}
-          {/* FAQ ------------------------------------------------------------ */}
+          {/* FAQ */}
           <HelpSection id="faq" title="C. Preguntas Frecuentes (FAQ)">
             <FAQItem question="¿Cuándo debo usar Crear un JIRA y cuándo Generar un reporte?">
               <p>
@@ -196,7 +183,6 @@ export default function HelpPage() {
                 <strong>Generar un reporte:</strong> Usa esta opción cuando el JIRA ya está creado (por ti o por otra persona) y necesitas añadir un comentario formal sobre las pruebas realizadas, validar funcionalidades, documentar la evolución de un error, o adjuntar un informe de pruebas completo. Esta opción es clave para la trazabilidad y auditorías.
               </p>
             </FAQItem>
-
             <FAQItem question="¿Cómo puedo asegurarme de que mi reporte sea claro y completo?">
               <ul className="list-disc list-inside space-y-1">
                 <li>Incluye siempre <strong>pasos detallados</strong> para reproducir el error.</li>
@@ -207,14 +193,14 @@ export default function HelpPage() {
                 <li>Si generas un reporte sobre un JIRA existente, asegúrate de que tu reporte añade valor y actualiza el estado de las pruebas.</li>
               </ul>
             </FAQItem>
-             <FAQItem question="¿Puedo personalizar los campos del entorno en los reportes?">
+            <FAQItem question="¿Puedo personalizar los campos del entorno en los reportes?">
               <p>
-                ¡Sí! Tanto en la creación de un nuevo JIRA como en la generación de reportes sobre JIRAs existentes, puedes añadir "Campos Personalizados del Entorno". Esto te permite incluir cualquier información específica de tu entorno que no esté cubierta por los campos estándar (ej. "Versión del Driver X", "Configuración Específica Y"). Estos campos aparecerán en la sección "Entorno de Pruebas" de tu reporte.
+                ¡Sí! Tanto en la creación de un nuevo JIRA como en la generación de reportes sobre JIRAs existentes, puedes añadir &quot;Campos Personalizados del Entorno&quot;. Esto te permite incluir cualquier información específica de tu entorno que no esté cubierta por los campos estándar (ej. &quot;Versión del Driver X&quot;, &quot;Configuración Específica Y&quot;). Estos campos aparecerán en la sección &quot;Entorno de Pruebas&quot; de tu reporte. {/* Cambio aquí */}
               </p>
             </FAQItem>
             <FAQItem question="¿Qué hago si la obtención automática del título del JIRA falla?">
                 <p>
-                    Si al introducir el código del JIRA en el "Paso 1" del generador de reportes la herramienta no puede obtener el título automáticamente (por ejemplo, debido a problemas de conexión, permisos, o si el JIRA no existe), no te preocupes.
+                    Si al introducir el código del JIRA en el <em>Paso 1</em> del generador de reportes la herramienta no puede obtener el título automáticamente (por ejemplo, debido a problemas de conexión, permisos, o si el JIRA no existe), no te preocupes. {/* Cambio aquí */}
                 </p>
                 <p className="mt-2">
                     La aplicación te mostrará un mensaje de error y habilitará un área de texto para que puedas pegar manualmente el contenido completo de tu JIRA. Aunque el título no se cargue, podrás continuar con el proceso de generación del reporte introduciendo los datos manualmente.
@@ -222,9 +208,8 @@ export default function HelpPage() {
             </FAQItem>
           </HelpSection>
 
-
-          {/* Footer contactos -------------------------------------------- */}
-          <div className="text-center text-sm text-gray-500 pt-12 border-t border-gray-200"> {/* Aumentado padding y separación */}
+          {/* Footer contactos */}
+          <div className="text-center text-sm text-gray-500 pt-12 border-t border-gray-200">
             ¿Necesitas ayuda adicional o tienes alguna sugerencia? Usa el botón flotante “Feedback + Bugs”
             o escribe a&nbsp;
             <a href="mailto:abort.etraid@grupoetra.com" className="text-blue-600 hover:underline">
@@ -240,13 +225,14 @@ export default function HelpPage() {
           className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[100] p-4"
           onClick={() => setLightboxImage(null)}
         >
-          <Image
+          <Image // Usando next/image aquí también
             src={lightboxImage}
             alt="Vista ampliada"
-            width={1200} // Ajusta según necesidad
-            height={800} // Ajusta según necesidad
-            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
-            onClick={(e) => e.stopPropagation()} // Evita que el clic en la imagen cierre el modal
+            width={1200}
+            height={800}
+            style={{ objectFit: 'contain', maxWidth: '90vw', maxHeight: '90vh' }} // objectFit en style para next/image
+            className="rounded-lg shadow-2xl" // Clases Tailwind para estética
+            onClick={(e) => e.stopPropagation()}
           />
         </div>
       )}
@@ -265,20 +251,22 @@ export default function HelpPage() {
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/* ---------------------------- Sub-componentes ----------------------------- */
-/* -------------------------------------------------------------------------- */
+/* Sub-componentes (QuickStartCard, HelpSection, SubStep, FieldBullet, Tip, ImageShow, FAQItem) ... */
+// (Asegúrate que las definiciones de estos subcomponentes estén aquí como en tu código original
+// o importados si están en archivos separados. He modificado ImageShow y FAQItem abajo
+// y añadido las definiciones de Tip, FieldBullet, etc., tal como estaban en tu código original para que sea completo)
+
 
 function QuickStartCard({
   title,
   desc,
   href,
-  icon, // Cambiado de emoji a icon
+  icon, 
 }: {
   title: string;
   desc: string;
   href: string;
-  icon: React.ReactNode; // Tipo para el icono
+  icon: React.ReactNode; 
 }) {
   return (
     <Link
@@ -291,9 +279,9 @@ function QuickStartCard({
         transition-all duration-300 transform hover:-translate-y-1
       "
     >
-      <div className="mb-4 p-3 bg-blue-100 rounded-full">{icon}</div> {/* Estilo para el contenedor del icono */}
-      <h3 className="text-2xl font-semibold text-gray-800 mb-2">{title}</h3> {/* Aumentado tamaño */}
-      <p className="text-gray-600 text-base flex-1 mb-4">{desc}</p> {/* Aumentado tamaño */}
+      <div className="mb-4 p-3 bg-blue-100 rounded-full">{icon}</div>
+      <h3 className="text-2xl font-semibold text-gray-800 mb-2">{title}</h3>
+      <p className="text-gray-600 text-base flex-1 mb-4">{desc}</p>
       <span className="mt-auto inline-flex items-center text-blue-600 font-semibold group">
         Abrir Guía
         <ExternalLink size={18} className="ml-2 group-hover:translate-x-1 transition-transform"/>
@@ -312,11 +300,11 @@ function HelpSection({
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className="space-y-8 p-6 bg-white rounded-xl shadow-lg"> {/* Estilo card y aumentado space-y */}
-      <h2 className="text-3xl font-bold text-gray-800 border-b pb-4 mb-6"> {/* Aumentado tamaño y separador */}
+    <section id={id} className="space-y-8 p-6 bg-white rounded-xl shadow-lg">
+      <h2 className="text-3xl font-bold text-gray-800 border-b pb-4 mb-6">
         {title}
       </h2>
-      <div className="space-y-6"> {/* Contenedor para los children con espacio */}
+      <div className="space-y-6">
         {children}
       </div>
     </section>
@@ -333,11 +321,11 @@ function SubStep({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-4 p-4 border-l-4 border-blue-500 bg-blue-50 rounded-r-lg"> {/* Estilo más marcado */}
-      <h3 className="text-2xl font-semibold text-blue-700"> {/* Color y tamaño */}
+    <div className="space-y-4 p-4 border-l-4 border-blue-500 bg-blue-50 rounded-r-lg">
+      <h3 className="text-2xl font-semibold text-blue-700">
         Paso {number}. {title}
       </h3>
-      <div className="prose prose-sm sm:prose max-w-none text-gray-700"> {/* Mejoras para el contenido */}
+      <div className="prose prose-sm sm:prose max-w-none text-gray-700">
          {children}
       </div>
     </div>
@@ -346,9 +334,9 @@ function SubStep({
 
 function FieldBullet({ name, note }: { name: string; note?: string }) {
   return (
-    <p className="flex items-start text-gray-700 text-base my-2"> {/* Aumentado tamaño y margen */}
+    <p className="flex items-start text-gray-700 text-base my-2">
       <span className="mt-1 mr-3 text-blue-600">
-        <CheckCircle size={18}/> {/* Icono en lugar de bullet */}
+        <CheckCircle size={18}/>
       </span>
       <span>
         <strong className="font-semibold text-gray-800">{name}</strong>
@@ -358,7 +346,6 @@ function FieldBullet({ name, note }: { name: string; note?: string }) {
   );
 }
 
-// Tip Componente Mejorado
 type TipType = "info" | "warning" | "success" | "danger";
 
 const tipStyles: Record<TipType, { icon: React.ReactNode; border: string; bg: string; text: string }> = {
@@ -380,10 +367,9 @@ function Tip({ children, type = "info" }: { children: React.ReactNode; type?: Ti
   );
 }
 
-// Componente para mostrar imágenes con funcionalidad de clic para lightbox
 function ImageShow({ src, alt, onImageClick }: { src: string; alt: string; onImageClick: (src: string) => void; }) {
   return (
-    <div className="my-6 text-center"> {/* Margen y centrado */}
+    <div className="my-6 text-center">
       <Image
         src={src}
         alt={alt}
@@ -397,7 +383,6 @@ function ImageShow({ src, alt, onImageClick }: { src: string; alt: string; onIma
   );
 }
 
-// Componente para items de FAQ
 function FAQItem({ question, children }: { question: string; children: React.ReactNode }) {
   return (
     <details className="group bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">

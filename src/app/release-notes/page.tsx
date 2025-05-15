@@ -1,9 +1,10 @@
-// app/release-notes/page.tsx
+// src/app/release-notes/page.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState } from "react"; // Eliminado useEffect si no se usa aquí
 import HeaderNav from "@/components/HeaderNav";
 
+// ... (interfaces ChangeType, ChangeItem, ReleaseItem y constante ALL_RELEASES sin cambios)...
 // Definimos los tipos de cambio posibles
 type ChangeType = "feat" | "impr" | "fix" | "style";
 
@@ -33,7 +34,7 @@ const ALL_RELEASES: ReleaseItem[] = [
   {
     version: "1.5.0",
     date: "30 Abril 2025",
-    isMajor: false, // Marcamos como versión mayor/significativa
+    isMajor: false, // Mantengo tu cambio a false
     changes: [
       { text: "Se añade la nueva funcionalidad 'Crear un nuevo JIRA' accesible desde la página de inicio y el menú de ayuda.", type: "feat" },
       { text: "El formulario de creación de JIRA permite definir proyecto, herramienta, descripción del error para generar un título estandarizado.", type: "feat" },
@@ -100,7 +101,7 @@ const ALL_RELEASES: ReleaseItem[] = [
   {
     version: "1.0.0",
     date: "13 Marzo 2025",
-    isMajor: true, // Marcamos como versión mayor
+    isMajor: true, 
     changes: [
       { text: "Primera versión inicial del Generador de Reportes JIRA.", type: "feat" },
       { text: "Se añade el formulario de pasos (Paso 1, Paso 2 y Paso 3) con capacidad de generar reportes en Markdown y exportar a Word.", type: "feat" },
@@ -110,10 +111,9 @@ const ALL_RELEASES: ReleaseItem[] = [
   },
 ];
 
-/** Mostramos 5 versiones por página */
+
 const ITEMS_PER_PAGE = 5;
 
-// Mapeo de tipos de cambio a etiquetas y colores (Tailwind)
 const changeTypeStyles: Record<ChangeType, { label: string;bgColor: string; textColor: string }> = {
   feat: { label: "Nuevo", bgColor: "bg-green-100", textColor: "text-green-700" },
   impr: { label: "Mejora", bgColor: "bg-blue-100", textColor: "text-blue-700" },
@@ -125,7 +125,6 @@ export default function ReleaseNotesPage() {
   const [page, setPage] = useState(1);
   const [selectedTypeFilter, setSelectedTypeFilter] = useState<ChangeType | "all">("all");
 
-  // Filtrar releases por tipo si hay un filtro activo
   const filteredReleases = ALL_RELEASES.filter(release => {
     if (selectedTypeFilter === "all") {
       return true;
@@ -133,15 +132,11 @@ export default function ReleaseNotesPage() {
     return release.changes.some(change => change.type === selectedTypeFilter);
   });
 
-  // Calculamos qué items mostrar en la página actual
   const startIndex = (page - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const currentReleases = filteredReleases.slice(startIndex, endIndex);
-
-  // Para saber si hay más páginas
   const totalPages = Math.ceil(filteredReleases.length / ITEMS_PER_PAGE);
 
-  // Resetear a página 1 cuando el filtro cambia
   React.useEffect(() => {
     setPage(1);
   }, [selectedTypeFilter]);
@@ -150,28 +145,15 @@ export default function ReleaseNotesPage() {
     <>
       <HeaderNav />
       <main className="pt-20 p-4 md:p-8 min-h-screen bg-gray-50">
-        <div
-          className="
-            max-w-3xl mx-auto
-            bg-gradient-to-br from-white via-blue-50 to-white
-            shadow-lg
-            rounded-lg
-            p-6 md:p-8
-            space-y-8
-            relative
-            z-10
-          "
-        >
+        <div className="max-w-3xl mx-auto bg-gradient-to-br from-white via-blue-50 to-white shadow-lg rounded-lg p-6 md:p-8 space-y-8 relative z-10">
           <h1 className="text-3xl font-bold text-gray-800 text-center md:text-left">
             Generador de Reportes JIRA — Release Notes
           </h1>
 
-          {/* Controles de Filtro */}
           <div className="flex flex-wrap justify-center md:justify-start gap-2 pb-4 border-b border-gray-200">
             <button
               onClick={() => setSelectedTypeFilter("all")}
-              className={`px-3 py-1 text-sm rounded-full transition-colors
-                ${selectedTypeFilter === "all" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+              className={`px-3 py-1 text-sm rounded-full transition-colors ${selectedTypeFilter === "all" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
             >
               Todos
             </button>
@@ -179,8 +161,7 @@ export default function ReleaseNotesPage() {
               <button
                 key={type}
                 onClick={() => setSelectedTypeFilter(type as ChangeType)}
-                className={`px-3 py-1 text-sm rounded-full transition-colors
-                  ${selectedTypeFilter === type ? `${style.bgColor} ${style.textColor} font-semibold ring-2 ring-offset-1 ${style.textColor.replace('text-', 'ring-')}` : `bg-gray-200 text-gray-700 hover:bg-gray-300`}`}
+                className={`px-3 py-1 text-sm rounded-full transition-colors ${selectedTypeFilter === type ? `${style.bgColor} ${style.textColor} font-semibold ring-2 ring-offset-1 ${style.textColor.replace('text-', 'ring-')}` : `bg-gray-200 text-gray-700 hover:bg-gray-300`}`}
               >
                 {style.label}
               </button>
@@ -193,21 +174,18 @@ export default function ReleaseNotesPage() {
             </p>
           )}
 
-          {currentReleases.map((release, index) => {
-            // Destacar la versión más reciente en la vista actual (si no hay filtros o si es la primera de las filtradas)
-            // O si es una versión marcada como "isMajor"
-            const isHighlighted = release.isMajor || (filteredReleases[0].version === release.version && page === 1 && startIndex === 0);
+          {currentReleases.map((release) => { // 'index' eliminado de aquí
+            const isHighlighted = release.isMajor || (filteredReleases.length > 0 && filteredReleases[0].version === release.version && page === 1 && startIndex === 0);
             return (
             <section
-              key={release.version}
-              className={`space-y-3 p-4 rounded-lg transition-all duration-300 ease-in-out
-                ${isHighlighted ? 'bg-blue-50 border-2 border-blue-500 shadow-md' : 'border border-gray-200 hover:shadow-sm'}`}
+              key={release.version} // 'key' sigue siendo release.version
+              className={`space-y-3 p-4 rounded-lg transition-all duration-300 ease-in-out ${isHighlighted ? 'bg-blue-50 border-2 border-blue-500 shadow-md' : 'border border-gray-200 hover:shadow-sm'}`}
             >
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
                 <h2 className={`text-2xl font-semibold ${isHighlighted ? 'text-blue-700' : 'text-gray-800'}`}>
                   Versión {release.version}
                   {isHighlighted && release.isMajor && <span className="ml-2 text-xs uppercase font-bold tracking-wider bg-blue-600 text-white px-2 py-0.5 rounded-full align-middle">Destacado</span>}
-                  {isHighlighted && !release.isMajor && (filteredReleases[0].version === release.version) && <span className="ml-2 text-xs uppercase font-bold tracking-wider bg-green-500 text-white px-2 py-0.5 rounded-full align-middle">Más Reciente</span>}
+                  {isHighlighted && !release.isMajor && (filteredReleases.length > 0 && filteredReleases[0].version === release.version) && <span className="ml-2 text-xs uppercase font-bold tracking-wider bg-green-500 text-white px-2 py-0.5 rounded-full align-middle">Más Reciente</span>}
                 </h2>
                 <p className={`text-sm ${isHighlighted ? 'text-blue-600' : 'text-gray-500'} mt-1 sm:mt-0`}>
                   Última actualización: {release.date}
@@ -216,12 +194,10 @@ export default function ReleaseNotesPage() {
               <ul className="list-none pl-0 space-y-2">
                 {release.changes
                   .filter(change => selectedTypeFilter === "all" || change.type === selectedTypeFilter)
-                  .map((change, idx) => (
+                  .map((change, idx) => ( // 'idx' se usa para la key interna, está bien
                   <li key={idx} className="flex items-start text-gray-700 leading-relaxed">
                     <span
-                      className={`mr-2 mt-1 px-1.5 py-0.5 text-xs font-semibold rounded-full
-                        ${changeTypeStyles[change.type].bgColor}
-                        ${changeTypeStyles[change.type].textColor}`}
+                      className={`mr-2 mt-1 px-1.5 py-0.5 text-xs font-semibold rounded-full ${changeTypeStyles[change.type].bgColor} ${changeTypeStyles[change.type].textColor}`}
                     >
                       {changeTypeStyles[change.type].label}
                     </span>
@@ -233,18 +209,12 @@ export default function ReleaseNotesPage() {
           );
         })}
 
-          {/* Paginación simple */}
           {totalPages > 1 && (
             <div className="flex justify-center items-center space-x-4 mt-8 pt-6 border-t border-gray-200">
               <button
                 onClick={() => setPage((prev) => Math.max(1, prev - 1))}
                 disabled={page === 1}
-                className="
-                  px-4 py-2
-                  bg-blue-600 text-white
-                  rounded hover:bg-blue-700 transition
-                  disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300
-                "
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
               >
                 Anterior
               </button>
@@ -254,12 +224,7 @@ export default function ReleaseNotesPage() {
               <button
                 onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
                 disabled={page === totalPages}
-                className="
-                  px-4 py-2
-                  bg-blue-600 text-white
-                  rounded hover:bg-blue-700 transition
-                  disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300
-                "
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
               >
                 Siguiente
               </button>

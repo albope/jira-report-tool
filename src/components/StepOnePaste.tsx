@@ -1,3 +1,4 @@
+// src/components/StepOnePaste.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -21,7 +22,6 @@ export default function StepOnePaste({
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [jiraTitle, setJiraTitle] = useState<string | null>(null);
 
-  // Obtención del resumen y key del JIRA vía API
   const handleFetchSummary = async () => {
     if (!jiraKey.trim()) return;
     setLoading(true);
@@ -30,21 +30,34 @@ export default function StepOnePaste({
 
     try {
       const res = await fetch(`/api/jira-summary?key=${encodeURIComponent(jiraKey.trim())}`);
-      if (!res.ok) throw new Error("No se pudo obtener el JIRA");
+      if (!res.ok) {
+        // Intenta obtener más detalles del error si es posible
+        let errorMsg = "No se pudo obtener el JIRA";
+        try {
+            const errorData = await res.json();
+            errorMsg = errorData.error || errorMsg;
+        } catch (_e) {
+            // No hacer nada si el cuerpo del error no es JSON
+        }
+        throw new Error(errorMsg);
+      }
       const data = await res.json();
       if (data.summary) {
         setJiraTitle(data.summary);
         setJiraContent(data.summary);
-
-        // Si el backend devuelve el key, lo seteamos
         if (data.key) setJiraKey(data.key);
       } else {
         setFetchError("No se encontró el título del JIRA.");
         setJiraTitle(null);
         setJiraContent("");
       }
-    } catch (err: any) {
-      setFetchError("Error consultando el JIRA. Puedes pegar el contenido manualmente.");
+    } catch (err: unknown) { // Cambiado 'any' a 'unknown'
+      console.error("Error en fetchSummary:", err); // Usar la variable 'err'
+      let message = "Error consultando el JIRA. Puedes pegar el contenido manualmente.";
+      if (err instanceof Error) {
+        message = err.message; // Usar el mensaje de error real si está disponible
+      }
+      setFetchError(message);
       setJiraTitle(null);
       setJiraContent("");
     } finally {
@@ -52,37 +65,20 @@ export default function StepOnePaste({
     }
   };
 
-  // Handler para avanzar de paso
   const handleNextStep = () => {
-    // Si hay key la pasamos, si no, undefined (flujo manual)
     onParse(jiraKey.trim() ? jiraKey.trim() : undefined);
   };
 
   return (
-    <div className="
-      relative z-10
-      max-w-3xl mx-auto
-      bg-gradient-to-br from-white via-blue-50 to-white
-      shadow-lg rounded-lg p-8 space-y-6
-    ">
-      {/* Botón “Inicio” */}
+    <div className="relative z-10 max-w-3xl mx-auto bg-gradient-to-br from-white via-blue-50 to-white shadow-lg rounded-lg p-8 space-y-6">
       <button
         onClick={() => router.push("/")}
         title="Volver al inicio"
-        className="
-          absolute top-4 right-4
-          inline-flex items-center justify-center
-          h-9 w-9 rounded-full
-          bg-gray-100 text-gray-700
-          hover:bg-blue-600 hover:text-white
-          transition-colors duration-150
-          focus:outline-none focus:ring-2 focus:ring-blue-500
-        "
+        className="absolute top-4 right-4 inline-flex items-center justify-center h-9 w-9 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-600 hover:text-white transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         <Home className="h-5 w-5" />
       </button>
 
-      {/* Encabezado principal */}
       <div className="space-y-3">
         <h1 className="text-3xl font-bold text-gray-800">
           Generador de reportes
@@ -92,7 +88,6 @@ export default function StepOnePaste({
         </p>
       </div>
 
-      {/* Paso 1 */}
       <div className="mb-6">
         <div className="flex items-center mb-2 space-x-2">
           <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
@@ -106,33 +101,23 @@ export default function StepOnePaste({
         <hr className="mt-3 border-gray-200" />
       </div>
 
-      {/* Input para JIRA Key + botón */}
       <div className="flex space-x-2 items-center mb-2">
         <input
           type="text"
           placeholder="Ej: SAERAIL-1459"
           value={jiraKey}
           onChange={(e) => setJiraKey(e.target.value)}
-          className="
-            border border-gray-300 rounded-lg px-3 py-2
-            focus:outline-none focus:ring-2 focus:ring-blue-500
-            transition
-          "
+          className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
         />
         <button
           onClick={handleFetchSummary}
-          className="
-            bg-blue-600 text-white px-4 py-2 rounded-lg
-            hover:bg-blue-700 transition
-            disabled:opacity-50
-          "
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
           disabled={loading || !jiraKey.trim()}
         >
           {loading ? "Buscando..." : "Generar título"}
         </button>
       </div>
 
-      {/* Mostrar el título recuperado */}
       {jiraTitle && (
         <div className="mb-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">Título JIRA</label>
@@ -142,20 +127,14 @@ export default function StepOnePaste({
         </div>
       )}
 
-      {/* Error y área de pegado manual solo si falla la búsqueda */}
       {fetchError && (
         <div className="text-red-500 text-sm mb-2">{fetchError}</div>
       )}
-      {fetchError && (
+      {fetchError && ( // Solo mostrar textarea si hubo error Y no se obtuvo título.
         <div className="space-y-2">
           <textarea
             id="jira-input"
-            className="
-              w-full h-40 border border-gray-300 rounded-lg p-2
-              placeholder:text-gray-400
-              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-              shadow-inner
-            "
+            className="w-full h-40 border border-gray-300 rounded-lg p-2 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-inner"
             placeholder="Introduce aquí el contenido del JIRA manualmente si la consulta automática por identificador ha fallado. Recuerda copiar todo el texto relevante para asegurar un reporte completo."
             value={jiraContent}
             onChange={(e) => setJiraContent(e.target.value)}
@@ -163,17 +142,10 @@ export default function StepOnePaste({
         </div>
       )}
 
-      {/* Botón siguiente paso */}
       <div className="pt-2">
         <button
           onClick={handleNextStep}
-          className="
-            bg-blue-600 text-white
-            py-2 px-6 rounded-lg
-            hover:bg-blue-700
-            transition duration-200
-            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-          "
+          className="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
           Siguiente Paso
         </button>

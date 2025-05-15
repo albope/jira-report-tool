@@ -23,17 +23,20 @@ export async function GET(req: NextRequest) {
         "Authorization": `Basic ${authString}`,
         "Accept": "application/json",
       },
-      // Next.js 13+ edge runtime requiere modo 'no-store'
       cache: "no-store",
     });
 
     if (!jiraResponse.ok) {
-      return NextResponse.json({ error: "No se pudo obtener el título automáticamente." }, { status: jiraResponse.status });
+      // Puedes opcionalmente leer el cuerpo del error de JIRA si es útil
+      // const errorData = await jiraResponse.json();
+      // console.error("JIRA API Error:", errorData);
+      return NextResponse.json({ error: "No se pudo obtener el título automáticamente desde JIRA." }, { status: jiraResponse.status });
     }
 
     const data = await jiraResponse.json();
     return NextResponse.json({ summary: data.fields.summary });
-  } catch (error) {
-    return NextResponse.json({ error: "No se pudo obtener el título automáticamente." }, { status: 400 });
+  } catch (error) { // Variable 'error' ahora se usa
+    console.error("Error al contactar la API de JIRA:", error); // Log del error
+    return NextResponse.json({ error: "Error interno al intentar obtener el título del JIRA." }, { status: 500 }); // Status 500 para error interno
   }
 }

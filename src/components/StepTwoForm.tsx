@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import * as XLSX from "xlsx";
 import Tippy from "@tippyjs/react";
 import JSZip from "jszip";
