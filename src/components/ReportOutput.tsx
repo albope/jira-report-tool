@@ -48,7 +48,7 @@ export default function ReportOutput({
     }
 
     try {
-      const docElements = markdownToDocx(report); 
+      const docElements = markdownToDocx(report);
       const doc = new Document({
         sections: [
           {
@@ -100,13 +100,13 @@ export default function ReportOutput({
     <div className="max-w-4xl mx-auto mt-10 mb-12 bg-gradient-to-br from-white via-blue-50 to-white shadow-2xl rounded-xl p-6 sm:p-8 space-y-8 relative z-10">
       <div className="flex flex-col sm:flex-row items-center justify-between pb-5 border-b border-gray-200">
         <div className="flex items-center mb-4 sm:mb-0">
-            <div className="flex-shrink-0 w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center text-xl font-bold mr-4 shadow">
-                3
-            </div>
-            <div>
-                <h2 className="text-2xl sm:text-3xl font-semibold text-gray-800">Revisión y Exportación</h2>
-                <p className="text-gray-500 text-sm mt-0.5">Verifica el reporte final y utiliza las opciones de exportación.</p>
-            </div>
+          <div className="flex-shrink-0 w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center text-xl font-bold mr-4 shadow">
+            3
+          </div>
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-semibold text-gray-800">Revisión y Exportación</h2>
+            <p className="text-gray-500 text-sm mt-0.5">Verifica el reporte final y utiliza las opciones de exportación.</p>
+          </div>
         </div>
         <button
           onClick={onGoBackToStep2}
@@ -122,7 +122,7 @@ export default function ReportOutput({
         <div className="prose prose-sm sm:prose-base max-w-none p-4 sm:p-5 bg-white rounded-lg border border-gray-200 shadow-sm max-h-[60vh] overflow-y-auto">
           <ReactMarkdown
             components={{
-              img: ({ node, alt, src, ...props }) => {
+              img: ({ node: _unusedNode, alt, src, ...props }) => {
                 // Caso 1: src es explícitamente una data URI (base64)
                 if (src?.startsWith("data:image")) {
                   return (
@@ -146,14 +146,14 @@ export default function ReportOutput({
                   </span>
                 );
               },
-              table: ({node, ...props}) => <div className="overflow-x-auto"><table className="min-w-full divide-y divide-gray-300 my-4" {...props} /></div>,
-              thead: ({node, ...props}) => <thead className="bg-gray-100" {...props} />,
-              th: ({node, ...props}) => <th scope="col" className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider" {...props} />,
-              td: ({node, ...props}) => <td className="px-4 py-3 whitespace-pre-wrap text-sm text-gray-700" {...props} />,
-              p: ({node, ...props}) => <p className="my-2 leading-relaxed" {...props} />,
-              ul: ({node, ...props}) => <ul className="list-disc pl-5 my-2 space-y-1" {...props} />,
-              ol: ({node, ...props}) => <ol className="list-decimal pl-5 my-2 space-y-1" {...props} />,
-              li: ({node, ...props}) => <li className="text-gray-700" {...props} />,
+              table: ({node: _unusedNode, ...props}) => <div className="overflow-x-auto"><table className="min-w-full divide-y divide-gray-300 my-4" {...props} /></div>,
+              thead: ({node: _unusedNode, ...props}) => <thead className="bg-gray-100" {...props} />,
+              th: ({node: _unusedNode, ...props}) => <th scope="col" className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider" {...props} />,
+              td: ({node: _unusedNode, ...props}) => <td className="px-4 py-3 whitespace-pre-wrap text-sm text-gray-700" {...props} />,
+              p: ({node: _unusedNode, ...props}) => <p className="my-2 leading-relaxed" {...props} />,
+              ul: ({node: _unusedNode, ...props}) => <ul className="list-disc pl-5 my-2 space-y-1" {...props} />,
+              ol: ({node: _unusedNode, ...props}) => <ol className="list-decimal pl-5 my-2 space-y-1" {...props} />,
+              li: ({node: _unusedNode, ...props}) => <li className="text-gray-700" {...props} />,
             }}
           >
             {report}

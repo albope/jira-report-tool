@@ -11,7 +11,7 @@ import "tippy.js/dist/tippy.css";
 
 import {
   Info, Settings, ListChecks, FileTextIcon, BarChart3, AlertOctagon, CheckCircle2,
-  Sheet, Download, PlusCircle, XCircle, Copy, Trash2, Layers, Edit3, ListPlus, GripVertical,
+  Sheet, Download, PlusCircle, XCircle, Copy, Trash2, Layers, Edit3, ListPlus,
   FileCheckIcon // Asegurado que está importado
 } from 'lucide-react';
 

@@ -78,15 +78,6 @@ export default function CreateJiraForm() {
   };
 
   /* ---------- 2. Helpers ---------- */
-  const toCamel = (s: string) =>
-    s
-      .replace(/[^a-zA-ZÀ-ÿ0-9 ]+/g, " ")
-      .split(" ")
-      .filter(Boolean)
-      .map((w, i) =>
-        i === 0 ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(),
-      )
-      .join("");
 
 const title = `${project.trim().toUpperCase()} - ${tool.trim()} - ${errorDesc.trim()}`;
 
