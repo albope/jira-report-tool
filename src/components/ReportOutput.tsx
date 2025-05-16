@@ -122,7 +122,7 @@ export default function ReportOutput({
         <div className="prose prose-sm sm:prose-base max-w-none p-4 sm:p-5 bg-white rounded-lg border border-gray-200 shadow-sm max-h-[60vh] overflow-y-auto">
           <ReactMarkdown
             components={{
-              img: ({ node: _unusedNode, alt, src, ...props }) => {
+              img: ({ alt, src, ...props }) => { // 'node' (o '_unusedNode') eliminado de la desestructuración
                 // Caso 1: src es explícitamente una data URI (base64)
                 if (src?.startsWith("data:image")) {
                   return (
@@ -146,14 +146,14 @@ export default function ReportOutput({
                   </span>
                 );
               },
-              table: ({node: _unusedNode, ...props}) => <div className="overflow-x-auto"><table className="min-w-full divide-y divide-gray-300 my-4" {...props} /></div>,
-              thead: ({node: _unusedNode, ...props}) => <thead className="bg-gray-100" {...props} />,
-              th: ({node: _unusedNode, ...props}) => <th scope="col" className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider" {...props} />,
-              td: ({node: _unusedNode, ...props}) => <td className="px-4 py-3 whitespace-pre-wrap text-sm text-gray-700" {...props} />,
-              p: ({node: _unusedNode, ...props}) => <p className="my-2 leading-relaxed" {...props} />,
-              ul: ({node: _unusedNode, ...props}) => <ul className="list-disc pl-5 my-2 space-y-1" {...props} />,
-              ol: ({node: _unusedNode, ...props}) => <ol className="list-decimal pl-5 my-2 space-y-1" {...props} />,
-              li: ({node: _unusedNode, ...props}) => <li className="text-gray-700" {...props} />,
+              table: ({ ...props}) => <div className="overflow-x-auto"><table className="min-w-full divide-y divide-gray-300 my-4" {...props} /></div>,
+              thead: ({ ...props}) => <thead className="bg-gray-100" {...props} />,
+              th: ({ ...props}) => <th scope="col" className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider" {...props} />,
+              td: ({ ...props}) => <td className="px-4 py-3 whitespace-pre-wrap text-sm text-gray-700" {...props} />,
+              p: ({ ...props}) => <p className="my-2 leading-relaxed" {...props} />,
+              ul: ({ ...props}) => <ul className="list-disc pl-5 my-2 space-y-1" {...props} />,
+              ol: ({ ...props}) => <ol className="list-decimal pl-5 my-2 space-y-1" {...props} />,
+              li: ({ ...props}) => <li className="text-gray-700" {...props} />,
             }}
           >
             {report}
