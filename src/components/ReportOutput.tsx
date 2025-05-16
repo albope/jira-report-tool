@@ -1,18 +1,14 @@
+// src/components/ReportOutput.tsx
 "use client";
 
-import React from "react";
-import ReactMarkdown from "react-markdown";      // ya instalado
+import React, { useState } from "react";
+import ReactMarkdown from "react-markdown";
 import {
-  Document,
-  Packer,
-  Footer,
-  Paragraph,
-  TextRun,
-  PageNumber,
-  AlignmentType,
+  Document, Packer, Footer, Paragraph, TextRun, PageNumber, AlignmentType,
 } from "docx";
 import { markdownToDocx } from "@/utils/markdownToDocx";
 import { saveAs } from "file-saver";
+import { CheckCircle, ArrowLeft, DownloadCloud, RotateCcw, AlertCircle, Info, Loader2, FileImage } from 'lucide-react';
 
 interface ReportOutputProps {
   report: string;
@@ -21,25 +17,38 @@ interface ReportOutputProps {
   jiraCode?: string;
 }
 
+type StatusMessageType = {
+  message: string;
+  type: "success" | "error" | "info";
+} | null;
+
 export default function ReportOutput({
   report,
   onReset,
   onGoBackToStep2,
   jiraCode,
 }: ReportOutputProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<StatusMessageType>(null);
+
   const handleCopyAndExport = async () => {
-    let copied = false,
-      exported = false;
+    setIsLoading(true);
+    setStatusMessage(null);
+    let copied = false;
+    let exported = false;
+    let copyError = "";
+    let exportError = "";
 
     try {
       await navigator.clipboard.writeText(report);
       copied = true;
-    } catch {
-      alert("No se pudo copiar al portapapeles.");
+    } catch (err) {
+      console.error("Error al copiar al portapapeles:", err);
+      copyError = "No se pudo copiar el reporte al portapapeles.";
     }
 
     try {
-      const docElements = markdownToDocx(report);
+      const docElements = markdownToDocx(report); 
       const doc = new Document({
         sections: [
           {
@@ -63,70 +72,88 @@ export default function ReportOutput({
       });
       const blob = await Packer.toBlob(doc);
       const filename = jiraCode?.trim()
-        ? `Reporte_${jiraCode.trim()}.docx`
+        ? `Reporte_${jiraCode.trim().replace(/[^a-zA-Z0-9_-]/g, '_')}.docx`
         : "Reporte_Prueba.docx";
       saveAs(blob, filename);
       exported = true;
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Error desconocido";
-      alert("Error exportando Word: " + msg);
+      console.error("Error exportando Word:", e);
+      exportError = `Error exportando a Word: ${msg}`;
     }
 
+    setIsLoading(false);
+
     if (copied && exported) {
-      alert("Reporte copiado y exportado con éxito.");
-    } else if (copied) {
-      alert("Reporte copiado, pero falló la exportación a Word.");
-    } else if (exported) {
-      alert("Reporte exportado, pero falló la copia al portapapeles.");
+      setStatusMessage({ message: "Reporte copiado y exportado con éxito.", type: "success" });
+    } else if (copied && !exported) {
+      setStatusMessage({ message: `Reporte copiado, pero falló la exportación a Word. ${exportError}`, type: "error" });
+    } else if (!copied && exported) {
+      setStatusMessage({ message: `Reporte exportado, pero falló la copia al portapapeles. ${copyError}`, type: "error" });
+    } else {
+      setStatusMessage({ message: `Fallaron ambas operaciones. ${copyError} ${exportError}`, type: "error" });
     }
+    setTimeout(() => setStatusMessage(null), 7000);
   };
 
   return (
-    <div className="max-w-4xl mx-auto mt-8 bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50 shadow-xl rounded-lg p-8 space-y-6 relative z-10 mb-8">
-      {/* ——— Encabezado Paso 3 con botón alineado ——— */}
-      <div className="space-y-6 max-w-3xl mx-auto mb-12">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="flex items-center text-2xl font-bold mb-1">
-              {/* Icono azul (check-circle) */}
-              <svg
-                className="w-6 h-6 mr-2 text-blue-600"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.707a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414L9 13.414l4.707-4.707z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Paso 3
-            </h2>
-            <p className="text-gray-600">
-              Revisa el reporte y luego cópialo/exporta.
-            </p>
-            <hr className="mt-3 border-gray-200" />
-          </div>
-
-          {/* Botón «Volver a Editar (Paso 2)» al lado derecho */}
-          <button
-            onClick={onGoBackToStep2}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors"
-          >
-            ← Volver a datos adicionales
-          </button>
+    <div className="max-w-4xl mx-auto mt-10 mb-12 bg-gradient-to-br from-white via-blue-50 to-white shadow-2xl rounded-xl p-6 sm:p-8 space-y-8 relative z-10">
+      <div className="flex flex-col sm:flex-row items-center justify-between pb-5 border-b border-gray-200">
+        <div className="flex items-center mb-4 sm:mb-0">
+            <div className="flex-shrink-0 w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center text-xl font-bold mr-4 shadow">
+                3
+            </div>
+            <div>
+                <h2 className="text-2xl sm:text-3xl font-semibold text-gray-800">Revisión y Exportación</h2>
+                <p className="text-gray-500 text-sm mt-0.5">Verifica el reporte final y utiliza las opciones de exportación.</p>
+            </div>
         </div>
+        <button
+          onClick={onGoBackToStep2}
+          className="w-full sm:w-auto inline-flex items-center justify-center text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors px-4 py-2.5 rounded-lg hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          <ArrowLeft size={16} className="mr-2" />
+          Volver a Datos Adicionales
+        </button>
       </div>
 
-      {/* ——— Preview Markdown renderizado, sin imágenes rotas ——— */}
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold text-gray-700">Vista Previa:</h3>
-        <div className="prose max-w-none p-4 bg-white rounded border">
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold text-gray-800">Vista Previa del Reporte:</h3>
+        <div className="prose prose-sm sm:prose-base max-w-none p-4 sm:p-5 bg-white rounded-lg border border-gray-200 shadow-sm max-h-[60vh] overflow-y-auto">
           <ReactMarkdown
             components={{
-              img: ({ alt }) => (
-                <span className="text-sm italic text-gray-500">{alt}</span>
-              ),
+              img: ({ node, alt, src, ...props }) => {
+                // Caso 1: src es explícitamente una data URI (base64)
+                if (src?.startsWith("data:image")) {
+                  return (
+                    <span className="flex items-center text-xs italic text-gray-500 my-2 p-2 bg-gray-100 border border-gray-200 rounded-md">
+                      <FileImage size={14} className="mr-2 text-gray-400 flex-shrink-0" />
+                      {alt || 'Imagen adjunta (base64)'}
+                    </span>
+                  );
+                }
+                // Caso 2: src es una URL válida (externa o ruta relativa si tuvieras imágenes servidas)
+                // Y no es una cadena vacía.
+                if (src && src.trim() !== "") {
+                  // eslint-disable-next-line @next/next/no-img-element
+                  return <img src={src} alt={alt} className="max-w-sm h-auto rounded-md shadow-sm my-2" {...props}/>;
+                }
+                // Caso 3: src es vacía, nula o indefinida. Mostrar un placeholder diferente.
+                return (
+                  <span className="flex items-center text-xs italic text-gray-500 my-2 p-2 bg-gray-100 border border-gray-200 rounded-md">
+                    <FileImage size={14} className="mr-2 text-gray-400 flex-shrink-0" />
+                    {alt || 'Imagen (enlace no disponible para previsualización)'}
+                  </span>
+                );
+              },
+              table: ({node, ...props}) => <div className="overflow-x-auto"><table className="min-w-full divide-y divide-gray-300 my-4" {...props} /></div>,
+              thead: ({node, ...props}) => <thead className="bg-gray-100" {...props} />,
+              th: ({node, ...props}) => <th scope="col" className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider" {...props} />,
+              td: ({node, ...props}) => <td className="px-4 py-3 whitespace-pre-wrap text-sm text-gray-700" {...props} />,
+              p: ({node, ...props}) => <p className="my-2 leading-relaxed" {...props} />,
+              ul: ({node, ...props}) => <ul className="list-disc pl-5 my-2 space-y-1" {...props} />,
+              ol: ({node, ...props}) => <ol className="list-decimal pl-5 my-2 space-y-1" {...props} />,
+              li: ({node, ...props}) => <li className="text-gray-700" {...props} />,
             }}
           >
             {report}
@@ -134,47 +161,39 @@ export default function ReportOutput({
         </div>
       </div>
 
-      {/* ——— Botones de acción ——— */}
-      <div className="flex flex-wrap gap-4 justify-center pt-6 border-t mt-6">
+      {statusMessage && (
+        <div className={`p-3.5 rounded-md text-sm flex items-center shadow-md
+          ${statusMessage.type === 'success' ? 'bg-green-100 text-green-700 border border-green-300' : ''}
+          ${statusMessage.type === 'error' ? 'bg-red-100 text-red-700 border border-red-300' : ''}
+          ${statusMessage.type === 'info' ? 'bg-blue-100 text-blue-700 border border-blue-300' : ''}
+        `}>
+          {statusMessage.type === 'success' && <CheckCircle size={18} className="mr-2.5 flex-shrink-0" />}
+          {statusMessage.type === 'error' && <AlertCircle size={18} className="mr-2.5 flex-shrink-0" />}
+          {statusMessage.type === 'info' && <Info size={18} className="mr-2.5 flex-shrink-0" />}
+          {statusMessage.message}
+        </div>
+      )}
+
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6 border-t border-gray-200 mt-8">
         <button
           onClick={handleCopyAndExport}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors text-lg flex items-center gap-2"
+          disabled={isLoading}
+          className="w-full sm:w-auto inline-flex items-center justify-center px-7 py-3 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors text-base font-semibold disabled:opacity-70"
         >
-          {/* Icono Copiar */}
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-            />
-          </svg>
-          Copiar y Exportar a Word
+          {isLoading ? (
+            <Loader2 size={20} className="animate-spin mr-2.5" />
+          ) : (
+            <DownloadCloud size={20} className="mr-2.5" />
+          )}
+          {isLoading ? "Procesando..." : "Copiar y Exportar a Word"}
         </button>
 
         <button
           onClick={onReset}
-          className="px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-500 transition-colors flex items-center gap-2"
+          disabled={isLoading}
+          className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-gray-700 bg-white rounded-lg shadow-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors text-sm font-medium disabled:opacity-70"
         >
-          {/* Icono Reiniciar */}
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m-15.357-2a8.001 8.001 0 0015.357 2m0 0H15"
-            />
-          </svg>
+          <RotateCcw size={16} className="mr-2" />
           Reiniciar Todo
         </button>
       </div>

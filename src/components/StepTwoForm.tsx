@@ -1,15 +1,23 @@
+// src/components/StepTwoForm.tsx
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import Image from "next/image"; // Importado para las imágenes de la batería
 import * as XLSX from "xlsx";
 import Tippy from "@tippyjs/react";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import "tippy.js/dist/tippy.css";
 
-import { ParsedData } from "@/utils/parseJiraContent"; // Ajusta la ruta si es necesario
+import {
+  Info, Settings, ListChecks, FileTextIcon, BarChart3, AlertOctagon, CheckCircle2,
+  Sheet, Download, PlusCircle, XCircle, Copy, Trash2, Layers, Edit3, ListPlus, GripVertical,
+  FileCheckIcon // Asegurado que está importado
+} from 'lucide-react';
 
-/** Batería de Pruebas */
+import { ParsedData } from "@/utils/parseJiraContent";
+
+// --- Interfaces (Se mantienen como las proporcionaste) ---
 export interface BatteryTest {
   id: string;
   description: string;
@@ -18,26 +26,20 @@ export interface BatteryTest {
   obtainedResult: string;
   testVersion: string;
   testStatus: string;
-  images?: string[]; // base64
+  images?: string[]; 
 }
-
-/** Incidencias */
 interface Incidence {
   id: string;
   description: string;
   impact: string;
   status: string;
 }
-
-/** Resumen */
 interface Summary {
   totalTests: string;
   successfulTests: string;
   failedTests: string;
   observations: string;
 }
-
-/** Campos ocultables */
 export interface HiddenFields {
   serverPruebas: boolean;
   ipMaquina: boolean;
@@ -46,8 +48,6 @@ export interface HiddenFields {
   maquetaUtilizada: boolean;
   ambiente: boolean;
 }
-
-/** FormData principal */
 export interface FormData {
   jiraCode: string;
   date: string;
@@ -66,58 +66,39 @@ export interface FormData {
   hasIncidences: boolean;
   conclusion: string;
   datosDePrueba: string;
-  // === NUEVO: Campo para Logs ===
   logsRelevantes?: string;
-  // ============================
-  // Campos APP
   isApp?: boolean;
   endpoint?: string;
   sistemaOperativo?: string;
   dispositivoPruebas?: string;
   precondiciones?: string;
   idioma?: string;
-  // ★ Campos personalizados del entorno
   customEnvFields: Array<{ label: string; value: string }>;
 }
-
 interface StepTwoFormProps {
   parsedData: ParsedData;
   formData: FormData;
-  setFormData: (val: FormData) => void;
+  setFormData: React.Dispatch<React.SetStateAction<FormData>>; // Tipo corregido
   hiddenFields: HiddenFields;
   setHiddenFields: React.Dispatch<React.SetStateAction<HiddenFields>>;
   onGenerate: () => void;
   onReset: () => void;
   onGoBackToStep1: () => void;
-  jiraCodeLocked?: boolean; // <--- Añadido aquí
+  jiraCodeLocked?: boolean;
 }
+// --- Fin de Interfaces ---
 
-/** Ayuda para la conclusión */
-const EXAMPLE_CONCLUSION = `Ejemplo de conclusión:
-❌ Rechazado → El fallo bloquea la validación de la funcionalidad`;
+const EXAMPLE_CONCLUSION = `Ejemplo de conclusión:\n❌ Rechazado → El fallo bloquea la validación de la funcionalidad`;
+const EXPECTED_HEADERS = ["ID Prueba", "Descripción", "Pasos", "Resultado Esperado", "Resultado Obtenido", "Versión", "Estado"];
 
-/** Cabeceras esperadas Excel */
-const EXPECTED_HEADERS = [
-  "ID Prueba",
-  "Descripción",
-  "Pasos",
-  "Resultado Esperado",
-  "Resultado Obtenido",
-  "Versión",
-  "Estado",
-];
-
-/** Incrementa ID tipo PR-001 → PR-002 */
 function incrementCaseId(originalId: string): string {
   const match = originalId.match(/^(\D*)(\d+)$/);
   if (!match) return originalId + " (copy)";
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_, prefix, num] = match;
-  const next = String(parseInt(num, 10) + 1).padStart(num.length, "0");
-  return prefix + next;
+  const [_, prefix, numStr] = match;
+  const nextNum = String(parseInt(numStr, 10) + 1).padStart(numStr.length, "0");
+  return prefix + nextNum;
 }
 
-// Lee File a base64
 const readFileAsBase64 = (file: File): Promise<string> =>
   new Promise((res, rej) => {
     const fr = new FileReader();
@@ -126,29 +107,79 @@ const readFileAsBase64 = (file: File): Promise<string> =>
     fr.readAsDataURL(file);
   });
 
-// Genera ZIP de evidencias de un array de tests
 async function downloadImagesZip(tests: BatteryTest[]) {
   const zip = new JSZip();
   tests.forEach((t) => {
     if (!t.images?.length) return;
-    // Usar ID limpio para nombre de carpeta
-    const folder = zip.folder(t.id.trim())!;
+    const folderName = t.id.trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+    const folder = zip.folder(folderName)!;
     t.images.forEach((b64, i) => {
       const mimeMatch = b64.match(/^data:(image\/\w+)/);
       const mime = mimeMatch ? mimeMatch[1] : "image/png";
-      const ext = mime.split("/")[1] || "png"; // Default a png si no se detecta
-      // Extraer solo la parte base64
+      const ext = mime.split("/")[1]?.toLowerCase() || "png";
       const base64Data = b64.split(",")[1];
-      if (base64Data) { // Asegurarse que hay datos
-        folder.file(`evidencia-${i + 1}.${ext}`, base64Data, {
-          base64: true,
-        });
+      if (base64Data) {
+        folder.file(`evidencia-${i + 1}.${ext}`, base64Data, { base64: true });
       }
     });
   });
   const blob = await zip.generateAsync({ type: "blob" });
-  saveAs(blob, "evidencias.zip");
+  saveAs(blob, "evidencias_pruebas.zip"); // Nombre de archivo ligeramente más descriptivo
 }
+
+// --- Sub-componentes de Estilo ---
+const StyledInput: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label: string; id: string; error?: boolean; required?: boolean }> = ({ label, id, error, required, ...props }) => (
+  <div>
+    <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1.5">
+      {label} {required && <span className="text-red-500">*</span>}
+    </label>
+    <input
+      id={id}
+      {...props}
+      className={`w-full border ${error ? 'border-red-400 ring-1 ring-red-400' : 'border-gray-300'} rounded-lg px-3.5 py-2.5 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm ${props.disabled ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white'}`}
+    />
+  </div>
+);
+
+const StyledTextarea: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string; id: string; required?: boolean }> = ({ label, id, required, ...props }) => (
+  <div>
+    <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1.5">
+      {label} {required && <span className="text-red-500">*</span>}
+    </label>
+    <textarea
+      id={id}
+      {...props}
+      className={`w-full border border-gray-300 rounded-lg px-3.5 py-2.5 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm ${props.className || ''}`}
+    />
+  </div>
+);
+
+const StyledSelect: React.FC<React.SelectHTMLAttributes<HTMLSelectElement> & { label: string; id: string; required?: boolean }> = ({ label, id, children, required, ...props }) => (
+  <div>
+    <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1.5">
+      {label} {required && <span className="text-red-500">*</span>}
+    </label>
+    <select
+      id={id}
+      {...props}
+      className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-sm appearance-none" // appearance-none para estilizar flecha si se desea
+    >
+      {children}
+    </select>
+  </div>
+);
+
+const FormSection: React.FC<{ title: string; icon?: React.ReactNode; children: React.ReactNode; className?: string }> = ({ title, icon, children, className }) => (
+  <section className={`bg-white p-6 rounded-xl shadow-lg space-y-5 ${className || ''}`}>
+    <h3 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-4 mb-6 flex items-center">
+      {icon && <span className="mr-3 text-blue-600">{icon}</span>}
+      {title}
+    </h3>
+    {children}
+  </section>
+);
+// --- Fin Sub-componentes de Estilo ---
+
 
 export default function StepTwoForm({
   parsedData,
@@ -159,39 +190,30 @@ export default function StepTwoForm({
   onGenerate,
   onReset,
   onGoBackToStep1,
-  jiraCodeLocked = false, // <--- Añadido aquí
+  jiraCodeLocked = false,
 }: StepTwoFormProps) {
-  // Nuevo estado para desbloquear la edición manualmente
   const [forceUnlock, setForceUnlock] = React.useState(false);
 
-  // Actualiza formData
   const handleInputChange = (
     field: keyof FormData,
     value: string | boolean | Summary
   ) => {
-    // Manejo especial para el objeto summary (como antes)
     if (field === "summary" && typeof value === "object") {
       const newSummary = { ...formData.summary, ...value } as Summary;
-      const total = +newSummary.totalTests || 0; // Usar 0 si no es número
+      const total = +newSummary.totalTests || 0; 
       const suc = +newSummary.successfulTests || 0;
       const fail = +newSummary.failedTests || 0;
 
       if (suc > total || fail > total || (suc + fail) > total) {
-        // Añadida validación extra suc + fail <= total
         alert("La suma de pruebas Exitosas y Fallidas no puede superar el Total.");
-        // Opcionalmente, no actualizar si es inválido, o resetear campos
-        // Aquí simplemente no actualizamos si la suma excede
         if ((suc + fail) > total) return;
       }
       setFormData({ ...formData, summary: newSummary });
       return;
     }
-    // Manejo para otros campos
     setFormData({ ...formData, [field]: value });
   };
 
-
-  // Demo on mount (sin cambios)
   useEffect(() => {
     const updated = formData.batteryTests.map((t) =>
       t.id === "PR-001" &&
@@ -203,114 +225,100 @@ export default function StepTwoForm({
         }
         : t
     );
-    // Solo actualiza si realmente hubo cambios para evitar bucles innecesarios
     if (JSON.stringify(updated) !== JSON.stringify(formData.batteryTests)) {
       setFormData({ ...formData, batteryTests: updated });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Dependencia vacía intencional para que corra solo al montar
+  }, []); 
 
-  // --- CRUD Batería (con actualización correcta de estado) ---
   const addBatteryTest = () => {
     const nt: BatteryTest = {
-      id: `PR-${String(formData.batteryTests.length + 1).padStart(3, '0')}`, // ID incremental básico
+      id: `PR-${String(formData.batteryTests.length + 1).padStart(3, '0')}`,
       description: "",
-      steps: "Paso 1: ...",
-      expectedResult: "Resultado esperado...",
+      steps: "1. ",
+      expectedResult: "",
       obtainedResult: "",
       testVersion: "",
-      testStatus: "Pendiente", // Estado inicial
+      testStatus: "Pendiente", 
       images: [],
     };
-    // Crear nuevo array inmutable
     const updatedTests = [...formData.batteryTests, nt];
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({ // Usar forma funcional para asegurar el estado más reciente
+      ...prev,
       batteryTests: updatedTests,
-      // Actualizar resumen basado en el nuevo array
-      summary: { ...formData.summary, totalTests: String(updatedTests.length) },
-    });
+      summary: { ...prev.summary, totalTests: String(updatedTests.length) },
+    }));
   };
 
   const removeBatteryTest = (i: number) => {
-    // Crear nuevo array filtrando el elemento
-    const updatedTests = formData.batteryTests.filter((_, index) => index !== i);
-    setFormData({
-      ...formData,
-      batteryTests: updatedTests,
-      summary: { ...formData.summary, totalTests: String(updatedTests.length) },
-    });
+    if (window.confirm(`¿Seguro que quieres eliminar el caso de prueba "${formData.batteryTests[i]?.id || i + 1}"?`)) {
+      const updatedTests = formData.batteryTests.filter((_, index) => index !== i);
+      setFormData((prev) => ({
+        ...prev,
+        batteryTests: updatedTests,
+        summary: { ...prev.summary, totalTests: String(updatedTests.length) },
+      }));
+    }
   };
 
   const duplicateBatteryTest = (i: number) => {
     const orig = formData.batteryTests[i];
-    // Usar trim() en el ID original antes de incrementar
-    const clone = { ...orig, id: incrementCaseId(orig.id.trim()), images: [] }; // Clonar sin imágenes
-    // Crear nuevo array insertando el clon
+    const clone = { ...orig, id: incrementCaseId(orig.id.trim()), images: [] }; 
     const updatedTests = [
       ...formData.batteryTests.slice(0, i + 1),
       clone,
       ...formData.batteryTests.slice(i + 1),
     ];
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       batteryTests: updatedTests,
-      summary: { ...formData.summary, totalTests: String(updatedTests.length) },
-    });
+      summary: { ...prev.summary, totalTests: String(updatedTests.length) },
+    }));
   };
-
+  
   const handleBatteryTestChange = (
     idx: number,
     field: keyof BatteryTest,
     val: string
   ) => {
-    // Actualización inmutable del array de tests
     const updatedTests = formData.batteryTests.map((test, index) => {
       if (index === idx) {
-        return { ...test, [field]: val }; // Crear copia del test modificado
+        return { ...test, [field]: val }; 
       }
-      return test; // Mantener los otros tests igual
+      return test; 
     });
-    setFormData({ ...formData, batteryTests: updatedTests });
+    setFormData(prev => ({ ...prev, batteryTests: updatedTests }));
   };
 
-
-  // --- Incidencias (lógica simplificada y con actualización inmutable) ---
   const addIncidence = () => {
-    // Añade una incidencia por defecto si no hay ninguna y hasIncidences es true
-    // La lógica de limitar a 1 se maneja mejor en la UI o al procesar
     const newIncidence: Incidence = {
-      id: "INC-001", // O algún ID por defecto
-      description: "Descripción de la incidencia...",
+      id: `INC-${String(formData.incidences.length + 1).padStart(3, '0')}`, 
+      description: "",
       impact: "Medio",
       status: "Abierto",
     };
-    setFormData({
-      ...formData,
-      incidences: [...formData.incidences, newIncidence],
-    });
+    setFormData((prev) => ({
+      ...prev,
+      incidences: [...prev.incidences, newIncidence],
+    }));
   };
 
   const removeIncidence = (i: number) => {
-    // Actualización inmutable
-    const updatedIncidences = formData.incidences.filter((_, index) => index !== i);
-    setFormData({ ...formData, incidences: updatedIncidences });
+     if (window.confirm("¿Seguro que quieres eliminar esta incidencia?")) {
+        const updatedIncidences = formData.incidences.filter((_, index) => index !== i);
+        setFormData(prev => ({ ...prev, incidences: updatedIncidences }));
+    }
   };
 
-  // Efecto para manejar el array de incidencias basado en hasIncidences
   useEffect(() => {
     if (formData.hasIncidences && formData.incidences.length === 0) {
-      // Si se marca "Sí" y no hay incidencias, añadir una por defecto
       addIncidence();
     } else if (!formData.hasIncidences && formData.incidences.length > 0) {
-      // Si se marca "No" y hay incidencias, limpiarlas
-      setFormData({ ...formData, incidences: [] });
+      setFormData(prev => ({ ...prev, incidences: [] }));
     }
-    // Dependencias correctas: formData.hasIncidences y formData.incidences.length
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.hasIncidences, formData.incidences.length]);
+  }, [formData.hasIncidences]); // Ajustado para depender solo de hasIncidences
 
-  // Actualizar incidencia específica (inmutable)
   const handleIncidenceChange = (
     idx: number,
     field: keyof Incidence,
@@ -322,11 +330,9 @@ export default function StepTwoForm({
       }
       return inc;
     });
-    setFormData({ ...formData, incidences: updatedIncidences });
+    setFormData(prev => ({ ...prev, incidences: updatedIncidences }));
   };
 
-
-  // --- Versiones (con actualización inmutable) ---
   const handleVersionChange = (
     i: number,
     field: "appName" | "appVersion",
@@ -338,23 +344,20 @@ export default function StepTwoForm({
       }
       return version;
     });
-    setFormData({ ...formData, versions: updatedVersions });
+    setFormData(prev => ({ ...prev, versions: updatedVersions }));
   };
 
   const addVersion = () =>
-    setFormData({
-      ...formData,
-      // Añadir nuevo objeto versión al array inmutablemente
-      versions: [...formData.versions, { appName: "", appVersion: "" }],
-    });
+    setFormData((prev) => ({
+      ...prev,
+      versions: [...prev.versions, { appName: "", appVersion: "" }],
+    }));
 
   const removeVersion = (i: number) => {
-    // Filtrar para crear nuevo array inmutable
     const updatedVersions = formData.versions.filter((_, index) => index !== i);
-    setFormData({ ...formData, versions: updatedVersions });
+    setFormData(prev => ({ ...prev, versions: updatedVersions }));
   };
-
-  // --- Campos Personalizados (con actualización inmutable) ---
+  
   const handleCustomFieldChange = (
     i: number,
     field: "label" | "value",
@@ -366,29 +369,25 @@ export default function StepTwoForm({
       }
       return f;
     });
-    setFormData({ ...formData, customEnvFields: updatedFields });
+    setFormData(prev => ({ ...prev, customEnvFields: updatedFields }));
   };
 
   const addCustomField = () => {
-    setFormData({
-      ...formData,
-      customEnvFields: [...formData.customEnvFields, { label: "", value: "" }],
-    });
+    setFormData((prev) => ({
+      ...prev,
+      customEnvFields: [...prev.customEnvFields, { label: "", value: "" }],
+    }));
   };
 
   const removeCustomField = (i: number) => {
     const updatedFields = formData.customEnvFields.filter((_, index) => index !== i);
-    setFormData({ ...formData, customEnvFields: updatedFields });
+    setFormData(prev => ({ ...prev, customEnvFields: updatedFields }));
   };
 
-
-  // Conclusión (sin cambios)
-  const isExampleConclusion =
-    formData.conclusion === EXAMPLE_CONCLUSION;
-
-  // Importar Excel (sin cambios funcionales, pero asegurar inmutabilidad)
+  const isExampleConclusion = formData.conclusion === EXAMPLE_CONCLUSION;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const handleImportClick = () => fileInputRef.current?.click();
+  
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -397,661 +396,477 @@ export default function StepTwoForm({
       const wb = XLSX.read(data, { type: "array" });
       const sh = wb.Sheets[wb.SheetNames[0]];
       if (!sh) throw new Error("Hoja no encontrada en el Excel");
-      const sd: unknown[][] = XLSX.utils.sheet_to_json(sh, {
-        header: 1,
-        blankrows: false,
-      });
-      if (sd.length < 2) {
-        alert("Excel vacío o sin datos suficientes (mínimo cabecera y una fila).");
-        return;
-      }
+      const sd: unknown[][] = XLSX.utils.sheet_to_json(sh, { header: 1, blankrows: false });
+      if (sd.length < 2) { alert("Excel vacío o sin datos suficientes."); return; }
       const hdr = sd[0] as string[];
-      if (
-        hdr.length !== EXPECTED_HEADERS.length ||
-        !EXPECTED_HEADERS.every((expectedH, i) => expectedH === hdr[i]?.trim()) // Trim a las cabeceras leídas
-      ) {
-        alert(
-          "El formato de las columnas no coincide con el esperado:\n" +
-          EXPECTED_HEADERS.join(" | ") + "\n\n" +
-          "Columnas encontradas:\n" + hdr.join(" | ")
-        );
+      if (hdr.length !== EXPECTED_HEADERS.length || !EXPECTED_HEADERS.every((h, i) => h === hdr[i]?.trim())) {
+        alert(`El formato de columnas no coincide.\nEsperado: ${EXPECTED_HEADERS.join(" | ")}\nEncontrado: ${hdr.join(" | ")}`);
         return;
       }
-      const imp: BatteryTest[] = [];
-      sd.slice(1).forEach((row: unknown[], rowIndex) => {
-        // Permitir filas más cortas, pero asegurar que los índices existan
+      const imp: BatteryTest[] = sd.slice(1).map((row: unknown[], rowIndex) => {
         const [id, d, steps, er, or, ver, st] = row;
-        const nt: BatteryTest = {
-          id: String(id || `IMP-${rowIndex + 1}`).trim(), // Usar trim y ID por defecto si está vacío
+        return {
+          id: String(id || `IMP-${rowIndex + 1}`).trim(), 
           description: String(d || ""),
           steps: String(steps || ""),
           expectedResult: String(er || ""),
           obtainedResult: String(or || ""),
           testVersion: String(ver || ""),
-          testStatus: String(st || "Pendiente"), // Estado por defecto
-          images: [], // Las imágenes no se importan de Excel
+          testStatus: String(st || "Pendiente"), 
+          images: [], 
         };
-        // Importar solo si el ID no está vacío después de trim
-        if (nt.id) imp.push(nt);
-      });
+      }).filter(nt => nt.id);
 
-      if (!imp.length) {
-        alert("No se importaron casos de prueba válidos desde el Excel.");
-        return;
-      }
-
-      // Combinar tests existentes con importados de forma inmutable
-      const combinedTests = [...formData.batteryTests, ...imp];
-      setFormData({
-        ...formData,
-        batteryTests: combinedTests,
-        summary: { ...formData.summary, totalTests: String(combinedTests.length) },
+      if (!imp.length) { alert("No se importaron casos válidos."); return; }
+      
+      setFormData(prev => {
+        const combinedTests = [...prev.batteryTests, ...imp];
+        return {
+          ...prev,
+          batteryTests: combinedTests,
+          summary: { ...prev.summary, totalTests: String(combinedTests.length) },
+        };
       });
       alert(`Importados ${imp.length} casos de prueba.`);
-    } catch (error) {
-      console.error("Error al leer Excel:", error);
-      alert(`Error al leer el archivo Excel: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    } catch (err) {
+      console.error("Error al leer Excel:", err);
+      alert(`Error al leer el archivo Excel: ${err instanceof Error ? err.message : 'Error desconocido'}`);
     } finally {
-      // Limpiar el input para permitir importar el mismo archivo de nuevo si es necesario
       if (e.target) e.target.value = "";
     }
   };
-
-  // Ocultar campos entorno (sin cambios)
-  const hideField = (k: keyof HiddenFields) =>
-    setHiddenFields((p) => ({ ...p, [k]: true }));
+  
+  const hideField = (k: keyof HiddenFields) => setHiddenFields((p) => ({ ...p, [k]: true }));
   const anyHidden = Object.values(hiddenFields).some(Boolean);
-  const restoreAll = () =>
-    setHiddenFields({
-      serverPruebas: false,
-      ipMaquina: false,
-      navegador: false,
-      baseDatos: false,
-      maquetaUtilizada: false,
-      ambiente: false,
-    });
+  const restoreAll = () => setHiddenFields({
+    serverPruebas: false, ipMaquina: false, navegador: false, baseDatos: false, maquetaUtilizada: false, ambiente: false,
+  });
 
-  // --- Renderizado del Formulario ---
+
   return (
-    <div className="space-y-6 max-w-3xl mx-auto mb-12">
-      {/* Encabezado */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="flex items-center text-2xl font-bold mb-1">
-            <svg /* Icono */ className="w-6 h-6 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11H9v-2h2v2zm0-4H9V5h2v4z" />
-            </svg>
-            Paso 2
-          </h2>
-          <p className="text-gray-600">Introduce los datos adicionales del reporte</p>
-          <hr className="mt-3 border-gray-200" />
+    <div className="space-y-10 max-w-4xl mx-auto pb-12">
+      {/* Encabezado del Paso 2 */}
+      <div className="flex flex-col sm:flex-row items-center justify-between mb-8 pb-5 border-b border-gray-300">
+        <div className="flex items-center">
+          <div className="flex-shrink-0 w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl font-bold mr-4 shadow">
+            2
+          </div>
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-semibold text-gray-800">Datos Adicionales del Reporte</h2>
+            <p className="text-gray-500 text-sm mt-0.5">Completa la información necesaria para generar un reporte detallado.</p>
+          </div>
         </div>
         <button
           onClick={onGoBackToStep1}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors" // Botón volver
+          className="mt-4 sm:mt-0 inline-flex items-center text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors px-3 py-2 rounded-lg hover:bg-blue-50"
         >
-          ← Volver a la introducción del JIRA
+          <Layers size={16} className="mr-1.5" />
+          Volver al Paso 1
         </button>
       </div>
 
-      {/* Datos básicos */}
-      <div className="p-4 border rounded shadow-sm bg-white space-y-4">
-        <h3 className="text-lg font-semibold border-b pb-2 mb-4">Información General</h3>
-        {/* Título (Solo lectura) */}
+      {/* --- Sección: Información General --- */}
+      <FormSection title="Información General" icon={<Info size={22}/>}>
         <div>
-          <label className="block font-medium text-gray-700">Título JIRA</label>
-          <p className="p-2 bg-gray-100 rounded text-gray-800 text-sm">{parsedData.title}</p>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Título JIRA (del Paso 1)</label>
+          <p className="mt-1 p-3 bg-gray-100 rounded-lg text-gray-800 text-sm min-h-[42px] border border-gray-200">{parsedData.title || "(No se cargó título desde el Paso 1)"}</p>
         </div>
-
-
-        {/* Código de JIRA */}
-        <div>
-          <label htmlFor="jiraCode" className="block font-medium text-gray-700">
-            Código de JIRA <span className="text-red-500">*</span>
-          </label>
-          <input
-            id="jiraCode"
-            type="text"
-            className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Ej: SAENEXTBUS-1411"
-            value={formData.jiraCode}
-            onChange={(e) => handleInputChange("jiraCode", e.target.value)}
-            required
-            disabled={jiraCodeLocked && !forceUnlock}
-            style={jiraCodeLocked && !forceUnlock ? { backgroundColor: "#f3f4f6", color: "#888", cursor: "not-allowed" } : {}}
-          />
-          {jiraCodeLocked && !forceUnlock && (
-            <button
-              type="button"
-              className="text-xs text-blue-700 underline mt-1"
-              onClick={() => setForceUnlock(true)}
-            >
-              ¿El código del JIRA no es correcto? Pulsa aquí para cambiarlo.
-            </button>
-          )}
+        <StyledInput
+          label="Código de JIRA"
+          id="jiraCode"
+          type="text"
+          placeholder="Ej: PROJ-123"
+          value={formData.jiraCode}
+          onChange={(e) => handleInputChange("jiraCode", e.target.value)}
+          required
+          disabled={jiraCodeLocked && !forceUnlock}
+          style={jiraCodeLocked && !forceUnlock ? { backgroundColor: "#e9ecef", color: "#6c757d", cursor: "not-allowed" } : {}}
+        />
+        {jiraCodeLocked && !forceUnlock && (
+          <button type="button" className="text-xs text-blue-600 hover:underline mt-1.5 flex items-center" onClick={() => setForceUnlock(true)}>
+            <Edit3 size={12} className="mr-1" /> ¿Código incorrecto? Editar.
+          </button>
+        )}
+         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+            <StyledInput
+                label="Fecha de Prueba"
+                id="date"
+                type="date"
+                value={formData.date}
+                onChange={(e) => handleInputChange("date", e.target.value)}
+            />
+            <StyledInput
+                label="Tester"
+                id="tester"
+                type="text"
+                placeholder="Iniciales o nombre completo"
+                value={formData.tester}
+                onChange={(e) => handleInputChange("tester", e.target.value)}
+            />
         </div>
-        {/* Fecha */}
-        <div>
-          <label htmlFor="date" className="block font-medium text-gray-700">Fecha de Prueba</label>
-          <input
-            id="date"
-            type="date"
-            className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={formData.date}
-            onChange={(e) => handleInputChange("date", e.target.value)}
-          />
-        </div>
-        {/* Tester */}
-        <div>
-          <label htmlFor="tester" className="block font-medium text-gray-700">Tester</label>
-          <input
-            id="tester"
-            type="text"
-            className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Iniciales o nombre"
-            value={formData.tester}
-            onChange={(e) => handleInputChange("tester", e.target.value)}
-          />
-        </div>
-        {/* Estado */}
-        <div>
-          <label htmlFor="testStatus" className="block font-medium text-gray-700">Estado General de la Prueba</label>
-          <select
+        <StyledSelect
+            label="Estado General de la Prueba"
             id="testStatus"
-            className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             value={formData.testStatus}
             onChange={(e) => handleInputChange("testStatus", e.target.value)}
-          >
-            <option value="" disabled>Seleccione...</option>
+            required
+        >
+            <option value="" disabled>Seleccione un estado...</option>
             <option value="Exitosa">Exitosa</option>
             <option value="Fallida">Fallida</option>
             <option value="Parcial">Parcialmente Exitosa</option>
             <option value="Bloqueada">Bloqueada</option>
-          </select>
-        </div>
-      </div>
+        </StyledSelect>
+      </FormSection>
 
-
-      {/* Entorno y Configuración */}
-      <div className="p-4 border rounded shadow-sm bg-white space-y-4">
-        <h3 className="text-lg font-semibold border-b pb-2 mb-4">Entorno y Configuración</h3>
-        {/* Checkbox APP */}
-        <div className="mt-4">
-          <label className="inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              className="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
-              checked={formData.isApp || false}
-              onChange={(e) => handleInputChange("isApp", e.target.checked)}
-            />
-            <span className="ml-2 text-gray-700">¿Es validación de una APP Móvil/Escritorio?</span>
-          </label>
+      {/* --- Sección: Entorno y Configuración --- */}
+      <FormSection title="Entorno y Configuración" icon={<Settings size={22}/>}>
+        <div className="pt-1"> {/* Pequeño ajuste para alinear con el título de sección */}
+            <label className="inline-flex items-center cursor-pointer">
+                <input
+                type="checkbox"
+                className="form-checkbox h-4 w-4 text-blue-600 rounded-sm border-gray-300 focus:ring-blue-500 focus:ring-offset-1"
+                checked={formData.isApp || false}
+                onChange={(e) => handleInputChange("isApp", e.target.checked)}
+                />
+                <span className="ml-2 text-sm text-gray-700">¿Es validación de una APP Móvil/Escritorio?</span>
+            </label>
         </div>
 
-        {/* Campos APP Condicionales */}
         {formData.isApp && (
-          <div className="mt-4 border p-3 rounded space-y-3 bg-blue-50 border-blue-200">
-            <h4 className="font-semibold text-blue-800">Detalles de la APP</h4>
-            {/* Endpoint */}
-            <div>
-              <label htmlFor="endpoint" className="block font-medium text-sm">Endpoint (si aplica)</label>
-              <input id="endpoint" type="text" className="border p-2 rounded w-full text-sm" placeholder="Ej: https://api.ejemplo.com" value={formData.endpoint || ""} onChange={(e) => handleInputChange("endpoint", e.target.value)} />
-            </div>
-            {/* Sistema Operativo */}
-            <div>
-              <label htmlFor="sistemaOperativo" className="block font-medium text-sm">Sistema Operativo / Versión</label>
-              <input id="sistemaOperativo" type="text" className="border p-2 rounded w-full text-sm" placeholder="Ej: Android 13, iOS 16.5, Windows 11" value={formData.sistemaOperativo || ""} onChange={(e) => handleInputChange("sistemaOperativo", e.target.value)} />
-            </div>
-            {/* Dispositivo */}
-            <div>
-              <label htmlFor="dispositivoPruebas" className="block font-medium text-sm">Dispositivo de Pruebas</label>
-              <input id="dispositivoPruebas" type="text" className="border p-2 rounded w-full text-sm" placeholder="Ej: Pixel 8, iPhone 14 Pro, PC (marca/modelo)" value={formData.dispositivoPruebas || ""} onChange={(e) => handleInputChange("dispositivoPruebas", e.target.value)} />
-            </div>
-            {/* Precondiciones APP */}
-            <div>
-              <label htmlFor="precondiciones" className="block font-medium text-sm">Precondiciones Específicas APP</label>
-              <textarea id="precondiciones" rows={2} className="w-full border p-2 rounded text-sm" placeholder="Ej: Permisos concedidos, versión mínima requerida..." value={formData.precondiciones || ""} onChange={(e) => handleInputChange("precondiciones", e.target.value)} />
-            </div>
-            {/* Idioma APP */}
-            <div>
-              <label htmlFor="idioma" className="block font-medium text-sm">Idioma Configurado</label>
-              <input id="idioma" type="text" className="border p-2 rounded w-full text-sm" placeholder="Ej: es-ES, en-US" value={formData.idioma || ""} onChange={(e) => handleInputChange("idioma", e.target.value)} />
-            </div>
+          <div className="mt-4 p-4 border rounded-lg bg-blue-50/60 border-blue-200 space-y-4">
+            <h4 className="font-semibold text-blue-700 text-sm">Detalles Específicos de la APP</h4>
+            <StyledInput label="Endpoint (si aplica)" id="app-endpoint" placeholder="https://api.ejemplo.com" value={formData.endpoint || ""} onChange={(e) => handleInputChange("endpoint", e.target.value)} />
+            <StyledInput label="Sistema Operativo / Versión" id="app-os" placeholder="Android 13, iOS 16.5, Windows 11" value={formData.sistemaOperativo || ""} onChange={(e) => handleInputChange("sistemaOperativo", e.target.value)} />
+            <StyledInput label="Dispositivo de Pruebas" id="app-device" placeholder="Pixel 8, iPhone 14 Pro, PC…" value={formData.dispositivoPruebas || ""} onChange={(e) => handleInputChange("dispositivoPruebas", e.target.value)} />
+            <StyledTextarea label="Precondiciones Específicas APP" id="app-preconds" rows={2} placeholder="Ej: Permisos concedidos, versión mínima requerida..." value={formData.precondiciones || ""} onChange={(e) => handleInputChange("precondiciones", e.target.value)} />
+            <StyledInput label="Idioma Configurado" id="app-lang" placeholder="es-ES, en-US" value={formData.idioma || ""} onChange={(e) => handleInputChange("idioma", e.target.value)} />
           </div>
         )}
 
-        {/* Versiones */}
-        <div className="mt-6 space-y-3">
-          <label className="block font-medium text-gray-700">Versiones de Aplicativos/Componentes</label>
+        <div className="mt-5 space-y-3"> {/* Incrementado mt */}
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Versiones de Aplicativos/Componentes</label>
           {formData.versions.map((v, i) => (
-            <div key={i} className="flex items-center space-x-2">
-              <input type="text" aria-label={`Nombre aplicativo ${i + 1}`} className="border p-2 rounded flex-grow" placeholder="Nombre aplicativo" value={v.appName} onChange={(e) => handleVersionChange(i, "appName", e.target.value)} />
-              <input type="text" aria-label={`Versión aplicativo ${i + 1}`} className="border p-2 rounded flex-grow" placeholder="Versión" value={v.appVersion} onChange={(e) => handleVersionChange(i, "appVersion", e.target.value)} />
-              <button type="button" onClick={() => removeVersion(i)} className="text-red-600 hover:text-red-800 font-bold px-2 py-1" title="Eliminar esta versión">✕</button>
+            <div key={i} className="flex items-center space-x-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
+              <input type="text" aria-label={`Nombre aplicativo ${i + 1}`} className="flex-grow border-gray-300 p-2.5 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Nombre aplicativo" value={v.appName} onChange={(e) => handleVersionChange(i, "appName", e.target.value)} />
+              <input type="text" aria-label={`Versión aplicativo ${i + 1}`} className="w-32 border-gray-300 p-2.5 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Versión" value={v.appVersion} onChange={(e) => handleVersionChange(i, "appVersion", e.target.value)} />
+              <button type="button" onClick={() => removeVersion(i)} className="p-1.5 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100 transition-colors" title="Eliminar esta versión"><XCircle size={20} /></button>
             </div>
           ))}
-          <button type="button" onClick={addVersion} className="mt-2 px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600">+ Añadir versión</button>
+          <button type="button" onClick={addVersion} className="inline-flex items-center mt-1.5 px-3.5 py-2 bg-green-500 text-white rounded-md text-xs font-medium hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-green-500 shadow-sm"><PlusCircle size={16} className="mr-1.5" /> Añadir versión</button>
+        </div>
+        
+        <div className="mt-6">
+            <h4 className="text-sm font-medium text-gray-700 mb-2.5">Campos de Entorno Adicionales</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+                {!hiddenFields.serverPruebas && ( <div className="relative group"> <StyledInput label="Servidor de Pruebas" id="serverPruebas" placeholder="Ej: Servidor UAT" value={formData.serverPruebas} onChange={(e) => handleInputChange("serverPruebas", e.target.value)} /> <button type="button" onClick={() => hideField("serverPruebas")} className="absolute top-1 right-1 text-gray-400 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-opacity rounded-full hover:bg-gray-100" title="Ocultar campo"><XCircle size={18} /></button> </div> )}
+                {!hiddenFields.ipMaquina && ( <div className="relative group"> <StyledInput label="IP Máquina Cliente" id="ipMaquina" placeholder="Ej: 192.168.1.100" value={formData.ipMaquina} onChange={(e) => handleInputChange("ipMaquina", e.target.value)} /> <button type="button" onClick={() => hideField("ipMaquina")} className="absolute top-1 right-1 text-gray-400 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-opacity rounded-full hover:bg-gray-100" title="Ocultar campo"><XCircle size={18} /></button> </div> )}
+                {!hiddenFields.navegador && ( <div className="relative group"> <StyledInput label="Navegador Utilizado" id="navegador" placeholder="Ej: Chrome 120" value={formData.navegador} onChange={(e) => handleInputChange("navegador", e.target.value)} /> <button type="button" onClick={() => hideField("navegador")} className="absolute top-1 right-1 text-gray-400 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-opacity rounded-full hover:bg-gray-100" title="Ocultar campo"><XCircle size={18} /></button> </div> )}
+                {!hiddenFields.baseDatos && ( <div className="relative group"> <StyledSelect label="Base de Datos" id="baseDatos" value={formData.baseDatos} onChange={(e) => handleInputChange("baseDatos", e.target.value)}> <option value="">Seleccione o escriba...</option> <option value="SQL Server">SQL Server</option><option value="Oracle">Oracle</option><option value="MySQL">MySQL</option> <option value="PostgreSQL">PostgreSQL</option><option value="MongoDB">MongoDB</option><option value="N/A">N/A</option> </StyledSelect> {formData.baseDatos === "" || !["SQL Server", "Oracle", "MySQL", "PostgreSQL", "MongoDB", "N/A"].includes(formData.baseDatos) && ( <input type="text" className="mt-1.5 w-full border-gray-300 p-2.5 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Especifique BD" value={formData.baseDatos} onChange={(e) => handleInputChange("baseDatos", e.target.value)} /> )} <button type="button" onClick={() => hideField("baseDatos")} className="absolute top-1 right-1 text-gray-400 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-opacity rounded-full hover:bg-gray-100" title="Ocultar campo"><XCircle size={18} /></button> </div> )}
+                {!hiddenFields.maquetaUtilizada && ( <div className="relative group"> <StyledInput label="Maqueta Utilizada" id="maquetaUtilizada" placeholder="Ej: Maqueta XYZ v2" value={formData.maquetaUtilizada} onChange={(e) => handleInputChange("maquetaUtilizada", e.target.value)} /> <button type="button" onClick={() => hideField("maquetaUtilizada")} className="absolute top-1 right-1 text-gray-400 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-opacity rounded-full hover:bg-gray-100" title="Ocultar campo"><XCircle size={18} /></button> </div> )}
+                {!hiddenFields.ambiente && ( <div className="relative group"> <StyledSelect label="Ambiente" id="ambiente" value={formData.ambiente} onChange={(e) => handleInputChange("ambiente", e.target.value)}> <option value="">Seleccione...</option> <option value="Desarrollo">Desarrollo</option><option value="Integración">Integración</option><option value="UAT">UAT</option> <option value="Transferencia">Transferencia</option><option value="PRE">Pre-Producción</option><option value="PROD">Producción</option> </StyledSelect> {formData.ambiente === "" || !["Desarrollo", "Integración", "UAT", "Transferencia", "PRE", "PROD"].includes(formData.ambiente) && ( <input type="text" className="mt-1.5 w-full border-gray-300 p-2.5 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Especifique Ambiente" value={formData.ambiente} onChange={(e) => handleInputChange("ambiente", e.target.value)} /> )} <button type="button" onClick={() => hideField("ambiente")} className="absolute top-1 right-1 text-gray-400 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-opacity rounded-full hover:bg-gray-100" title="Ocultar campo"><XCircle size={18} /></button> </div> )}
+            </div>
+            {anyHidden && (
+            <div className="mt-5 text-right">
+                <button type="button" onClick={restoreAll} className="inline-flex items-center text-xs px-3 py-1.5 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-400 shadow-sm"><ListPlus size={14} className="mr-1.5"/> Mostrar todos los campos de entorno</button>
+            </div>
+            )}
         </div>
 
-        {/* Campos entorno ocultables */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          {/* Servidor */}
-          {!hiddenFields.serverPruebas && (
-            <div className="relative group">
-              <label htmlFor="serverPruebas" className="block font-medium text-sm">Servidor de Pruebas</label>
-              <input id="serverPruebas" type="text" className="border p-2 rounded w-full pr-8 text-sm" placeholder="Ej: Servidor UAT" value={formData.serverPruebas} onChange={(e) => handleInputChange("serverPruebas", e.target.value)} />
-              <button type="button" onClick={() => hideField("serverPruebas")} className="absolute top-6 right-1 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity" title="Ocultar este campo del reporte">✕</button>
-            </div>
-          )}
-          {/* IP */}
-          {!hiddenFields.ipMaquina && (
-            <div className="relative group">
-              <label htmlFor="ipMaquina" className="block font-medium text-sm">IP Máquina Cliente</label>
-              <input id="ipMaquina" type="text" className="border p-2 rounded w-full pr-8 text-sm" placeholder="Ej: 192.168.1.100" value={formData.ipMaquina} onChange={(e) => handleInputChange("ipMaquina", e.target.value)} />
-              <button type="button" onClick={() => hideField("ipMaquina")} className="absolute top-6 right-1 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity" title="Ocultar este campo del reporte">✕</button>
-            </div>
-          )}
-          {/* Navegador */}
-          {!hiddenFields.navegador && (
-            <div className="relative group">
-              <label htmlFor="navegador" className="block font-medium text-sm">Navegador Utilizado (si aplica)</label>
-              <input id="navegador" type="text" className="border p-2 rounded w-full pr-8 text-sm" placeholder="Ej: Chrome 120, Firefox 118" value={formData.navegador} onChange={(e) => handleInputChange("navegador", e.target.value)} />
-              <button type="button" onClick={() => hideField("navegador")} className="absolute top-6 right-1 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity" title="Ocultar este campo del reporte">✕</button>
-            </div>
-          )}
-          {/* Base de Datos */}
-          {!hiddenFields.baseDatos && (
-            <div className="relative group">
-              <label htmlFor="baseDatos" className="block font-medium text-sm">Base de Datos (si aplica)</label>
-              <select id="baseDatos" className="border p-2 rounded w-full pr-8 text-sm bg-white appearance-none" value={formData.baseDatos} onChange={(e) => handleInputChange("baseDatos", e.target.value)}>
-                <option value="">Seleccione o escriba...</option>
-                <option value="SQL Server">SQL Server</option>
-                <option value="Oracle">Oracle</option>
-                <option value="MySQL">MySQL</option>
-                <option value="PostgreSQL">PostgreSQL</option>
-                <option value="MongoDB">MongoDB</option>
-                <option value="N/A">N/A</option>
-              </select>
-              {/* Input para escribir si no está en la lista */}
-              {formData.baseDatos === "" || !["SQL Server", "Oracle", "MySQL", "PostgreSQL", "MongoDB", "N/A"].includes(formData.baseDatos) && (
-                <input type="text" className="border p-2 rounded w-full pr-8 text-sm mt-1" placeholder="Especifique BD" value={formData.baseDatos} onChange={(e) => handleInputChange("baseDatos", e.target.value)} />
-              )}
-              <button type="button" onClick={() => hideField("baseDatos")} className="absolute top-6 right-1 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity" title="Ocultar este campo del reporte">✕</button>
-            </div>
-          )}
-          {/* Maqueta */}
-          {!hiddenFields.maquetaUtilizada && (
-            <div className="relative group">
-              <label htmlFor="maquetaUtilizada" className="block font-medium text-sm">Maqueta Utilizada (si aplica)</label>
-              <input id="maquetaUtilizada" type="text" className="border p-2 rounded w-full pr-8 text-sm" placeholder="Ej: Maqueta XYZ v2" value={formData.maquetaUtilizada} onChange={(e) => handleInputChange("maquetaUtilizada", e.target.value)} />
-              <button type="button" onClick={() => hideField("maquetaUtilizada")} className="absolute top-6 right-1 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity" title="Ocultar este campo del reporte">✕</button>
-            </div>
-          )}
-          {/* Ambiente */}
-          {!hiddenFields.ambiente && (
-            <div className="relative group">
-              <label htmlFor="ambiente" className="block font-medium text-sm">Ambiente</label>
-              <select id="ambiente" className="border p-2 rounded w-full pr-8 text-sm bg-white appearance-none" value={formData.ambiente} onChange={(e) => handleInputChange("ambiente", e.target.value)}>
-                <option value="">Seleccione...</option>
-                <option value="Desarrollo">Desarrollo</option>
-                <option value="Integración">Integración</option>
-                <option value="UAT">UAT</option>
-                <option value="Transferencia">Transferencia</option>
-                <option value="PRE">Pre-Producción</option>
-                <option value="PROD">Producción</option>
-              </select>
-              {/* Input para escribir si no está en la lista */}
-              {formData.ambiente === "" || !["Desarrollo", "Integración", "UAT", "Transferencia", "PRE", "PROD"].includes(formData.ambiente) && (
-                <input type="text" className="border p-2 rounded w-full pr-8 text-sm mt-1" placeholder="Especifique Ambiente" value={formData.ambiente} onChange={(e) => handleInputChange("ambiente", e.target.value)} />
-              )}
-              <button type="button" onClick={() => hideField("ambiente")} className="absolute top-6 right-1 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity" title="Ocultar este campo del reporte">✕</button>
-            </div>
-          )}
-        </div>
-
-        {/* Campos personalizados */}
-        <div className="mt-4">
-          <label className="block font-medium text-sm mb-2">Campos Personalizados del Entorno</label>
+        <div className="mt-5"> {/* Incrementado mt */}
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Campos Personalizados (Entorno)</label>
           {formData.customEnvFields.map((f, i) => (
-            <div key={i} className="flex items-center space-x-2 mt-2">
-              <input type="text" aria-label={`Nombre campo personalizado ${i + 1}`} placeholder="Nombre del campo" className="border p-2 rounded w-1/3 text-sm" value={f.label} onChange={(e) => handleCustomFieldChange(i, "label", e.target.value)} />
-              <input type="text" aria-label={`Valor campo personalizado ${i + 1}`} placeholder="Valor del campo" className="border p-2 rounded w-1/3 text-sm" value={f.value} onChange={(e) => handleCustomFieldChange(i, "value", e.target.value)} />
-              <button type="button" onClick={() => removeCustomField(i)} className="text-red-600 hover:text-red-800 font-bold" title="Eliminar campo personalizado">✕</button>
+            <div key={i} className="flex items-center space-x-3 bg-gray-50 p-3 rounded-lg border border-gray-200 mt-2">
+              <input type="text" aria-label={`Nombre campo ${i + 1}`} placeholder="Nombre del campo" className="flex-grow border-gray-300 p-2.5 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500" value={f.label} onChange={(e) => handleCustomFieldChange(i, "label", e.target.value)} />
+              <input type="text" aria-label={`Valor campo ${i + 1}`} placeholder="Valor del campo" className="flex-grow border-gray-300 p-2.5 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500" value={f.value} onChange={(e) => handleCustomFieldChange(i, "value", e.target.value)} />
+              <button type="button" onClick={() => removeCustomField(i)} className="p-1.5 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100 transition-colors" title="Eliminar campo"><XCircle size={20}/></button>
             </div>
           ))}
-          <button type="button" onClick={addCustomField} className="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600">+ Añadir campo personalizado</button>
+          <button type="button" onClick={addCustomField} className="inline-flex items-center mt-2.5 px-3.5 py-2 bg-blue-500 text-white rounded-md text-xs font-medium hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 shadow-sm"><PlusCircle size={16} className="mr-1.5" /> Añadir campo personalizado</button>
         </div>
+      </FormSection>
 
-        {/* Restaurar campos ocultos */}
-        {anyHidden && (
-          <div className="mt-4 text-right">
-            <button type="button" onClick={restoreAll} className="px-3 py-1 bg-gray-200 rounded text-sm hover:bg-gray-300">🔁 Mostrar todos los campos del entorno</button>
-          </div>
-        )}
-
-      </div>
-
-
-      {/* Batería de Pruebas */}
-      <div className="p-4 border rounded shadow-sm bg-white mt-6">
-        <h3 className="text-lg font-semibold border-b pb-2 mb-4">Batería de Pruebas</h3>
-        <p className="text-sm text-gray-500 mb-4">
-          Define aquí los casos de prueba ejecutados. Puedes añadir, eliminar, duplicar o importar desde Excel.
+      <FormSection title="Batería de Pruebas" icon={<ListChecks size={22} />}>
+        <p className="text-sm text-gray-500 -mt-3 mb-5"> {/* Ajuste de margen */}
+          Define los casos de prueba ejecutados. Puedes añadir, eliminar, duplicar o importar desde Excel.
         </p>
-
-        {/* Contenedor de Tests */}
-        <div className="space-y-4">
-          {formData.batteryTests.map((test, idx) => {
-            // const isExample = test.id === "PR-001"; // Ya no se usa la lógica de ejemplo directamente
-            return (
-              <div key={idx} className="relative border rounded p-4 space-y-3 bg-gray-50 border-gray-200">
-                {/* Botones de Acción por Test */}
-                <div className="absolute top-2 right-2 flex space-x-1">
-                  <button type="button" onClick={() => duplicateBatteryTest(idx)} className="text-blue-500 hover:text-blue-700 p-1" title="Duplicar este caso">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                  </button>
-                  <button type="button" onClick={() => removeBatteryTest(idx)} className="text-red-500 hover:text-red-700 p-1" title="Eliminar este caso">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                  </button>
-                </div>
-
-                {/* Campos del Test */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor={`test-id-${idx}`} className="block font-medium text-sm">ID Prueba</label>
-                    <input id={`test-id-${idx}`} type="text" className="border p-2 rounded w-full text-sm" placeholder="Ej: CASO-001" value={test.id} onChange={(e) => handleBatteryTestChange(idx, "id", e.target.value)} />
-                  </div>
-                  <div>
-                    <label htmlFor={`test-version-${idx}`} className="block font-medium text-sm">Versión Probada</label>
-                    <input id={`test-version-${idx}`} type="text" className="border p-2 rounded w-full text-sm" placeholder="Ej: v1.2.0" value={test.testVersion} onChange={(e) => handleBatteryTestChange(idx, "testVersion", e.target.value)} />
-                  </div>
-                </div>
-                <div>
-                  <label htmlFor={`test-desc-${idx}`} className="block font-medium text-sm">Descripción</label>
-                  <textarea id={`test-desc-${idx}`} rows={2} className="w-full border p-2 rounded text-sm" placeholder="Describe el objetivo de la prueba" value={test.description} onChange={(e) => handleBatteryTestChange(idx, "description", e.target.value)} />
-                </div>
-                <div>
-                  <label htmlFor={`test-steps-${idx}`} className="block font-medium text-sm">Pasos</label>
-                  <textarea id={`test-steps-${idx}`} rows={4} className="w-full border p-2 rounded text-sm" placeholder="1. Ir a...\n2. Hacer clic en...\n3. Verificar que..." value={test.steps} onChange={(e) => handleBatteryTestChange(idx, "steps", e.target.value)} />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor={`test-expected-${idx}`} className="block font-medium text-sm">Resultado Esperado</label>
-                    <textarea id={`test-expected-${idx}`} rows={3} className="w-full border p-2 rounded text-sm" placeholder="Lo que debería suceder" value={test.expectedResult} onChange={(e) => handleBatteryTestChange(idx, "expectedResult", e.target.value)} />
-                  </div>
-                  <div>
-                    <label htmlFor={`test-obtained-${idx}`} className="block font-medium text-sm">Resultado Obtenido</label>
-                    <textarea id={`test-obtained-${idx}`} rows={3} className="w-full border p-2 rounded text-sm" placeholder="Lo que sucedió realmente (usa ❌ o ✅)" value={test.obtainedResult} onChange={(e) => handleBatteryTestChange(idx, "obtainedResult", e.target.value)} />
-                  </div>
-                </div>
-                <div>
-                  <label htmlFor={`test-status-${idx}`} className="block font-medium text-sm">Estado del Caso</label>
-                  <select id={`test-status-${idx}`} className="border p-2 rounded w-full text-sm bg-white" value={test.testStatus} onChange={(e) => handleBatteryTestChange(idx, "testStatus", e.target.value)}>
-                    <option value="Pendiente">Pendiente</option>
-                    <option value="Exitoso">Exitoso</option>
-                    <option value="Fallido">Fallido</option>
-                    <option value="Bloqueado">Bloqueado</option>
-                    <option value="No aplica">No aplica</option>
-                  </select>
-                </div>
-                {/* === SECCIÓN DATOS DE PRUEBA (AÑADIR ESTO) === */}
-                <div className="p-4 border rounded shadow-sm bg-white mt-6">
-                  <h3 className="text-lg font-semibold border-b pb-2 mb-4">Datos de Prueba Utilizados</h3>
-                  <p className="text-sm text-gray-500 mb-2">
-                    Registra aquí los datos de entrada, parámetros, usuarios, o cualquier información específica usada para poder reproducir las pruebas.
-                  </p>
-                  <textarea
-                    id="datosDePrueba" // ID para accesibilidad
-                    rows={5} // Puedes ajustar la altura
-                    className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 font-mono text-sm" // Fuente monoespaciada opcional
-                    placeholder="Ej: Usuario: test_user | Contraseña: pwd | Pedido ID: 12345 | Filtro aplicado: Fecha='2025-04-22'"
-                    value={formData.datosDePrueba} // Enlazar al estado
-                    onChange={(e) => handleInputChange("datosDePrueba", e.target.value)} // Enlazar al handler
-                  />
-                </div>
-                {/* =========================================== */}
-
-                {/* Evidencias */}
-                <div>
-                  <label className="block font-medium text-sm mb-1">Evidencias (Capturas de pantalla)</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="mb-2 text-sm"
-                    onChange={async (e) => {
-                      const files = Array.from(e.target.files || []);
-                      if (!files.length) return;
-                      try {
-                        const b64s = await Promise.all(files.map(readFileAsBase64));
-                        // Actualización inmutable
-                        const updatedTests = formData.batteryTests.map((t, index) => {
-                          if (index === idx) {
-                            return { ...t, images: [...(t.images || []), ...b64s] };
-                          }
-                          return t;
-                        });
-                        setFormData({ ...formData, batteryTests: updatedTests });
-                      } catch (error) {
-                        console.error("Error al leer imágenes:", error);
-                        alert("Hubo un error al cargar una o más imágenes.");
-                      } finally {
-                        if (e.target) e.target.value = ""; // Limpiar input
-                      }
-                    }}
-                  />
-                  {/* Miniaturas */}
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {test.images?.map((src, i) => (
-                      <div key={`${idx}-${i}`} className="relative w-20 h-20 rounded overflow-hidden border group">
-                        <img src={src} alt={`Evidencia ${idx + 1}-${i + 1}`} className="w-full h-full object-contain" />
-                        {/* Botón eliminar imagen */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const updatedTests = formData.batteryTests.map((t, index) => {
-                              if (index === idx) {
-                                const updatedImages = t.images?.filter((_, imgIndex) => imgIndex !== i);
-                                return { ...t, images: updatedImages };
-                              }
-                              return t;
-                            });
-                            setFormData({ ...formData, batteryTests: updatedTests });
-                          }}
-                          className="absolute top-0 right-0 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                          title="Eliminar esta imagen"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  {/* Descargar ZIP de este test */}
-                  {test.images?.length ? (
-                    <div className="text-right mt-1">
-                      <button
-                        type="button"
-                        onClick={() => downloadImagesZip([test])} // Solo este test
-                        className="flex items-center text-purple-600 hover:text-purple-800 text-xs ml-auto"
-                        title={`Descargar ${test.images.length} evidencia(s) de ${test.id.trim()} en ZIP`}
-                      >
-                        <svg /* Icono ZIP */ className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h4a1 1 0 100-2H7z" clipRule="evenodd" /></svg>
-                        ZIP Evidencias
-                      </button>
-                    </div>
-                  ) : null}
-                </div> {/* Fin Evidencias */}
-              </div> // Fin Test Case Div
-            );
-          })}
+        <div className="space-y-6">
+          {formData.batteryTests.map((test, idx) => (
+            <BatteryTestCaseCard
+              key={test.id || idx} // Usar un ID más estable si es posible, fallback al índice
+              test={test}
+              index={idx}
+              onTestChange={handleBatteryTestChange}
+              onRemoveTest={removeBatteryTest}
+              onDuplicateTest={duplicateBatteryTest}
+              setFormData={setFormData} 
+              allTests={formData.batteryTests} 
+            />
+          ))}
         </div>
-
-        {/* Botones añadir/importar/plantilla */}
-        <div className="flex items-center gap-3 mt-4 pt-4 border-t">
-          <button
-            type="button"
-            onClick={addBatteryTest}
-            className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600"
-          >
-            + Añadir caso
-          </button>
-
-          <div className="flex items-center">
-            <Tippy
-              content={`Importa casos desde Excel.\nColumnas: ${EXPECTED_HEADERS.join(
-                ", "
-              )}`}
-              placement="top"
-            >
-              <button
-                type="button"
-                onClick={handleImportClick}
-                className="px-3 py-1 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600"
-              >
-                Importar Excel
-              </button>
-            </Tippy>
-          </div>
-          <a
-            href="/plantillas/plantilla_bateria_pruebas.xlsx"
-            download
-            className="inline-flex items-center text-sm text-gray-600 hover:text-gray-800 transition-colors"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-5 h-5 mr-1"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
-              <path d="M6 2h9a2 2 0 012 2v4h-2V4H6v16h6v2H6a2 2 0 01-2-2V4a2 2 0 012-2z" />
-              <path d="M13 12l3 3h-2v4h-2v-4h-2l3-3z" />
-            </svg>
-            Descargar Plantilla Excel
+        <div className="flex flex-wrap items-center gap-4 mt-6 pt-5 border-t border-gray-200"> {/* Aumentado gap y padding/margen */}
+          <button type="button" onClick={addBatteryTest} className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-sm hover:shadow-md"><PlusCircle size={18} className="mr-2" /> Añadir Caso de Prueba</button>
+          <Tippy content={`Importa casos desde Excel. Columnas: ${EXPECTED_HEADERS.join(", ")}`} placement="top">
+            <button type="button" onClick={handleImportClick} className="inline-flex items-center px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm font-medium hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 shadow-sm hover:shadow-md"><Sheet size={18} className="mr-2" /> Importar Excel</button>
+          </Tippy>
+          <a href="/plantillas/plantilla_bateria_pruebas.xlsx" download className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 hover:underline font-medium">
+            <Download size={16} className="mr-1.5" />Descargar Plantilla Excel
           </a>
         </div>
         <input type="file" accept=".xls,.xlsx" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
-      </div>
+      </FormSection>
 
-      {/* === NUEVO: Sección Logs Relevantes === */}
-      <div className="p-4 border rounded shadow-sm bg-white mt-6">
-        <h3 className="text-lg font-semibold border-b pb-2 mb-4">Logs Relevantes</h3>
-        <p className="text-sm text-gray-500 mb-2">
-          Pega aquí extractos de logs que ayuden a entender el comportamiento o errores observados durante las pruebas.
-        </p>
-        <textarea
-          id="logsRelevantes"
-          rows={10}
-          className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 font-mono text-xs bg-gray-800 text-gray-200" // Estilo tipo consola
-          placeholder={`Ejemplo:\n[INFO] 2025-04-22 18:00:01 - User logged in: testuser\n[ERROR] 2025-04-22 18:05:30 - Failed to process order 123: Connection timed out`}
-          value={formData.logsRelevantes || ""}
-          onChange={(e) => handleInputChange("logsRelevantes", e.target.value)}
+      <FormSection title="Datos de Prueba Utilizados (Globales)" icon={<Layers size={22} />}>
+        <StyledTextarea
+            label="Registro de datos de entrada, parámetros, usuarios, etc., comunes a varias pruebas."
+            id="datosDePrueba"
+            rows={5}
+            className="font-mono text-xs"
+            placeholder="Ej: Usuario: test_user | Contraseña: pwd | Pedido ID: 12345 | Filtro aplicado: Fecha='2025-04-22'"
+            value={formData.datosDePrueba}
+            onChange={(e) => handleInputChange("datosDePrueba", e.target.value)}
         />
-      </div>
-      {/* ===================================== */}
+        <p className="text-xs text-gray-500 mt-1.5">Estos son datos generales. Los datos específicos de un caso se pueden detallar dentro de cada tarjeta de caso de prueba si es necesario.</p>
+      </FormSection>
+      
+      <FormSection title="Logs Relevantes" icon={<FileTextIcon size={22} />}>
+        <StyledTextarea
+            label="Extractos de logs que ayuden a entender comportamientos o errores."
+            id="logsRelevantes"
+            rows={10}
+            className="font-mono text-xs bg-gray-900 text-green-400 placeholder-gray-500 rounded-md p-4" // Mejorado estilo consola
+            placeholder={`Ejemplo:\n[INFO] 2025-05-16 10:30:00 - User 'albope' logged in.\n[ERROR] 2025-05-16 10:32:15 - Service 'X' failed: Timeout after 30s.`}
+            value={formData.logsRelevantes || ""}
+            onChange={(e) => handleInputChange("logsRelevantes", e.target.value)}
+        />
+      </FormSection>
 
-
-      {/* Resumen de Resultados */}
-      <div className="p-4 border rounded shadow-sm bg-white mt-6">
-        <h3 className="text-lg font-semibold border-b pb-2 mb-4">Resumen de Resultados</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label htmlFor="totalTests" className="block font-medium text-sm">Total de Pruebas</label>
-            <input id="totalTests" type="number" min={0} className="border p-2 rounded w-full text-sm" value={formData.summary.totalTests} onChange={(e) => handleInputChange("summary", { ...formData.summary, totalTests: e.target.value })} />
-          </div>
-          <div>
-            <label htmlFor="successfulTests" className="block font-medium text-sm">Pruebas Exitosas</label>
-            <input id="successfulTests" type="number" min={0} max={Number(formData.summary.totalTests) || undefined} className="border p-2 rounded w-full text-sm" value={formData.summary.successfulTests} onChange={(e) => handleInputChange("summary", { ...formData.summary, successfulTests: e.target.value })} />
-          </div>
-          <div>
-            <label htmlFor="failedTests" className="block font-medium text-sm">Pruebas Fallidas</label>
-            <input id="failedTests" type="number" min={0} max={Number(formData.summary.totalTests) || undefined} className="border p-2 rounded w-full text-sm" value={formData.summary.failedTests} onChange={(e) => handleInputChange("summary", { ...formData.summary, failedTests: e.target.value })} />
-          </div>
+      <FormSection title="Resumen de Resultados" icon={<BarChart3 size={22} />}>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-5">
+            <StyledInput label="Total de Pruebas" id="totalTests" type="number" min={0} value={formData.summary.totalTests} onChange={(e) => handleInputChange("summary", { ...formData.summary, totalTests: e.target.value })} />
+            <StyledInput label="Pruebas Exitosas" id="successfulTests" type="number" min={0} max={Number(formData.summary.totalTests) || undefined} value={formData.summary.successfulTests} onChange={(e) => handleInputChange("summary", { ...formData.summary, successfulTests: e.target.value })} />
+            <StyledInput label="Pruebas Fallidas" id="failedTests" type="number" min={0} max={Number(formData.summary.totalTests) || undefined} value={formData.summary.failedTests} onChange={(e) => handleInputChange("summary", { ...formData.summary, failedTests: e.target.value })} />
         </div>
-        <div className="mt-4">
-          <label htmlFor="observations" className="block font-medium text-sm">Observaciones del Resumen</label>
-          <textarea id="observations" rows={3} className="w-full border p-2 rounded text-sm" placeholder="Breve resumen o notas adicionales sobre los resultados globales." value={formData.summary.observations} onChange={(e) => handleInputChange("summary", { ...formData.summary, observations: e.target.value })} />
+        <StyledTextarea
+            label="Observaciones del Resumen"
+            id="observations"
+            rows={4} // Un poco más de espacio
+            placeholder="Breve resumen, notas adicionales sobre los resultados globales, o cualquier impedimento encontrado."
+            value={formData.summary.observations}
+            onChange={(e) => handleInputChange("summary", { ...formData.summary, observations: e.target.value })}
+        />
+      </FormSection>
+
+      <FormSection title="Incidencias Detectadas" icon={<AlertOctagon size={22} />}>
+        <div className="flex items-center gap-4 mb-3"> {/* mb-3 añadido */}
+            <label className="block text-sm font-medium text-gray-700 whitespace-nowrap">¿Se detectaron incidencias?</label>
+            <div className="flex items-center gap-3">
+                {(["Sí", "No"] as const).map(option => (
+                    <button
+                        key={option}
+                        type="button"
+                        onClick={() => handleInputChange("hasIncidences", option === "Sí")}
+                        className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all shadow-sm
+                            ${(formData.hasIncidences && option === "Sí") || (!formData.hasIncidences && option === "No")
+                                ? 'bg-blue-600 text-white ring-2 ring-offset-2 ring-blue-400'
+                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100 hover:border-gray-400'
+                            }`}
+                    >
+                        {option}
+                    </button>
+                ))}
+            </div>
         </div>
-      </div>
 
-
-      {/* Incidencias */}
-      <div className="p-4 border rounded shadow-sm bg-white mt-6">
-        <h3 className="text-lg font-semibold border-b pb-2 mb-4">Incidencias Detectadas</h3>
-        <div>
-          <label className="block font-medium text-sm mb-2">¿Se detectaron incidencias?</label>
-          <select
-            className="border p-2 rounded w-full md:w-1/3 text-sm bg-white"
-            value={formData.hasIncidences ? "Sí" : "No"}
-            onChange={(e) => handleInputChange("hasIncidences", e.target.value === "Sí")}
-          >
-            <option value="No">No</option>
-            <option value="Sí">Sí</option>
-          </select>
-        </div>
-
-        {/* Lista de Incidencias (si hasIncidences es true) */}
         {formData.hasIncidences && (
-          <div className="mt-4 space-y-4">
+          <div className="mt-5 space-y-5">
             {formData.incidences.map((inc, i) => (
-              <div key={i} className="relative border rounded p-3 space-y-2 bg-red-50 border-red-200">
-                <button type="button" onClick={() => removeIncidence(i)} className="absolute top-1 right-1 text-red-500 hover:text-red-700" title="Eliminar incidencia">✕</button>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label htmlFor={`inc-id-${i}`} className="block font-medium text-xs">ID Prueba Relacionada</label>
-                    <input id={`inc-id-${i}`} type="text" className="border p-1 rounded w-full text-sm" placeholder="Ej: CASO-005" value={inc.id} onChange={(e) => handleIncidenceChange(i, "id", e.target.value)} />
-                  </div>
-                  <div>
-                    <label htmlFor={`inc-status-${i}`} className="block font-medium text-xs">Estado Incidencia</label>
-                    <input id={`inc-status-${i}`} type="text" className="border p-1 rounded w-full text-sm" placeholder="Ej: Reportada, Corregida, Reabierta" value={inc.status} onChange={(e) => handleIncidenceChange(i, "status", e.target.value)} />
-                  </div>
+              <div key={i} className="p-4 rounded-lg border bg-red-50/40 border-red-300 relative space-y-4 shadow">
+                 <button type="button" onClick={() => removeIncidence(i)} className="absolute top-2.5 right-2.5 p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100 transition-colors" title="Eliminar incidencia"><XCircle size={20}/></button>
+                 <h5 className="text-sm font-semibold text-red-700">Incidencia #{i + 1}</h5>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                  <StyledInput label="ID Prueba Relacionada" id={`inc-id-${i}`} placeholder="Ej: CASO-005" value={inc.id} onChange={(e) => handleIncidenceChange(i, "id", e.target.value)} />
+                  <StyledInput label="Estado Incidencia" id={`inc-status-${i}`} placeholder="Ej: Reportada, Corregida" value={inc.status} onChange={(e) => handleIncidenceChange(i, "status", e.target.value)} />
                 </div>
-                <div>
-                  <label htmlFor={`inc-desc-${i}`} className="block font-medium text-xs">Descripción Incidencia</label>
-                  <textarea id={`inc-desc-${i}`} rows={2} className="w-full border p-1 rounded text-sm" placeholder="Describe brevemente el problema encontrado" value={inc.description} onChange={(e) => handleIncidenceChange(i, "description", e.target.value)} />
-                </div>
-                <div>
-                  <label htmlFor={`inc-impact-${i}`} className="block font-medium text-xs">Impacto</label>
-                  <input id={`inc-impact-${i}`} type="text" className="border p-1 rounded w-full text-sm" placeholder="Ej: Crítico, Alto, Medio, Bajo" value={inc.impact} onChange={(e) => handleIncidenceChange(i, "impact", e.target.value)} />
-                </div>
+                <StyledTextarea label="Descripción Incidencia" id={`inc-desc-${i}`} rows={3} placeholder="Describe brevemente el problema" value={inc.description} onChange={(e) => handleIncidenceChange(i, "description", e.target.value)} />
+                <StyledInput label="Impacto" id={`inc-impact-${i}`} placeholder="Ej: Crítico, Alto, Medio" value={inc.impact} onChange={(e) => handleIncidenceChange(i, "impact", e.target.value)} />
               </div>
             ))}
-            {/* Botón Añadir Incidencia */}
-            <button type="button" onClick={addIncidence} className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600">+ Añadir incidencia</button>
+            <button type="button" onClick={addIncidence} className="inline-flex items-center mt-2 px-3.5 py-2 bg-red-500 text-white rounded-md text-xs font-medium hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-500 shadow-sm"><PlusCircle size={16} className="mr-1.5" /> Añadir incidencia</button>
           </div>
         )}
-      </div>
-
-
-      {/* Conclusiones */}
-      <div className="p-4 border rounded shadow-sm bg-white mt-6">
-        <h3 className="text-lg font-semibold border-b pb-2 mb-4">Conclusiones Finales</h3>
-        <textarea
-          id="conclusion"
-          rows={5}
-          className={`w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 text-sm ${isExampleConclusion ? "italic text-gray-400" : ""}`}
-          placeholder={EXAMPLE_CONCLUSION}
-          value={formData.conclusion}
-          onChange={(e) => handleInputChange("conclusion", e.target.value)}
+      </FormSection>
+      
+      <FormSection title="Conclusiones Finales" icon={<CheckCircle2 size={22} />}>
+        <StyledTextarea
+            label="Evaluación final del ciclo de pruebas y próximos pasos recomendados."
+            id="conclusion"
+            rows={5}
+            className={isExampleConclusion ? "italic text-gray-400" : ""}
+            placeholder={EXAMPLE_CONCLUSION}
+            value={formData.conclusion}
+            onChange={(e) => handleInputChange("conclusion", e.target.value)}
         />
-      </div>
+      </FormSection>
 
-      {/* Botones finales */}
-      <div className="flex justify-end gap-3 mt-8">
-        <button
-          type="button" // Cambiado a type="button" si no es el submit principal del form
-          onClick={onGenerate} // Esta función debería ahora pasar al siguiente paso (ReportOutput)
-          className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-green-700 transition-colors text-lg"
-        >
-          Generar Reporte
-        </button>
+      <div className="flex flex-col sm:flex-row justify-end gap-4 mt-12 pt-8 border-t border-gray-300"> {/* Aumentado mt y gap */}
         <button
           type="button"
           onClick={onReset}
-          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-500 transition-colors"
+          className="w-full sm:w-auto px-6 py-3 border border-gray-300 text-gray-800 bg-white rounded-lg shadow-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors text-sm font-medium flex items-center justify-center"
         >
+          <Trash2 size={16} className="mr-2" />
           Reiniciar Formulario
+        </button>
+        <button
+          type="button"
+          onClick={onGenerate}
+          className="w-full sm:w-auto px-8 py-3 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors text-base font-semibold flex items-center justify-center"
+        >
+          <FileCheckIcon size={18} className="mr-2" />
+          Generar Reporte
         </button>
       </div>
     </div>
   );
 }
+
+// --- Sub-componente para Tarjeta de Caso de Prueba ---
+// (Definición de BatteryTestCaseCard como la tenías, pero aplicando las correcciones de tipo dentro si es necesario)
+interface BatteryTestCaseCardProps {
+    test: BatteryTest;
+    index: number;
+    onTestChange: (index: number, field: keyof BatteryTest, value: string) => void;
+    onRemoveTest: (index: number) => void;
+    onDuplicateTest: (index: number) => void;
+    setFormData: React.Dispatch<React.SetStateAction<FormData>>; // Tipo corregido
+    allTests: BatteryTest[]; 
+}
+
+const BatteryTestCaseCard: React.FC<BatteryTestCaseCardProps> = ({
+    test, index, onTestChange, onRemoveTest, onDuplicateTest, setFormData, allTests
+}) => {
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+        try {
+            const b64s = await Promise.all(files.map(readFileAsBase64));
+            setFormData((prev: FormData) => { // CORRECCIÓN: Tipo explícito para prev
+                const updatedTests = prev.batteryTests.map((t, i) => {
+                    if (i === index) {
+                        return { ...t, images: [...(t.images || []), ...b64s] };
+                    }
+                    return t;
+                });
+                return { ...prev, batteryTests: updatedTests };
+            });
+        } catch (error) {
+            console.error("Error al leer imágenes:", error);
+            alert("Hubo un error al cargar una o más imágenes.");
+        } finally {
+            if (e.target) e.target.value = "";
+        }
+    };
+
+    const handleRemoveImage = (imgIndex: number) => {
+        setFormData((prev: FormData) => { // CORRECCIÓN: Tipo explícito para prev
+            const updatedTests = prev.batteryTests.map((t, i) => {
+                if (i === index) {
+                    const updatedImages = t.images?.filter((_, idx) => idx !== imgIndex);
+                    return { ...t, images: updatedImages };
+                }
+                return t;
+            });
+            return { ...prev, batteryTests: updatedTests };
+        });
+    };
+    
+    let statusBorderColor = "border-gray-300"; // Default
+    let statusTextColor = "text-gray-600";
+    let statusBgColor = "bg-gray-100";
+
+    if (test.testStatus === "Exitoso") {
+        statusBorderColor = "border-green-400";
+        statusTextColor = "text-green-700";
+        statusBgColor = "bg-green-50";
+    } else if (test.testStatus === "Fallido") {
+        statusBorderColor = "border-red-400";
+        statusTextColor = "text-red-700";
+        statusBgColor = "bg-red-50";
+    } else if (test.testStatus === "Bloqueado") {
+        statusBorderColor = "border-yellow-400";
+        statusTextColor = "text-yellow-700";
+        statusBgColor = "bg-yellow-50";
+    }
+
+
+    return (
+        <div className={`p-5 rounded-xl border-2 ${statusBorderColor} ${statusBgColor} shadow-md space-y-4 relative group`}>
+            <div className="flex justify-between items-center pb-2 mb-3 border-b ${statusBorderColor}">
+                <span className={`text-sm font-semibold ${statusTextColor} px-2.5 py-1 rounded-md`}>
+                    ID Caso: {test.id || `Caso #${index + 1}`}
+                </span>
+                <div className="flex space-x-1">
+                    <Tippy content="Duplicar Caso de Prueba">
+                        <button type="button" onClick={() => onDuplicateTest(index)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors focus:outline-none focus:ring-1 focus:ring-blue-500"><Copy size={16} /></button>
+                    </Tippy>
+                    <Tippy content="Eliminar Caso de Prueba">
+                        <button type="button" onClick={() => onRemoveTest(index)} className="p-2 text-red-500 hover:bg-red-100 rounded-full transition-colors focus:outline-none focus:ring-1 focus:ring-red-500"><Trash2 size={16} /></button>
+                    </Tippy>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                <StyledInput label="ID Prueba (Editable)" id={`test-id-${index}`} placeholder="Ej: CASO-001" value={test.id} onChange={(e) => onTestChange(index, "id", e.target.value)} />
+                <StyledInput label="Versión Probada" id={`test-version-${index}`} placeholder="Ej: v1.2.0" value={test.testVersion} onChange={(e) => onTestChange(index, "testVersion", e.target.value)} />
+            </div>
+            <StyledTextarea label="Descripción del Caso" id={`test-desc-${index}`} rows={2} placeholder="Describe el objetivo de la prueba" value={test.description} onChange={(e) => onTestChange(index, "description", e.target.value)} />
+            <StyledTextarea label="Pasos para Reproducir" id={`test-steps-${index}`} rows={4} placeholder="1. Ir a...\n2. Hacer clic en...\n3. Verificar que..." value={test.steps} onChange={(e) => onTestChange(index, "steps", e.target.value)} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                <StyledTextarea label="Resultado Esperado" id={`test-expected-${index}`} rows={3} placeholder="Lo que debería suceder" value={test.expectedResult} onChange={(e) => onTestChange(index, "expectedResult", e.target.value)} />
+                <StyledTextarea label="Resultado Obtenido" id={`test-obtained-${index}`} rows={3} placeholder="Lo que sucedió realmente (usa ❌ o ✅)" value={test.obtainedResult} onChange={(e) => onTestChange(index, "obtainedResult", e.target.value)} />
+            </div>
+            <StyledSelect label="Estado del Caso" id={`test-status-${index}`} value={test.testStatus} onChange={(e) => onTestChange(index, "testStatus", e.target.value)}>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Exitoso">Exitoso ✅</option>
+                <option value="Fallido">Fallido ❌</option>
+                <option value="Bloqueado">Bloqueado 🚧</option>
+                <option value="No aplica">No aplica ➖</option>
+            </StyledSelect>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Evidencias (Imágenes)</label>
+                <input
+                    type="file"
+                    accept="image/*,.jpeg,.jpg,.png,.gif"
+                    multiple
+                    className="block w-full text-xs text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    onChange={handleImageUpload}
+                />
+                 {test.images && test.images.length > 0 && (
+                    <div className="mt-3.5 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                        {test.images.map((src, i) => (
+                            <div key={i} className="relative aspect-square rounded-md overflow-hidden border-2 border-gray-200 shadow-sm group/image hover:border-blue-400 transition-all">
+                                <Image src={src} alt={`Evidencia ${index + 1}-${i + 1}`} layout="fill" objectFit="cover" unoptimized={true} className="group-hover/image:scale-105 transition-transform duration-300" />
+                                <button
+                                    type="button"
+                                    onClick={() => handleRemoveImage(i)}
+                                    className="absolute top-1 right-1 bg-red-600/80 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover/image:opacity-100 transition-opacity focus:opacity-100"
+                                    title="Eliminar esta imagen"
+                                >
+                                    <XCircle size={14} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+                {test.images && test.images.length > 0 && (
+                    <div className="text-right mt-2.5">
+                        <button type="button" onClick={() => downloadImagesZip([test])} className="inline-flex items-center text-xs text-purple-600 hover:text-purple-800 font-medium hover:underline"><Download size={14} className="mr-1" /> Descargar ZIP ({test.images.length})</button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
