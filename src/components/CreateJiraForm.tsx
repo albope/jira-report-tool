@@ -88,9 +88,7 @@ export default function CreateJiraForm() {
       )
       .join("");
 
-  const title = `${project.trim().toUpperCase()} - ${toCamel(
-    tool.trim(),
-  )} - ${errorDesc.trim()}`;
+const title = `${project.trim().toUpperCase()} - ${tool.trim()} - ${errorDesc.trim()}`;
 
   const handleCopy = (
     txt: string,
