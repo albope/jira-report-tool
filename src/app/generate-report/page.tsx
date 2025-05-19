@@ -1,3 +1,4 @@
+// src/app/generate-report/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -8,68 +9,24 @@ import Feedback from "@/components/Feedback";
 import HeaderNav from "@/components/HeaderNav";
 import FooterNav from "@/components/FooterNav";
 import parseJiraContent, { ParsedData } from "@/utils/parseJiraContent";
-import formatReport from "@/utils/formatReport";
+// Asegúrate que formatReport y los tipos FormData, HiddenFields estén correctamente exportados e importados
+import formatReport, { FormData, HiddenFields } from "@/utils/formatReport"; 
 
-/** Definimos la interfaz para ocultar campos de entorno. */
-interface HiddenFields {
-  serverPruebas: boolean;
-  ipMaquina: boolean;
-  navegador: boolean;
-  baseDatos: boolean;
-  maquetaUtilizada: boolean;
-  ambiente: boolean;
-}
+// Las interfaces BatteryTest, Incidence, Summary se mantienen igual
+// pero no son directamente usadas por este componente padre, sino por FormData.
+// Si FormData está correctamente definida e importada (o definida aquí), está bien.
 
-interface BatteryTest {
-  id: string;
-  description: string;
-  steps: string;
-  expectedResult: string;
-  obtainedResult: string;
-  testVersion: string;
-  testStatus: string;
-}
+// Interfaz FormData (la mantengo aquí por si no la importas directamente)
+// Si la importas desde formatReport.ts, puedes eliminar esta definición duplicada.
+// interface FormData {
+//   jiraCode: string;
+//   date: string;
+//   tester: string;
+//   // ... todos los demás campos de FormData
+//   logsRelevantes?: string; // Asegúrate que este campo esté en tu definición de FormData
+//   customEnvFields: Array<{ label: string; value: string }>;
+// }
 
-interface Incidence {
-  id: string;
-  description: string;
-  impact: string;
-  status: string;
-}
-
-interface Summary {
-  totalTests: string;
-  successfulTests: string;
-  failedTests: string;
-  observations: string;
-}
-
-interface FormData {
-  jiraCode: string;
-  date: string;
-  tester: string;
-  testStatus: string;
-  versions: Array<{ appName: string; appVersion: string }>;
-  serverPruebas: string;
-  ipMaquina: string;
-  navegador: string;
-  baseDatos: string;
-  maquetaUtilizada: string;
-  ambiente: string;
-  batteryTests: BatteryTest[];
-  summary: Summary;
-  incidences: Incidence[];
-  hasIncidences: boolean;
-  conclusion: string;
-  datosDePrueba: string;
-  isApp?: boolean;
-  endpoint?: string;
-  sistemaOperativo?: string;
-  dispositivoPruebas?: string;
-  precondiciones?: string;
-  idioma?: string;
-  customEnvFields: Array<{ label: string; value: string }>;
-}
 
 export default function Home() {
   const [step, setStep] = useState(1);
@@ -99,10 +56,17 @@ export default function Home() {
     hasIncidences: false,
     conclusion: "",
     datosDePrueba: "",
+    logsRelevantes: "", // Inicializar si es parte de FormData
     customEnvFields: [],
+    // Inicializar campos de APP si son parte de FormData
+    isApp: false,
+    endpoint: "",
+    sistemaOperativo: "",
+    dispositivoPruebas: "",
+    precondiciones: "",
+    idioma: "",
   });
 
-  // Estado para bloquear el campo código de JIRA si viene por API
   const [jiraCodeLocked, setJiraCodeLocked] = useState(false);
 
   const [hiddenFields, setHiddenFields] = useState<HiddenFields>({
@@ -114,11 +78,9 @@ export default function Home() {
     ambiente: false,
   });
 
-  const [report, setReport] = useState("");
+  // El estado 'report' ya no es necesario si ReportOutput genera su propia preview.
+  // const [report, setReport] = useState(""); 
 
-  /**
-   * Manejo de cambio de paso y sincronización del key de JIRA.
-   */
   const handleParseJira = (jiraKey?: string) => {
     const result = parseJiraContent(jiraContent);
     setParsedData(result);
@@ -135,9 +97,15 @@ export default function Home() {
   };
 
   const handleGenerateReport = () => {
-    if (!parsedData) return;
-    const finalReport = formatReport(parsedData, formData, hiddenFields);
-    setReport(finalReport);
+    if (!parsedData) {
+      alert("No hay datos parseados para generar el reporte. Vuelve al Paso 1.");
+      return;
+    }
+    // Ya no necesitamos generar y pasar el 'report' string a ReportOutput.
+    // ReportOutput tomará parsedData, formData, hiddenFields y generará
+    // la vista previa internamente.
+    // const finalReport = formatReport(parsedData, formData, hiddenFields, 'jira'); // Ya no es necesario aquí
+    // setReport(finalReport); // Ya no es necesario aquí
     setStep(3);
   };
 
@@ -157,38 +125,40 @@ export default function Home() {
       maquetaUtilizada: "",
       ambiente: "",
       batteryTests: [],
-      summary: {
-        totalTests: "",
-        successfulTests: "",
-        failedTests: "",
-        observations: "",
-      },
+      summary: { totalTests: "", successfulTests: "", failedTests: "", observations: "" },
       incidences: [],
       hasIncidences: false,
       conclusion: "",
       datosDePrueba: "",
+      logsRelevantes: "",
       customEnvFields: [],
+      isApp: false,
+      endpoint: "",
+      sistemaOperativo: "",
+      dispositivoPruebas: "",
+      precondiciones: "",
+      idioma: "",
     });
     setHiddenFields({
-      serverPruebas: false,
-      ipMaquina: false,
-      navegador: false,
-      baseDatos: false,
-      maquetaUtilizada: false,
-      ambiente: false,
+      serverPruebas: false, ipMaquina: false, navegador: false,
+      baseDatos: false, maquetaUtilizada: false, ambiente: false,
     });
-    setReport("");
+    // setReport(""); // Ya no es necesario
     setStep(1);
     setJiraCodeLocked(false);
   };
 
-  const goBackToStep1 = () => setStep(1);
+  const goBackToStep1 = () => {
+    // Al volver al paso 1, podríamos considerar limpiar parsedData
+    // si la intención es empezar de nuevo con el parseo.
+    // setParsedData(null); // Opcional
+    setStep(1);
+  }
   const goBackToStep2 = () => setStep(2);
 
   return (
     <>
       <HeaderNav />
-
       <main className="pt-20 min-h-screen bg-gray-50 relative">
         {step === 1 && (
           <StepOnePaste
@@ -214,16 +184,17 @@ export default function Home() {
 
         {step === 3 && (
           <ReportOutput
-            report={report}
+            // La prop 'report' se elimina
+            parsedData={parsedData}      // Pasar parsedData
+            formData={formData}          // Pasar formData
+            hiddenFields={hiddenFields}  // Pasar hiddenFields
             onReset={handleReset}
             onGoBackToStep2={goBackToStep2}
             jiraCode={formData.jiraCode}
           />
         )}
-
         <Feedback />
       </main>
-
       <FooterNav />
     </>
   );

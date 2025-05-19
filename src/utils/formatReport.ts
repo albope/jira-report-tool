@@ -1,8 +1,9 @@
+// src/utils/formatReport.ts
+
 import { ParsedData } from "./parseJiraContent"; // Ajusta la ruta si es necesario
 
-// --- Interfaces (Asegúrate que FormData incluye logsRelevantes) ---
-/** Estructura de la batería */
-interface BatteryTest {
+// --- Interfaces (sin cambios, como las proporcionaste) ---
+export interface BatteryTest {
   id: string;
   description: string;
   steps: string;
@@ -12,24 +13,18 @@ interface BatteryTest {
   testStatus: string;
   images?: string[];  // base64
 }
-
-/** Incidencias */
-interface Incidence {
+export interface Incidence { // Asegúrate que esta interfaz esté definida o importada si la usas
   id: string;
   description: string;
   impact: string;
   status: string;
 }
-
-/** Resumen */
-interface Summary {
+export interface Summary { // Asegúrate que esta interfaz esté definida o importada
   totalTests: string;
   successfulTests: string;
   failedTests: string;
   observations: string;
 }
-
-/** Campos ocultables */
 export interface HiddenFields {
   serverPruebas: boolean;
   ipMaquina: boolean;
@@ -38,8 +33,6 @@ export interface HiddenFields {
   maquetaUtilizada: boolean;
   ambiente: boolean;
 }
-
-/** FormData */
 export interface FormData {
   jiraCode: string;
   date: string;
@@ -58,9 +51,7 @@ export interface FormData {
   hasIncidences: boolean;
   conclusion: string;
   datosDePrueba: string;
-  // === Campo para Logs (Ya presente) ===
   logsRelevantes?: string;
-  // =======================================
   isApp?: boolean;
   endpoint?: string;
   sistemaOperativo?: string;
@@ -71,22 +62,21 @@ export interface FormData {
 }
 // --- Fin Interfaces ---
 
-/** Helper para formatear pasos multiline en bullet points */
+
 function formatStepsCell(steps: string): string {
   const lines = steps.split(/\r?\n/).filter((l) => l.trim());
-  // Escapar barras verticales para que no rompan las tablas Markdown
-  // Usamos \\n para saltos de línea que algunos visores Markdown en tablas podrían interpretar
   return lines.map((l) => `- ${l.replace(/\|/g, '\\|')}`).join(" \\n ");
 }
 
 export default function formatReport(
   parsed: ParsedData,
   formData: FormData,
-  hiddenFields: HiddenFields
+  hiddenFields: HiddenFields,
+  targetOutput: 'jira' | 'docx' // <--- NUEVO PARÁMETRO
 ): string {
   const finalDate = formData.date || new Date().toISOString().split("T")[0];
 
-  // --- Versiones ---
+  // --- Versiones (sin cambios) ---
   let versionTable = "";
   formData.versions.forEach((v) => {
     const appName = v.appName.trim().replace(/\|/g, '\\|');
@@ -97,7 +87,7 @@ export default function formatReport(
     versionTable = "| (No hay versiones) | (N/A) |\n";
   }
 
-  // --- Batería de Pruebas ---
+  // --- Batería de Pruebas (sin cambios) ---
   let batteryTable = `| ID Prueba | Descripción | Pasos | Resultado Esperado | Resultado Obtenido | Versión | Estado |\n`;
   batteryTable += `| --------- | ----------- | ----- | ------------------ | ------------------ | ------- | ------ |\n`;
   if (formData.batteryTests.length) {
@@ -115,39 +105,56 @@ export default function formatReport(
     batteryTable += "| (Sin pruebas) | - | - | - | - | - | - |\n";
   }
 
-  // --- Datos de Prueba ---
+  // --- Datos de Prueba (sin cambios) ---
   const datosDePrueba = formData.datosDePrueba?.trim() || "(Sin datos de prueba)";
 
-  // --- Evidencias (ahora con salto de línea doble y asegurando TODOS los adjuntos) ---
-  const evidenciaSection = formData.batteryTests
-    .filter((t) => t.images && t.images.length > 0)
-    .map((t) => {
-      const cleanId = t.id.trim();
-      const header = `**Imágenes adjuntas del caso de prueba ${cleanId}**`;
-      const imgs = t.images!
-        .map((src, i) => `![${cleanId} – Evidencia ${i + 1}](${src})`)
-        .join("\n\n"); // doble salto para separarlas
-      return `${header}\n\n${imgs}`;
-    })
-    .join("\n\n") // doble salto entre casos
-    || "(No hay evidencias adjuntas)";
+  // --- Evidencias (MODIFICADO según targetOutput) ---
+  let evidenciaSection = "";
+  const testCasesWithImages = formData.batteryTests.filter((t) => t.images && t.images.length > 0);
 
-  // --- Logs Relevantes ---
+  if (testCasesWithImages.length > 0) {
+    if (targetOutput === 'jira') {
+      const imagePlaceholders = testCasesWithImages.map(t => {
+        const cleanId = t.id.trim();
+        const numImages = t.images!.length;
+        const imageNoun = numImages === 1 ? "imagen" : "imágenes";
+        return `* Para el caso de prueba **${cleanId}**: Se han adjuntado ${numImages} ${imageNoun}. Por favor, consúltelas en el documento Word adjunto o en el comentario aparte.`;
+      }).join("\n");
+      evidenciaSection = imagePlaceholders;
+      if (!evidenciaSection) { // En caso de que el map no produzca nada (aunque filter ya lo asegura)
+        evidenciaSection = "(No hay evidencias que listar para JIRA, pero compruebe el Word si se indica carga de imágenes).";
+      }
+    } else { // targetOutput === 'docx'
+      evidenciaSection = testCasesWithImages.map((t) => {
+        const cleanId = t.id.trim();
+        const header = `**Imágenes adjuntas del caso de prueba ${cleanId}**`;
+        // Asegurarse de que t.images no es undefined antes de llamar a map
+        const imgs = t.images ? t.images.map((src, i) => 
+            src ? `![${cleanId} – Evidencia ${i + 1}](${src})` : `[Referencia a Evidencia ${i + 1} para ${cleanId} no disponible]`
+        ).join("\n\n") : ""; // doble salto para separarlas
+        return `${header}\n\n${imgs}`;
+      }).join("\n\n"); // doble salto entre casos
+    }
+  } else {
+    evidenciaSection = "(No hay evidencias adjuntas)";
+  }
+
+
+  // --- Logs Relevantes (sin cambios) ---
   let logsSection = "";
   if (formData.logsRelevantes && formData.logsRelevantes.trim()) {
-    // Usamos bloque de código Markdown (```) para preservar formato
     logsSection = "```log\n" + formData.logsRelevantes.trim() + "\n```";
   } else {
     logsSection = "(No se adjuntaron logs)";
   }
 
-  // --- Resumen de Resultados ---
+  // --- Resumen de Resultados (sin cambios) ---
   let summaryTable = `| **Total de Pruebas** | **Pruebas Exitosas** | **Pruebas Fallidas** | **Observaciones** |\n`;
   summaryTable += `| -------------------- | -------------------- | -------------------- | ----------------- |\n`;
   const observations = formData.summary.observations.replace(/\|/g, '\\|') || "(N/A)";
   summaryTable += `| ${formData.summary.totalTests || "0"} | ${formData.summary.successfulTests || "0"} | ${formData.summary.failedTests || "0"} | ${observations} |\n`;
 
-  // --- Incidencias ---
+  // --- Incidencias (sin cambios) ---
   let incidSection = "";
   if (formData.hasIncidences && formData.incidences.length) {
     incidSection += `| **ID Prueba** | **Descripción** | **Impacto** | **Estado** |\n`;
@@ -163,7 +170,7 @@ export default function formatReport(
     incidSection = "No se detectaron incidencias durante las pruebas.";
   }
 
-  // --- Entorno de Pruebas ---
+  // --- Entorno de Pruebas (sin cambios) ---
   const entornoPairs: [string, string][] = [];
   if (!hiddenFields.serverPruebas && formData.serverPruebas.trim()) { entornoPairs.push(["Servidor de Pruebas", formData.serverPruebas]); }
   if (!hiddenFields.ipMaquina && formData.ipMaquina.trim()) { entornoPairs.push(["IP Máquina", formData.ipMaquina]); }
@@ -174,7 +181,7 @@ export default function formatReport(
   formData.customEnvFields.forEach((f) => { if (f.label.trim() && f.value.trim()) { entornoPairs.push([f.label.trim(), f.value.trim()]); } });
   const entornoList = entornoPairs.map(([k, v]) => `**${k}:** ${v}`).join("\n");
 
-  // --- Sección APP ---
+  // --- Sección APP (sin cambios) ---
   const appSection = formData.isApp ? `
 📱 **Validación de Aplicación**
 
@@ -187,7 +194,7 @@ export default function formatReport(
 | Idioma | ${formData.idioma?.replace(/\|/g, '\\|') || "(N/A)"} |
 ` : "";
 
-  // --- Montaje final en el orden solicitado ---
+  // --- Montaje final (sin cambios en la estructura general) ---
   return `
 📌 **Información General**
 **Título:** ${parsed.title}
@@ -206,7 +213,7 @@ ${versionTable.trim()}
 
 🖥️ **Entorno de Pruebas**
 
-${entornoList}
+${entornoList.trim() ? entornoList : "(No se especificó entorno)"}
 
 ${appSection.trim() ? '\n' + appSection.trim() + '\n' : ''}
 ✅ **Batería de Pruebas**
@@ -221,7 +228,7 @@ ${datosDePrueba}
 
 📎 **Evidencias**
 
-${evidenciaSection}
+${evidenciaSection.trim()}
 
 
 📝 **Logs Relevantes**
@@ -241,6 +248,6 @@ ${incidSection.includes('|') ? '\n' + incidSection.trim() : incidSection}
 
 📌 **Conclusiones**
 
-${formData.conclusion || "(Sin conclusiones)"}
+${formData.conclusion.trim() || "(Sin conclusiones)"}
 `;
 }
