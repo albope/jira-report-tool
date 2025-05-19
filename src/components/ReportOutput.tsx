@@ -151,8 +151,6 @@ export default function ReportOutput({
         <div className="prose prose-sm sm:prose-base max-w-none p-4 sm:p-5 bg-white rounded-lg border border-gray-200 shadow-sm max-h-[60vh] overflow-y-auto">
           <ReactMarkdown
             components={{
-              // CORRECCIÓN: 'node' eliminado de la desestructuración si no se usa.
-              // Si la firma del tipo de ReactMarkdown requiere 'node', usar '_node'.
               img: ({ alt, src, ...props }) => { 
                 const altText = alt || ''; 
                 if (!src) { 
@@ -174,14 +172,15 @@ export default function ReportOutput({
                 // eslint-disable-next-line @next/next/no-img-element
                 return <img src={src} alt={altText} className="max-w-sm h-auto rounded-md shadow-sm my-2" {...props}/>;
               },
-              table: ({node: _node, ...props}) => <div className="overflow-x-auto"><table className="min-w-full divide-y divide-gray-300 my-4" {...props} /></div>,
-              thead: ({node: _node, ...props}) => <thead className="bg-gray-100" {...props} />,
-              th: ({node: _node, ...props}) => <th scope="col" className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider" {...props} />,
-              td: ({node: _node, ...props}) => <td className="px-4 py-3 whitespace-pre-wrap text-sm text-gray-700" {...props} />,
-              p: ({node: _node, ...props}) => <p className="my-2 leading-relaxed" {...props} />,
-              ul: ({node: _node, ...props}) => <ul className="list-disc pl-5 my-2 space-y-1" {...props} />,
-              ol: ({node: _node, ...props}) => <ol className="list-decimal pl-5 my-2 space-y-1" {...props} />,
-              li: ({node: _node, ...props}) => <li className="text-gray-700" {...props} />,
+              // CORRECCIÓN: Eliminado 'node' (o '_node') de la desestructuración
+              table: ({ ...props}) => <div className="overflow-x-auto"><table className="min-w-full divide-y divide-gray-300 my-4" {...props} /></div>,
+              thead: ({ ...props}) => <thead className="bg-gray-100" {...props} />,
+              th: ({ ...props}) => <th scope="col" className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider" {...props} />,
+              td: ({ ...props}) => <td className="px-4 py-3 whitespace-pre-wrap text-sm text-gray-700" {...props} />,
+              p: ({ ...props}) => <p className="my-2 leading-relaxed" {...props} />,
+              ul: ({ ...props}) => <ul className="list-disc pl-5 my-2 space-y-1" {...props} />,
+              ol: ({ ...props}) => <ol className="list-decimal pl-5 my-2 space-y-1" {...props} />,
+              li: ({ ...props}) => <li className="text-gray-700" {...props} />,
             }}
           >
             {reportForPreview}
