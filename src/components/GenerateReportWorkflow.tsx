@@ -180,30 +180,30 @@ export default function GenerateReportWorkflow() {
   // Efecto para inicializar el paso y validar datos al montar
   useEffect(() => {
     if (typeof window !== 'undefined') {
-        const stepFromUrl = searchParams.get('step');
-        const currentStepInUrl = stepFromUrl ? parseInt(stepFromUrl, 10) : 1;
+      const stepFromUrl = searchParams.get('step');
+      const currentStepInUrl = stepFromUrl ? parseInt(stepFromUrl, 10) : 1;
 
-        // Cargar datos de sessionStorage si no se hizo en useState (por si Suspense retrasa la primera lectura de searchParams)
-        const savedJiraContent = sessionStorage.getItem('generateReportJiraContent');
-        if (savedJiraContent && !jiraContent) setJiraContent(savedJiraContent);
+      // Cargar datos de sessionStorage si no se hizo en useState (por si Suspense retrasa la primera lectura de searchParams)
+      const savedJiraContent = sessionStorage.getItem('generateReportJiraContent');
+      if (savedJiraContent && !jiraContent) setJiraContent(savedJiraContent);
 
-        const savedParsedDataString = sessionStorage.getItem('generateReportParsedData');
-        if (savedParsedDataString && !parsedData) {
-            try {
-                setParsedData(JSON.parse(savedParsedDataString));
-            } catch (e) { console.error("Error re-parsing parsedData", e); }
-        }
-        // Similar para formData, hiddenFields, jiraCodeLocked si es necesario, aunque useState ya lo hace.
+      const savedParsedDataString = sessionStorage.getItem('generateReportParsedData');
+      if (savedParsedDataString && !parsedData) {
+        try {
+          setParsedData(JSON.parse(savedParsedDataString));
+        } catch (e) { console.error("Error re-parsing parsedData", e); }
+      }
+      // Similar para formData, hiddenFields, jiraCodeLocked si es necesario, aunque useState ya lo hace.
 
-        if (currentStepInUrl === 2 && !parsedData && !savedParsedDataString) {
-            updateStepUrl(1);
-        } else if (currentStepInUrl === 3 && (!parsedData && !savedParsedDataString)) { // Simplificado, formData debería existir
-            updateStepUrl(1);
-        } else {
-            setStep(currentStepInUrl);
-        }
+      if (currentStepInUrl === 2 && !parsedData && !savedParsedDataString) {
+        updateStepUrl(1);
+      } else if (currentStepInUrl === 3 && (!parsedData && !savedParsedDataString)) { // Simplificado, formData debería existir
+        updateStepUrl(1);
+      } else {
+        setStep(currentStepInUrl);
+      }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Ejecutar solo una vez al montar para leer la URL inicial y sessionStorage
 
   // Guardar estados en sessionStorage cuando cambien
@@ -295,13 +295,19 @@ export default function GenerateReportWorkflow() {
       const sessionParsedDataString = sessionStorage.getItem('generateReportParsedData');
       let sessionParsedDataObj = null;
       if (sessionParsedDataString) {
-        try { sessionParsedDataObj = JSON.parse(sessionParsedDataString); } catch (_e) {/* ignore */}
+        try {
+          sessionParsedDataObj = JSON.parse(sessionParsedDataString);
+
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars 
+        } catch (_e) {/* ignore */ }
       }
 
       const sessionFormDataString = sessionStorage.getItem('generateReportFormData');
       let sessionFormDataObj = null;
       if (sessionFormDataString) {
-          try { sessionFormDataObj = JSON.parse(sessionFormDataString); } catch (_e) {/* ignore */}
+        try { sessionFormDataObj = JSON.parse(sessionFormDataString); }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        catch (_e) {/* ignore */ }
       }
 
 
@@ -310,14 +316,14 @@ export default function GenerateReportWorkflow() {
       } else if (currentStepInUrl === 2) {
         if (parsedData || sessionParsedDataObj) {
           setStep(2);
-          if(!parsedData && sessionParsedDataObj) setParsedData(sessionParsedDataObj); // Restaurar si es necesario
+          if (!parsedData && sessionParsedDataObj) setParsedData(sessionParsedDataObj); // Restaurar si es necesario
         } else {
           updateStepUrl(1); // No hay datos para el paso 2, volver al 1
         }
       } else if (currentStepInUrl === 3) {
         if ((parsedData || sessionParsedDataObj) && (formData?.jiraCode || sessionFormDataObj?.jiraCode)) { // formData siempre debería existir
           setStep(3);
-          if(!parsedData && sessionParsedDataObj) setParsedData(sessionParsedDataObj); // Restaurar si es necesario
+          if (!parsedData && sessionParsedDataObj) setParsedData(sessionParsedDataObj); // Restaurar si es necesario
           // formData se actualiza a través de su propio useEffect y useState
         } else {
           updateStepUrl(1); // No hay datos para el paso 3, volver al 1
@@ -327,7 +333,7 @@ export default function GenerateReportWorkflow() {
         updateStepUrl(1);
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]); // Solo depende de searchParams para reaccionar a cambios de URL
 
   return (
@@ -373,7 +379,7 @@ export default function GenerateReportWorkflow() {
         />
       )}
       {step === 3 && !parsedData && (
-         <div className="text-center p-10">
+        <div className="text-center p-10">
           <p>Faltan datos para el paso 3. Por favor, completa los pasos anteriores.</p>
           <button onClick={goBackToStep1} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded">
             Volver al Paso 1
