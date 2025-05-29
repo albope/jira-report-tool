@@ -295,13 +295,13 @@ export default function GenerateReportWorkflow() {
       const sessionParsedDataString = sessionStorage.getItem('generateReportParsedData');
       let sessionParsedDataObj = null;
       if (sessionParsedDataString) {
-        try { sessionParsedDataObj = JSON.parse(sessionParsedDataString); } catch (e) {/* ignore */}
+        try { sessionParsedDataObj = JSON.parse(sessionParsedDataString); } catch (_e) {/* ignore */}
       }
 
       const sessionFormDataString = sessionStorage.getItem('generateReportFormData');
       let sessionFormDataObj = null;
       if (sessionFormDataString) {
-          try { sessionFormDataObj = JSON.parse(sessionFormDataString); } catch (e) {/* ignore */}
+          try { sessionFormDataObj = JSON.parse(sessionFormDataString); } catch (_e) {/* ignore */}
       }
 
 
