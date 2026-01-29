@@ -12,7 +12,7 @@ import "tippy.js/dist/tippy.css";
 import {
   Info, Settings, ListChecks, FileTextIcon, BarChart3, AlertOctagon, CheckCircle2,
   Sheet, Download, PlusCircle, XCircle, Copy, Trash2, Layers, Edit3, ListPlus,
-  FileCheckIcon // Asegurado que está importado
+  FileCheckIcon, AlertTriangle
 } from 'lucide-react';
 
 import { ParsedData } from "@/utils/parseJiraContent";
@@ -194,42 +194,33 @@ export default function StepTwoForm({
 }: StepTwoFormProps) {
   const [forceUnlock, setForceUnlock] = React.useState(false);
 
+  // Estado para mostrar error de validación de suma
+  const [summaryValidationError, setSummaryValidationError] = React.useState<string | null>(null);
+
   const handleInputChange = (
     field: keyof FormData,
     value: string | boolean | Summary
   ) => {
     if (field === "summary" && typeof value === "object") {
       const newSummary = { ...formData.summary, ...value } as Summary;
-      const total = +newSummary.totalTests || 0;
-      const suc = +newSummary.successfulTests || 0;
-      const fail = +newSummary.failedTests || 0;
+      const total = parseInt(newSummary.totalTests, 10) || 0;
+      const suc = parseInt(newSummary.successfulTests, 10) || 0;
+      const fail = parseInt(newSummary.failedTests, 10) || 0;
 
-      if (suc > total || fail > total || (suc + fail) > total) {
-        alert("La suma de pruebas Exitosas y Fallidas no puede superar el Total.");
-        if ((suc + fail) > total) return;
+      // Validación mejorada: mostrar error visual en lugar de alert
+      if (suc > total || fail > total) {
+        setSummaryValidationError("Las pruebas exitosas o fallidas no pueden superar el total.");
+      } else if ((suc + fail) > total) {
+        setSummaryValidationError("La suma de exitosas + fallidas no puede superar el total.");
+      } else {
+        setSummaryValidationError(null);
       }
+
       setFormData({ ...formData, summary: newSummary });
       return;
     }
     setFormData({ ...formData, [field]: value });
   };
-
-  useEffect(() => {
-    const updated = formData.batteryTests.map((t) =>
-      t.id === "PR-001" &&
-        !t.obtainedResult.includes("El sistema no procesó correctamente")
-        ? {
-          ...t,
-          obtainedResult:
-            "❌ El sistema no procesó correctamente la eliminación del servicio con retirada, generando un error inesperado.",
-        }
-        : t
-    );
-    if (JSON.stringify(updated) !== JSON.stringify(formData.batteryTests)) {
-      setFormData({ ...formData, batteryTests: updated });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const addBatteryTest = () => {
     const nt: BatteryTest = {
@@ -480,7 +471,7 @@ export default function StepTwoForm({
           onChange={(e) => handleInputChange("jiraCode", e.target.value)}
           required
           disabled={jiraCodeLocked && !forceUnlock}
-          style={jiraCodeLocked && !forceUnlock ? { backgroundColor: "#e9ecef", color: "#6c757d", cursor: "not-allowed" } : {}}
+          className={jiraCodeLocked && !forceUnlock ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""}
         />
         {jiraCodeLocked && !forceUnlock && (
           <button type="button" className="text-xs text-blue-600 hover:underline mt-1.5 flex items-center" onClick={() => setForceUnlock(true)}>
@@ -646,6 +637,12 @@ export default function StepTwoForm({
           <StyledInput label="Pruebas Exitosas" id="successfulTests" type="number" min={0} max={Number(formData.summary.totalTests) || undefined} value={formData.summary.successfulTests} onChange={(e) => handleInputChange("summary", { ...formData.summary, successfulTests: e.target.value })} />
           <StyledInput label="Pruebas Fallidas" id="failedTests" type="number" min={0} max={Number(formData.summary.totalTests) || undefined} value={formData.summary.failedTests} onChange={(e) => handleInputChange("summary", { ...formData.summary, failedTests: e.target.value })} />
         </div>
+        {summaryValidationError && (
+          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md flex items-center text-red-700 text-sm">
+            <AlertTriangle size={18} className="mr-2 flex-shrink-0" />
+            {summaryValidationError}
+          </div>
+        )}
         <StyledTextarea
           label="Observaciones del Resumen"
           id="observations"

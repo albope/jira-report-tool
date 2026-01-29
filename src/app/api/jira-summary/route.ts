@@ -7,12 +7,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "No se ha proporcionado el código del JIRA" }, { status: 400 });
   }
 
-  const JIRA_TOKEN = process.env.JIRA_TOKEN; // Añade esto en tu .env.local
-  const JIRA_EMAIL = "abort.etraid@grupoetra.com"; // <-- TU EMAIL
-  const JIRA_DOMAIN = "etraid.atlassian.net";
+  const JIRA_TOKEN = process.env.JIRA_TOKEN;
+  const JIRA_EMAIL = process.env.JIRA_EMAIL;
+  const JIRA_DOMAIN = process.env.JIRA_DOMAIN;
 
-  if (!JIRA_TOKEN) {
-    return NextResponse.json({ error: "API token no configurado" }, { status: 500 });
+  if (!JIRA_TOKEN || !JIRA_EMAIL || !JIRA_DOMAIN) {
+    return NextResponse.json({
+      error: "Configuración JIRA incompleta. Verifica las variables de entorno JIRA_TOKEN, JIRA_EMAIL y JIRA_DOMAIN."
+    }, { status: 500 });
   }
 
   const authString = Buffer.from(`${JIRA_EMAIL}:${JIRA_TOKEN}`).toString("base64");

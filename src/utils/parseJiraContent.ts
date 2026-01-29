@@ -33,10 +33,9 @@ export default function parseJiraContent(jiraContent: string): ParsedData {
       descLines.push(lines[i]);
     }
 
-    // Si hay contenido, unimos con espacios o saltos de línea
+    // Si hay contenido, unimos manteniendo los saltos de línea
     if (descLines.length > 0) {
-      description = descLines.join(" ");
-      // Si quieres mantener saltos de línea, podrías usar descLines.join("\n")
+      description = descLines.join("\n");
     }
   }
 

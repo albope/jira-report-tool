@@ -54,7 +54,15 @@ export default function StepOnePaste({
     setJiraContent(""); 
 
     try {
-      const res = await fetch(`/api/jira-summary?key=${encodeURIComponent(jiraKey.trim())}`);
+      // Timeout de 10 segundos para evitar bloqueos indefinidos
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      const res = await fetch(`/api/jira-summary?key=${encodeURIComponent(jiraKey.trim())}`, {
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
       if (!res.ok) {
         let errorMsg = "No se pudo obtener el título del JIRA desde la API.";
         try {
@@ -79,7 +87,11 @@ export default function StepOnePaste({
       console.error("Error en fetchSummary:", err);
       let message = "Error consultando el JIRA. Puedes pegar el contenido manualmente.";
       if (err instanceof Error) {
-        message = err.message;
+        if (err.name === "AbortError") {
+          message = "La consulta tardó demasiado (timeout). Verifica tu conexión o introduce el contenido manualmente.";
+        } else {
+          message = err.message;
+        }
       }
       setFetchError(message);
       setFetchedJiraTitle(null); // Asegurar que esté limpio

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import React from "react";
+import { FileText } from "lucide-react";
 
 export default function HeaderNav() {
   return (
@@ -18,7 +19,7 @@ export default function HeaderNav() {
       <div className="flex items-center space-x-3">
         {/* Ícono circular con color sólido para destacar */}
         <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-          <span className="text-white text-sm">📝</span>
+          <FileText size={16} className="text-white" />
         </div>
         <span className="text-lg font-bold text-gray-800">
           Generador de Reportes JIRA

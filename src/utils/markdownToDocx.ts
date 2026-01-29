@@ -92,23 +92,35 @@ export function markdownToDocx(report: string) {
       // Imagen base64?
       const imgMatch = line.match(imageRegex);
       if (imgMatch) {
-        const b64 = imgMatch[1].split(",")[1];
-        const data = Buffer.from(b64, "base64");
+        try {
+          const b64Parts = imgMatch[1].split(",");
+          const b64 = b64Parts[1];
 
-        // Inserta la imagen
-        docElements.push(
-          new Paragraph({
-            children: [
-              new ImageRun({
-                data,
-                transformation: { width: 400, height: 300 },
-              }),
-            ],
-          })
-        );
-        // …y un párrafo en blanco para separarlas
-        docElements.push(new Paragraph(""));
+          // Validar que existe el contenido base64
+          if (!b64) {
+            console.warn("Imagen con formato base64 inválido, saltando...");
+            continue;
+          }
 
+          const data = Buffer.from(b64, "base64");
+
+          // Inserta la imagen
+          docElements.push(
+            new Paragraph({
+              children: [
+                new ImageRun({
+                  data,
+                  transformation: { width: 400, height: 300 },
+                }),
+              ],
+            })
+          );
+          // …y un párrafo en blanco para separarlas
+          docElements.push(new Paragraph(""));
+        } catch (error) {
+          console.error("Error procesando imagen base64:", error);
+          // Continuar con la siguiente línea en lugar de crashear
+        }
         continue;
       }
 

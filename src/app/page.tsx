@@ -16,7 +16,7 @@ export default function Landing() {
     <>
       <HeaderNav />
 
-      <main className="min-h-screen flex flex-col items-center justify-center bg-[#f5f5f7] px-4 overflow-hidden"> {/* Añadido overflow-hidden para contener animaciones */}
+      <main className="min-h-screen flex flex-col items-center justify-center bg-gray-100 px-4 overflow-hidden">
         {/* ---------- HERO ---------- */}
         <section className="text-center max-w-3xl py-20"> {/* Añadido py-20 para más espacio vertical */}
           {/* Título */}
