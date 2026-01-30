@@ -9,7 +9,7 @@ export default function CreateJiraPage() {
     <>
       <HeaderNav />
 
-      <main className="pt-20 min-h-screen bg-gray-50">
+      <main className="pt-20 min-h-screen bg-[var(--background)]">
         <CreateJiraForm />
       </main>
 

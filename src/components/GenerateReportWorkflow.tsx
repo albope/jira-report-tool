@@ -3,15 +3,18 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import StepOnePaste from "@/components/StepOnePaste";
 import StepTwoForm from "@/components/StepTwoForm";
 import ReportOutput from "@/components/ReportOutput";
 import Feedback from "@/components/Feedback";
 import parseJiraContent, { ParsedData } from "@/utils/parseJiraContent";
+import { useToast } from "@/components/ui/Toast";
+import { useAutoSave } from "@/hooks/useAutoSave";
+import { AutoSaveIndicator } from "@/components/ui/AutoSaveIndicator";
+import { PageLoadingSkeleton } from "@/components/ui/Skeleton";
 
-// INTERFACES (Copiadas de tu page.tsx original)
-// Asegúrate de que estas definiciones coincidan con las usadas en tus otros componentes (StepTwoForm, ReportOutput)
-// o considera moverlas a un archivo de tipos compartido.
+// INTERFACES
 interface HiddenFields {
   serverPruebas: boolean;
   ipMaquina: boolean;
@@ -29,7 +32,7 @@ interface BatteryTest {
   obtainedResult: string;
   testVersion: string;
   testStatus: string;
-  images?: string[]; // Para las imágenes de la batería de pruebas
+  images?: string[];
 }
 
 interface Incidence {
@@ -46,7 +49,7 @@ interface Summary {
   observations: string;
 }
 
-export interface FormData { // Exportada si StepTwoForm u otros la necesitan directamente
+export interface FormData {
   jiraCode: string;
   date: string;
   tester: string;
@@ -73,11 +76,62 @@ export interface FormData { // Exportada si StepTwoForm u otros la necesitan dir
   idioma?: string;
   customEnvFields: Array<{ label: string; value: string }>;
 }
-// FIN DE INTERFACES
+
+const defaultFormData: FormData = {
+  jiraCode: "",
+  date: new Date().toISOString().split("T")[0],
+  tester: "",
+  testStatus: "",
+  versions: [],
+  serverPruebas: "",
+  ipMaquina: "",
+  navegador: "",
+  baseDatos: "",
+  maquetaUtilizada: "",
+  ambiente: "",
+  batteryTests: [],
+  summary: { totalTests: "", successfulTests: "", failedTests: "", observations: "" },
+  incidences: [],
+  hasIncidences: false,
+  conclusion: "",
+  datosDePrueba: "",
+  logsRelevantes: "",
+  customEnvFields: [],
+  isApp: false,
+  endpoint: "",
+  sistemaOperativo: "",
+  dispositivoPruebas: "",
+  precondiciones: "",
+  idioma: "",
+};
+
+const defaultHiddenFields: HiddenFields = {
+  serverPruebas: false,
+  ipMaquina: false,
+  navegador: false,
+  baseDatos: false,
+  maquetaUtilizada: false,
+  ambiente: false,
+};
+
+// Animation variants
+const pageVariants = {
+  initial: { opacity: 0, x: 20 },
+  animate: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -20 },
+};
+
+const pageTransition = {
+  type: "spring" as const,
+  stiffness: 300,
+  damping: 30,
+};
 
 export default function GenerateReportWorkflow() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const toast = useToast();
+  const [isLoading, setIsLoading] = useState(true);
 
   const [step, setStep] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -119,38 +173,7 @@ export default function GenerateReportWorkflow() {
         }
       }
     }
-    return {
-      jiraCode: "",
-      date: new Date().toISOString().split("T")[0],
-      tester: "",
-      testStatus: "",
-      versions: [],
-      serverPruebas: "",
-      ipMaquina: "",
-      navegador: "",
-      baseDatos: "",
-      maquetaUtilizada: "",
-      ambiente: "",
-      batteryTests: [],
-      summary: {
-        totalTests: "",
-        successfulTests: "",
-        failedTests: "",
-        observations: "",
-      },
-      incidences: [],
-      hasIncidences: false,
-      conclusion: "",
-      datosDePrueba: "",
-      logsRelevantes: "",
-      customEnvFields: [],
-      isApp: false,
-      endpoint: "",
-      sistemaOperativo: "",
-      dispositivoPruebas: "",
-      precondiciones: "",
-      idioma: "",
-    };
+    return defaultFormData;
   });
 
   const [jiraCodeLocked, setJiraCodeLocked] = useState(() => {
@@ -171,19 +194,29 @@ export default function GenerateReportWorkflow() {
         }
       }
     }
-    return {
-      serverPruebas: false, ipMaquina: false, navegador: false,
-      baseDatos: false, maquetaUtilizada: false, ambiente: false,
-    };
+    return defaultHiddenFields;
   });
 
-  // Efecto para inicializar el paso y validar datos al montar
+  // Auto-save hook
+  const autoSave = useAutoSave({
+    key: 'jira-report-autosave',
+    data: { formData, hiddenFields, jiraContent, parsedData },
+    debounceMs: 2000,
+    enabled: step === 2,
+  });
+
+  // Initialize loading
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Initialize step from URL
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const stepFromUrl = searchParams.get('step');
       const currentStepInUrl = stepFromUrl ? parseInt(stepFromUrl, 10) : 1;
 
-      // Cargar datos de sessionStorage si no se hizo en useState (por si Suspense retrasa la primera lectura de searchParams)
       const savedJiraContent = sessionStorage.getItem('generateReportJiraContent');
       if (savedJiraContent && !jiraContent) setJiraContent(savedJiraContent);
 
@@ -191,35 +224,35 @@ export default function GenerateReportWorkflow() {
       if (savedParsedDataString && !parsedData) {
         try {
           setParsedData(JSON.parse(savedParsedDataString));
-        } catch (e) { console.error("Error re-parsing parsedData", e); }
+        } catch (e) {
+          console.error("Error re-parsing parsedData", e);
+        }
       }
-      // Similar para formData, hiddenFields, jiraCodeLocked si es necesario, aunque useState ya lo hace.
 
       if (currentStepInUrl === 2 && !parsedData && !savedParsedDataString) {
         updateStepUrl(1);
-      } else if (currentStepInUrl === 3 && (!parsedData && !savedParsedDataString)) { // Simplificado, formData debería existir
+      } else if (currentStepInUrl === 3 && (!parsedData && !savedParsedDataString)) {
         updateStepUrl(1);
       } else {
         setStep(currentStepInUrl);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Ejecutar solo una vez al montar para leer la URL inicial y sessionStorage
+  }, []);
 
-  // Guardar estados en sessionStorage cuando cambien
+  // Save to sessionStorage on change
   useEffect(() => {
     if (typeof window !== 'undefined') {
       sessionStorage.setItem('generateReportFormData', JSON.stringify(formData));
       sessionStorage.setItem('generateReportHiddenFields', JSON.stringify(hiddenFields));
       sessionStorage.setItem('generateReportJiraCodeLocked', String(jiraCodeLocked));
       if (jiraContent) sessionStorage.setItem('generateReportJiraContent', jiraContent);
-      else sessionStorage.removeItem('generateReportJiraContent'); // Limpiar si está vacío
+      else sessionStorage.removeItem('generateReportJiraContent');
       if (parsedData) sessionStorage.setItem('generateReportParsedData', JSON.stringify(parsedData));
-      else sessionStorage.removeItem('generateReportParsedData'); // Limpiar si es null
+      else sessionStorage.removeItem('generateReportParsedData');
     }
   }, [formData, hiddenFields, jiraCodeLocked, jiraContent, parsedData]);
 
-  // Función para actualizar el paso y la URL
   const updateStepUrl = (newStep: number) => {
     setStep(newStep);
     router.push(`/generate-report?step=${newStep}`, { scroll: false });
@@ -237,14 +270,16 @@ export default function GenerateReportWorkflow() {
     } else {
       setJiraCodeLocked(false);
     }
+    toast.success("Contenido procesado", "Puedes continuar completando el formulario.");
     updateStepUrl(2);
   };
 
   const handleGenerateReport = () => {
     if (!parsedData) {
-      alert("No hay datos parseados para generar el reporte. Vuelve al Paso 1.");
+      toast.error("Error", "No hay datos parseados para generar el reporte. Vuelve al Paso 1.");
       return;
     }
+    toast.info("Generando reporte", "Tu reporte está listo para visualizar.");
     updateStepUrl(3);
   };
 
@@ -257,135 +292,197 @@ export default function GenerateReportWorkflow() {
       sessionStorage.removeItem('generateReportJiraCodeLocked');
       sessionStorage.removeItem('generateReportJiraContent');
       sessionStorage.removeItem('generateReportParsedData');
+      localStorage.removeItem('jira-report-autosave');
     }
-    setFormData({
-      jiraCode: "", date: new Date().toISOString().split("T")[0], tester: "",
-      testStatus: "", versions: [], serverPruebas: "", ipMaquina: "",
-      navegador: "", baseDatos: "", maquetaUtilizada: "", ambiente: "",
-      batteryTests: [],
-      summary: { totalTests: "", successfulTests: "", failedTests: "", observations: "" },
-      incidences: [], hasIncidences: false, conclusion: "", datosDePrueba: "",
-      logsRelevantes: "", customEnvFields: [], isApp: false, endpoint: "",
-      sistemaOperativo: "", dispositivoPruebas: "", precondiciones: "", idioma: "",
-    });
-    setHiddenFields({
-      serverPruebas: false, ipMaquina: false, navegador: false,
-      baseDatos: false, maquetaUtilizada: false, ambiente: false,
-    });
+    setFormData(defaultFormData);
+    setHiddenFields(defaultHiddenFields);
     setJiraCodeLocked(false);
+    toast.success("Formulario reiniciado", "Puedes comenzar de nuevo.");
     updateStepUrl(1);
   };
 
   const goBackToStep1 = () => {
     updateStepUrl(1);
   };
+
   const goBackToStep2 = () => {
     updateStepUrl(2);
   };
 
-  // Efecto para escuchar cambios en la URL (botones de atrás/adelante del navegador)
+  // Listen to URL changes
   useEffect(() => {
-    if (typeof window === 'undefined') return; // Asegurar que se ejecuta en el cliente
+    if (typeof window === 'undefined') return;
 
     const stepFromUrl = searchParams.get('step');
     const currentStepInUrl = stepFromUrl ? parseInt(stepFromUrl, 10) : 1;
 
     if (currentStepInUrl !== step) {
-      // Cargar datos necesarios de sessionStorage para validar la transición
       const sessionParsedDataString = sessionStorage.getItem('generateReportParsedData');
       let sessionParsedDataObj = null;
       if (sessionParsedDataString) {
         try {
           sessionParsedDataObj = JSON.parse(sessionParsedDataString);
-
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars 
-        } catch (_e) {/* ignore */ }
+        } catch {
+          /* ignore */
+        }
       }
 
       const sessionFormDataString = sessionStorage.getItem('generateReportFormData');
       let sessionFormDataObj = null;
       if (sessionFormDataString) {
-        try { sessionFormDataObj = JSON.parse(sessionFormDataString); }
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        catch (_e) {/* ignore */ }
+        try {
+          sessionFormDataObj = JSON.parse(sessionFormDataString);
+        } catch {
+          /* ignore */
+        }
       }
-
 
       if (currentStepInUrl === 1) {
         setStep(1);
       } else if (currentStepInUrl === 2) {
         if (parsedData || sessionParsedDataObj) {
           setStep(2);
-          if (!parsedData && sessionParsedDataObj) setParsedData(sessionParsedDataObj); // Restaurar si es necesario
+          if (!parsedData && sessionParsedDataObj) setParsedData(sessionParsedDataObj);
         } else {
-          updateStepUrl(1); // No hay datos para el paso 2, volver al 1
+          updateStepUrl(1);
         }
       } else if (currentStepInUrl === 3) {
-        if ((parsedData || sessionParsedDataObj) && (formData?.jiraCode || sessionFormDataObj?.jiraCode)) { // formData siempre debería existir
+        if ((parsedData || sessionParsedDataObj) && (formData?.jiraCode || sessionFormDataObj?.jiraCode)) {
           setStep(3);
-          if (!parsedData && sessionParsedDataObj) setParsedData(sessionParsedDataObj); // Restaurar si es necesario
-          // formData se actualiza a través de su propio useEffect y useState
+          if (!parsedData && sessionParsedDataObj) setParsedData(sessionParsedDataObj);
         } else {
-          updateStepUrl(1); // No hay datos para el paso 3, volver al 1
+          updateStepUrl(1);
         }
       } else {
-        // Si la URL tiene un paso inválido, ir al paso 1 por defecto
         updateStepUrl(1);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]); // Solo depende de searchParams para reaccionar a cambios de URL
+  }, [searchParams]);
+
+  if (isLoading) {
+    return (
+      <div className="px-4 py-8">
+        <PageLoadingSkeleton />
+      </div>
+    );
+  }
 
   return (
     <>
-      {step === 1 && (
-        <StepOnePaste
-          jiraContent={jiraContent}
-          setJiraContent={setJiraContent}
-          onParse={handleParseJira}
-        />
+      {/* Auto-save indicator - only show in step 2 */}
+      {step === 2 && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="fixed top-16 right-4 z-40 bg-[var(--surface)]/80 backdrop-blur-sm px-3 py-2 rounded-lg shadow-sm border border-[var(--surface-border)]"
+        >
+          <AutoSaveIndicator status={autoSave.status} lastSaved={autoSave.lastSaved} />
+        </motion.div>
       )}
 
-      {step === 2 && parsedData && (
-        <StepTwoForm
-          parsedData={parsedData}
-          formData={formData}
-          setFormData={setFormData}
-          hiddenFields={hiddenFields}
-          setHiddenFields={setHiddenFields}
-          onGenerate={handleGenerateReport}
-          onReset={handleReset}
-          onGoBackToStep1={goBackToStep1}
-          jiraCodeLocked={jiraCodeLocked}
-        />
-      )}
-      {step === 2 && !parsedData && (
-        <div className="text-center p-10">
-          <p>Faltan datos para el paso 2. Por favor, completa el paso 1.</p>
-          <button onClick={goBackToStep1} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded">
-            Volver al Paso 1
-          </button>
-        </div>
-      )}
+      <AnimatePresence mode="wait">
+        {step === 1 && (
+          <motion.div
+            key="step-1"
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={pageTransition}
+          >
+            <StepOnePaste
+              jiraContent={jiraContent}
+              setJiraContent={setJiraContent}
+              onParse={handleParseJira}
+            />
+          </motion.div>
+        )}
 
-      {step === 3 && parsedData && (
-        <ReportOutput
-          parsedData={parsedData}
-          formData={formData}
-          hiddenFields={hiddenFields}
-          onReset={handleReset}
-          onGoBackToStep2={goBackToStep2}
-          jiraCode={formData.jiraCode}
-        />
-      )}
-      {step === 3 && !parsedData && (
-        <div className="text-center p-10">
-          <p>Faltan datos para el paso 3. Por favor, completa los pasos anteriores.</p>
-          <button onClick={goBackToStep1} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded">
-            Volver al Paso 1
-          </button>
-        </div>
-      )}
+        {step === 2 && parsedData && (
+          <motion.div
+            key="step-2"
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={pageTransition}
+          >
+            <StepTwoForm
+              parsedData={parsedData}
+              formData={formData}
+              setFormData={setFormData}
+              hiddenFields={hiddenFields}
+              setHiddenFields={setHiddenFields}
+              onGenerate={handleGenerateReport}
+              onReset={handleReset}
+              onGoBackToStep1={goBackToStep1}
+              jiraCodeLocked={jiraCodeLocked}
+            />
+          </motion.div>
+        )}
+
+        {step === 2 && !parsedData && (
+          <motion.div
+            key="step-2-error"
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={pageTransition}
+            className="text-center p-10"
+          >
+            <p className="text-[var(--foreground-secondary)] mb-4">Faltan datos para el paso 2. Por favor, completa el paso 1.</p>
+            <button
+              onClick={goBackToStep1}
+              className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              Volver al Paso 1
+            </button>
+          </motion.div>
+        )}
+
+        {step === 3 && parsedData && (
+          <motion.div
+            key="step-3"
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={pageTransition}
+          >
+            <ReportOutput
+              parsedData={parsedData}
+              formData={formData}
+              hiddenFields={hiddenFields}
+              onReset={handleReset}
+              onGoBackToStep2={goBackToStep2}
+              jiraCode={formData.jiraCode}
+            />
+          </motion.div>
+        )}
+
+        {step === 3 && !parsedData && (
+          <motion.div
+            key="step-3-error"
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={pageTransition}
+            className="text-center p-10"
+          >
+            <p className="text-[var(--foreground-secondary)] mb-4">Faltan datos para el paso 3. Por favor, completa los pasos anteriores.</p>
+            <button
+              onClick={goBackToStep1}
+              className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              Volver al Paso 1
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <Feedback />
     </>
   );

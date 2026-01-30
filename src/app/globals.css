@@ -2,70 +2,528 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Puedes añadir estilos globales aquí */
+/* ============================================
+   PREMIUM DESIGN SYSTEM - Light Mode (Default)
+   Inspired by Linear, Vercel, Stripe
+   ============================================ */
 :root {
-  --background: #f9fafb; /* Ejemplo de color claro */
-  --foreground: #111827; /* Texto oscuro */
+  /* ---- Spacing Scale (8px Grid) ---- */
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
 
-  /* Animación existente */
-  @keyframes fadeInOut {
-    0% { opacity: 0; }
-    10% { opacity: 1; }
-    90% { opacity: 1; }
-    100% { opacity: 0; }
-  }
-  
-  .animate-fade {
-    animation: fadeInOut 2s ease-in-out forwards;
-  }
+  /* ---- Typography Scale ---- */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+
+  /* ---- Background Colors (Refined) ---- */
+  --background: #FAFAFA;
+  --background-secondary: #F4F4F5;
+  --background-tertiary: #E4E4E7;
+
+  /* ---- Foreground/Text (Better Contrast) ---- */
+  --foreground: #18181B;
+  --foreground-secondary: #52525B;
+  --foreground-tertiary: #71717A;
+  --foreground-muted: #A1A1AA;
+
+  /* ---- Surface Colors (Cards, Panels) ---- */
+  --surface: #FFFFFF;
+  --surface-hover: #FAFAFA;
+  --surface-active: #F4F4F5;
+  --surface-border: #E4E4E7;
+  --surface-border-subtle: rgba(0, 0, 0, 0.06);
+
+  /* ---- Primary (Refined Blue) ---- */
+  --primary: #2563EB;
+  --primary-hover: #1D4ED8;
+  --primary-active: #1E40AF;
+  --primary-foreground: #FFFFFF;
+  --primary-soft: rgba(37, 99, 235, 0.08);
+  --primary-glow: rgba(37, 99, 235, 0.15);
+
+  /* ---- Accent Gradient ---- */
+  --gradient-primary: linear-gradient(135deg, #2563EB 0%, #7C3AED 100%);
+  --gradient-accent: linear-gradient(135deg, #EC4899 0%, #8B5CF6 50%, #3B82F6 100%);
+  --gradient-subtle: linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 50%, #F8FAFC 100%);
+
+  /* ---- Semantic: Success ---- */
+  --success: #10B981;
+  --success-hover: #059669;
+  --success-foreground: #FFFFFF;
+  --success-soft: rgba(16, 185, 129, 0.1);
+  --success-soft-foreground: #065F46;
+
+  /* ---- Semantic: Error ---- */
+  --error: #EF4444;
+  --error-hover: #DC2626;
+  --error-foreground: #FFFFFF;
+  --error-soft: rgba(239, 68, 68, 0.1);
+  --error-soft-foreground: #991B1B;
+
+  /* ---- Semantic: Warning ---- */
+  --warning: #F59E0B;
+  --warning-hover: #D97706;
+  --warning-foreground: #18181B;
+  --warning-soft: rgba(245, 158, 11, 0.1);
+  --warning-soft-foreground: #92400E;
+
+  /* ---- Semantic: Info ---- */
+  --info: #3B82F6;
+  --info-soft: rgba(59, 130, 246, 0.1);
+  --info-soft-foreground: #1E40AF;
+
+  /* ---- Shadows (Realistic Depth) ---- */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+  --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.04);
+
+  /* ---- Header ---- */
+  --header-bg: rgba(255, 255, 255, 0.8);
+  --header-border: rgba(0, 0, 0, 0.06);
+
+  /* ---- Input (Premium) ---- */
+  --input-bg: #FFFFFF;
+  --input-border: #D4D4D8;
+  --input-border-hover: #A1A1AA;
+  --input-border-focus: #2563EB;
+  --input-placeholder: #A1A1AA;
+  --input-ring: rgba(37, 99, 235, 0.2);
+
+  /* ---- Border Radius Scale ---- */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 9999px;
+}
+
+/* ============================================
+   PREMIUM DARK MODE - Vercel/Linear Inspired
+   ============================================ */
+.dark {
+  /* ---- Backgrounds (Deep, Rich) ---- */
+  --background: #09090B;
+  --background-secondary: #0C0C0E;
+  --background-tertiary: #141416;
+
+  /* ---- Surfaces (Elevated Cards) ---- */
+  --surface: #18181B;
+  --surface-hover: #1F1F23;
+  --surface-active: #27272A;
+  --surface-border: rgba(255, 255, 255, 0.06);
+  --surface-border-subtle: rgba(255, 255, 255, 0.04);
+  --surface-border-bright: rgba(255, 255, 255, 0.1);
+
+  /* ---- Text (Perfect Hierarchy) ---- */
+  --foreground: #FAFAFA;
+  --foreground-secondary: #A1A1AA;
+  --foreground-tertiary: #71717A;
+  --foreground-muted: #52525B;
+
+  /* ---- Primary (Vibrant Blue with Glow) ---- */
+  --primary: #3B82F6;
+  --primary-hover: #60A5FA;
+  --primary-active: #2563EB;
+  --primary-foreground: #FFFFFF;
+  --primary-soft: rgba(59, 130, 246, 0.12);
+  --primary-glow: rgba(59, 130, 246, 0.25);
+
+  /* ---- Premium Gradients ---- */
+  --gradient-primary: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+  --gradient-accent: linear-gradient(135deg, #EC4899 0%, #8B5CF6 50%, #3B82F6 100%);
+  --gradient-success: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+  --gradient-subtle: linear-gradient(135deg, #18181B 0%, #1F1F23 50%, #18181B 100%);
+  --gradient-shine: linear-gradient(110deg, transparent 25%, rgba(255,255,255,0.05) 50%, transparent 75%);
+
+  /* ---- Semantic Colors ---- */
+  --success: #22C55E;
+  --success-hover: #16A34A;
+  --success-foreground: #FFFFFF;
+  --success-soft: rgba(34, 197, 94, 0.12);
+  --success-soft-foreground: #4ADE80;
+
+  --error: #EF4444;
+  --error-hover: #DC2626;
+  --error-foreground: #FFFFFF;
+  --error-soft: rgba(239, 68, 68, 0.12);
+  --error-soft-foreground: #F87171;
+
+  --warning: #F59E0B;
+  --warning-hover: #D97706;
+  --warning-foreground: #18181B;
+  --warning-soft: rgba(245, 158, 11, 0.12);
+  --warning-soft-foreground: #FBBF24;
+
+  --info: #3B82F6;
+  --info-soft: rgba(59, 130, 246, 0.12);
+  --info-soft-foreground: #60A5FA;
+
+  /* ---- Shadows (Deep, Glow Effects) ---- */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 40px -10px var(--primary-glow);
+  --shadow-glow-strong: 0 0 60px -10px rgba(59, 130, 246, 0.4);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+
+  /* ---- Header ---- */
+  --header-bg: rgba(9, 9, 11, 0.85);
+  --header-border: rgba(255, 255, 255, 0.06);
+
+  /* ---- Input (Glass Effect) ---- */
+  --input-bg: rgba(24, 24, 27, 0.8);
+  --input-border: rgba(255, 255, 255, 0.08);
+  --input-border-hover: rgba(255, 255, 255, 0.12);
+  --input-border-focus: #3B82F6;
+  --input-placeholder: #52525B;
+  --input-ring: rgba(59, 130, 246, 0.25);
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  @apply bg-[var(--background)] text-[var(--foreground)];
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"; /* Añadida una pila de fuentes más completa */
+  @apply bg-[var(--background)] text-[var(--foreground)] transition-colors duration-200;
+  font-family: var(--font-sans);
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  letter-spacing: -0.011em;
 }
 
-/* --- Nuevas animaciones para Landing Page (Estilo Apple) --- */
+/* Better focus styles */
+*:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
 
-/* Keyframes para la animación de aparición suave hacia arriba */
+/* Selection color */
+::selection {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.dark ::selection {
+  background: var(--primary-soft);
+  color: var(--foreground);
+}
+
+/* ============================================
+   PREMIUM UTILITY CLASSES
+   ============================================ */
+@layer utilities {
+  /* ---- Background Utilities ---- */
+  .bg-surface {
+    background-color: var(--surface);
+  }
+  .bg-surface-hover {
+    background-color: var(--surface-hover);
+  }
+  .bg-surface-active {
+    background-color: var(--surface-active);
+  }
+
+  /* ---- Text Utilities ---- */
+  .text-primary {
+    color: var(--primary);
+  }
+  .text-secondary {
+    color: var(--foreground-secondary);
+  }
+  .text-tertiary {
+    color: var(--foreground-tertiary);
+  }
+  .text-muted {
+    color: var(--foreground-muted);
+  }
+
+  /* Text Balance for Headlines */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* ---- Border Utilities ---- */
+  .border-surface {
+    border-color: var(--surface-border);
+  }
+  .border-subtle {
+    border-color: var(--surface-border-subtle);
+  }
+
+  /* ---- Shadow Utilities ---- */
+  .shadow-theme-xs {
+    box-shadow: var(--shadow-xs);
+  }
+  .shadow-theme-sm {
+    box-shadow: var(--shadow-sm);
+  }
+  .shadow-theme-md {
+    box-shadow: var(--shadow-md);
+  }
+  .shadow-theme-lg {
+    box-shadow: var(--shadow-lg);
+  }
+  .shadow-theme-xl {
+    box-shadow: var(--shadow-xl);
+  }
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  /* ---- Status Badges (Premium) ---- */
+  .badge-success {
+    background-color: var(--success-soft);
+    color: var(--success-soft-foreground);
+  }
+  .badge-error {
+    background-color: var(--error-soft);
+    color: var(--error-soft-foreground);
+  }
+  .badge-warning {
+    background-color: var(--warning-soft);
+    color: var(--warning-soft-foreground);
+  }
+  .badge-info {
+    background-color: var(--info-soft);
+    color: var(--info-soft-foreground);
+  }
+
+  /* ---- Premium Input Styling ---- */
+  .input-premium {
+    @apply w-full rounded-lg border bg-[var(--input-bg)] px-4 py-3;
+    @apply text-[var(--foreground)] text-sm;
+    @apply placeholder:text-[var(--input-placeholder)];
+    @apply border-[var(--input-border)];
+    @apply transition-all duration-200 ease-out;
+    @apply hover:border-[var(--input-border-hover)];
+    @apply focus:outline-none focus:border-[var(--input-border-focus)];
+    @apply focus:ring-2 focus:ring-[var(--input-ring)];
+  }
+
+  .input-premium-dark {
+    @apply input-premium;
+    @apply dark:bg-[var(--surface)] dark:border-[var(--surface-border)];
+    @apply dark:hover:border-[var(--surface-border-bright)];
+    @apply dark:focus:shadow-[0_0_0_3px_var(--input-ring),var(--shadow-glow)];
+  }
+
+  /* ---- Premium Card Styling ---- */
+  .card-premium {
+    @apply bg-[var(--surface)] rounded-xl border border-[var(--surface-border)];
+    box-shadow: var(--shadow-sm);
+  }
+
+  .card-premium-elevated {
+    @apply card-premium;
+    box-shadow: var(--shadow-md);
+  }
+
+  .card-premium-interactive {
+    @apply card-premium;
+    @apply transition-all duration-300 ease-out;
+    @apply hover:shadow-[var(--shadow-lg)] hover:-translate-y-0.5;
+    @apply hover:border-[var(--surface-border-bright)];
+  }
+
+  .dark .card-premium-interactive:hover {
+    box-shadow: var(--shadow-lg), var(--shadow-glow);
+  }
+
+  /* ---- Premium Button Base ---- */
+  .btn-premium {
+    @apply relative inline-flex items-center justify-center gap-2;
+    @apply font-medium rounded-lg;
+    @apply transition-all duration-200 ease-out;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
+    @apply disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .btn-primary {
+    @apply btn-premium px-5 py-2.5;
+    @apply bg-[var(--primary)] text-white;
+    @apply hover:bg-[var(--primary-hover)] active:bg-[var(--primary-active)];
+    @apply shadow-sm hover:shadow-md;
+  }
+
+  .btn-secondary {
+    @apply btn-premium px-5 py-2.5;
+    @apply bg-[var(--surface)] text-[var(--foreground)] border border-[var(--surface-border)];
+    @apply hover:bg-[var(--surface-hover)] hover:border-[var(--foreground-muted)];
+    @apply shadow-sm;
+  }
+
+  .btn-ghost {
+    @apply btn-premium px-4 py-2;
+    @apply text-[var(--foreground-secondary)];
+    @apply hover:text-[var(--foreground)] hover:bg-[var(--surface-hover)];
+  }
+
+  /* ---- Glass Effect ---- */
+  .glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .dark .glass {
+    background: rgba(24, 24, 27, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .glass-strong {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .dark .glass-strong {
+    background: rgba(24, 24, 27, 0.85);
+  }
+
+  /* ---- Gradient Text ---- */
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-primary);
+  }
+
+  .text-gradient-accent {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-accent);
+  }
+
+  /* ---- Glow Effects ---- */
+  .glow-primary {
+    box-shadow: 0 0 20px var(--primary-glow);
+  }
+
+  .glow-primary-strong {
+    box-shadow: 0 0 40px var(--primary-glow), 0 0 80px rgba(59, 130, 246, 0.1);
+  }
+
+  /* ---- Gradient Border ---- */
+  .gradient-border {
+    position: relative;
+    background: var(--surface);
+  }
+
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: var(--gradient-primary);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .gradient-border:hover::before {
+    opacity: 1;
+  }
+
+  /* ---- Shine Effect ---- */
+  .shine {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shine::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gradient-shine);
+    background-size: 200% 100%;
+    animation: shine 3s infinite linear;
+    pointer-events: none;
+  }
+
+  /* ---- Noise Texture ---- */
+  .noise-overlay {
+    position: relative;
+  }
+
+  .noise-overlay::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.02;
+    pointer-events: none;
+    mix-blend-mode: overlay;
+  }
+
+  .dark .noise-overlay::after {
+    opacity: 0.03;
+  }
+}
+
+/* ============================================
+   PREMIUM ANIMATIONS
+   ============================================ */
+
+/* ---- Fade In Up (Staggered) ---- */
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(20px); /* Comienza 20px abajo */
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
-    transform: translateY(0); /* Termina en su posición original */
+    transform: translateY(0);
   }
 }
 
-/* Clase de utilidad para aplicar la animación */
 .animate-fadeInUp {
-  animation: fadeInUp 0.6s ease-out forwards; /* Duración de 0.6s, curva ease-out, mantiene el estado final */
+  animation: fadeInUp 0.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
 }
 
-/* Clases de utilidad para delays escalonados en las animaciones */
-.delay-100 { animation-delay: 0.1s; }
-.delay-200 { animation-delay: 0.2s; }
-.delay-300 { animation-delay: 0.3s; }
-.delay-400 { animation-delay: 0.4s; }
-/* Puedes añadir más delays si los necesitas (e.g., .delay-500) */
-
-/*
-  Regla importante:
-  Asegura que los elementos que usarán .animate-fadeInUp
-  comiencen invisibles antes de que la animación se active.
-  Esto previene un "flash" del contenido antes de animarse.
-*/
 [class*="animate-fadeInUp"] {
-  opacity: 0; /* Comienzan invisibles */
+  opacity: 0;
 }
 
-/* --- Fin de Nuevas animaciones --- */
+/* Animation Delays */
+.delay-75 { animation-delay: 75ms; }
+.delay-100 { animation-delay: 100ms; }
+.delay-150 { animation-delay: 150ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+
+/* ---- Modal Animation ---- */
 @keyframes modalOpen {
   from {
     opacity: 0;
-    transform: scale(0.95) translateY(10px); /* Puedes ajustar el translateY */
+    transform: scale(0.96) translateY(8px);
   }
   to {
     opacity: 1;
@@ -74,5 +532,135 @@ body {
 }
 
 .animate-modalOpen {
-  animation: modalOpen 0.2s ease-out forwards; /* Ajusta la duración como prefieras */
+  animation: modalOpen 0.25s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+/* ---- Gradient Shift ---- */
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.animate-gradient {
+  background-size: 200% auto;
+  animation: gradient-shift 4s ease infinite;
+}
+
+/* ---- Shimmer Effect ---- */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.06),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2.5s infinite;
+}
+
+/* ---- Shine Effect ---- */
+@keyframes shine {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ---- Glow Pulse ---- */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px var(--primary-glow);
+  }
+  50% {
+    box-shadow: 0 0 40px var(--primary-glow), 0 0 60px rgba(59, 130, 246, 0.15);
+  }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* ---- Float Animation ---- */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float 6s ease-in-out infinite 3s;
+}
+
+/* ---- Subtle Pulse ---- */
+@keyframes subtle-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-subtle-pulse {
+  animation: subtle-pulse 2s ease-in-out infinite;
+}
+
+/* ---- Scale In ---- */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+/* ---- Slide In Right ---- */
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+/* ---- Border Glow ---- */
+@keyframes border-glow {
+  0%, 100% {
+    border-color: rgba(59, 130, 246, 0.2);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.1);
+  }
+  50% {
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: 0 0 25px rgba(139, 92, 246, 0.2);
+  }
+}
+
+.animate-border-glow {
+  animation: border-glow 4s ease-in-out infinite;
+}
+
+/* ---- Spotlight Effect ---- */
+@keyframes spotlight {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+
+.animate-spotlight {
+  animation: spotlight 4s ease-in-out infinite;
 }

@@ -1,53 +1,185 @@
 "use client";
 
 import Link from "next/link";
+import { motion } from "framer-motion";
 import HeaderNav from "@/components/HeaderNav";
 import FooterNav from "@/components/FooterNav";
-// Importar iconos de lucide-react
-import { FilePlus2, ClipboardList, ArrowRight } from "lucide-react";
+import { GridPattern, GradientBlob } from "@/components/effects";
+import {
+  FilePlus2,
+  ClipboardList,
+  ArrowRight,
+  FileText,
+  Copy,
+  Download,
+} from "lucide-react";
 
 /**
- * Landing Page — Estética Apple:
- * fondo gris claro, jerarquía tipográfica limpia,
- * botones azul sólido y outline azul.
+ * Landing Page Premium — Inspirada en Linear, Vercel, Stripe
+ * Diseño minimalista con jerarquía visual clara y microinteracciones elegantes
  */
 export default function Landing() {
   return (
     <>
       <HeaderNav />
 
-      <main className="min-h-screen flex flex-col items-center justify-center bg-gray-100 px-4 overflow-hidden">
-        {/* ---------- HERO ---------- */}
-        <section className="text-center max-w-3xl py-20"> {/* Añadido py-20 para más espacio vertical */}
-          {/* Título */}
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-semibold text-gray-900 tracking-tight animate-fadeInUp">
-            Herramienta de&nbsp;
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"> {/* Degradado ajustado ligeramente */}
-              Reportes JIRA
-            </span>
-          </h1>
+      {/* Background Effects */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <GridPattern fadeIntensity="strong" />
 
-          {/* Subtítulo */}
-          <p className="mt-6 text-xl md:text-2xl text-gray-600 max-w-2xl mx-auto leading-relaxed animate-fadeInUp delay-100"> {/* Aumentado mt, max-w, leading y color */}
-            Automatiza la creación de tickets JIRA o genera reportes detallados de pruebas de manera rápida y sencilla.
-          </p>
+        {/* Gradient Orbs */}
+        <div className="dark:block hidden">
+          <GradientBlob
+            position="top-right"
+            colors={["#3B82F6", "#8B5CF6", "#EC4899"]}
+            size="lg"
+          />
+          <GradientBlob
+            position="bottom-left"
+            colors={["#8B5CF6", "#3B82F6", "#06B6D4"]}
+            size="md"
+          />
+        </div>
 
-          {/* CTA buttons */}
-          <div className="mt-12 flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center animate-fadeInUp delay-200"> {/* Aumentado mt y gap */}
-            <CTA href="/create-jira" variant="primary">
-              <FilePlus2 size={22} className="mr-2.5" /> {/* Icono y margen */}
-              Crear un nuevo JIRA
-            </CTA>
-            <CTA href="/generate-report" variant="outline">
-              <ClipboardList size={22} className="mr-2.5" /> {/* Icono y margen */}
-              Generar reporte de pruebas
-            </CTA>
+        {/* Light mode subtle gradient */}
+        <div className="dark:hidden absolute inset-0 bg-gradient-to-b from-blue-50/50 via-transparent to-purple-50/30" />
+      </div>
+
+      <main className="relative min-h-screen flex flex-col">
+        {/* ========== HERO SECTION ========== */}
+        <section className="relative flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-24 pb-16">
+          <div className="relative z-10 max-w-5xl mx-auto text-center">
+            {/* Badge - Departamento */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="mb-6"
+            >
+              <span className="
+                inline-flex items-center gap-2 px-3 py-1.5 rounded-md
+                bg-[var(--surface)] dark:bg-white/[0.05]
+                border border-[var(--surface-border)] dark:border-white/[0.08]
+                text-xs font-medium text-[var(--foreground-tertiary)] uppercase tracking-wider
+              ">
+                Dpto. Transferencia Desarrollo
+              </span>
+            </motion.div>
+
+            {/* Main Headline */}
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="
+                text-3xl sm:text-4xl md:text-5xl
+                font-semibold tracking-tight
+                text-[var(--foreground)]
+              "
+            >
+              Reportes y Tickets JIRA
+            </motion.h1>
+
+            {/* Subheadline */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="
+                mt-3 text-base sm:text-lg text-[var(--foreground-secondary)]
+                max-w-xl mx-auto
+              "
+            >
+              Generador de reportes de pruebas y creación de tickets JIRA
+            </motion.p>
+
+            {/* CTA Buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="mt-8 flex flex-col sm:flex-row gap-3 justify-center"
+            >
+              <PrimaryButton href="/generate-report">
+                <ClipboardList className="w-5 h-5" />
+                Generar Reporte
+              </PrimaryButton>
+
+              <SecondaryButton href="/create-jira">
+                <FilePlus2 className="w-5 h-5" />
+                Crear JIRA
+              </SecondaryButton>
+            </motion.div>
           </div>
+        </section>
 
-          {/* Rainbow tagline opcional */}
-          <p className="mt-16 text-sm font-medium bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-orange-500 to-emerald-500 animate-fadeInUp delay-300"> {/* Aumentado mt */}
-            Selecciona según el caso · Creación de JIRAs o generación de reportes de prueba
-          </p>
+        {/* ========== FEATURES SECTION ========== */}
+        <section className="relative py-16 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto">
+            {/* Feature Cards - Grid compacto */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Feature Card 1 */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                <FeatureCard
+                  href="/generate-report"
+                  icon={<ClipboardList className="w-5 h-5" />}
+                  title="Generador de Reportes"
+                  description="Reportes de pruebas con casos, resultados e incidencias. Copia al portapapeles en formato texto estructurado."
+                  gradient="from-blue-600 to-blue-500"
+                />
+              </motion.div>
+
+              {/* Feature Card 2 */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <FeatureCard
+                  href="/create-jira"
+                  icon={<FilePlus2 className="w-5 h-5" />}
+                  title="Crear Ticket JIRA"
+                  description="Genera la estructura del ticket con descripción, pasos de reproducción y prioridad. Listo para pegar en JIRA."
+                  gradient="from-violet-600 to-violet-500"
+                />
+              </motion.div>
+            </div>
+
+            {/* Funcionalidades rápidas */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="mt-6"
+            >
+              <div className="
+                flex flex-wrap justify-center gap-4
+                p-4 rounded-xl
+                bg-[var(--surface)]/50 dark:bg-[var(--surface)]/30
+                border border-[var(--surface-border)] dark:border-white/[0.04]
+              ">
+                <SmallFeature
+                  icon={<FileText className="w-4 h-4" />}
+                  title="Formato estructurado"
+                />
+                <SmallFeature
+                  icon={<Copy className="w-4 h-4" />}
+                  title="Copiar al portapapeles"
+                />
+                <SmallFeature
+                  icon={<Download className="w-4 h-4" />}
+                  title="Exportar"
+                />
+              </div>
+            </motion.div>
+          </div>
         </section>
       </main>
 
@@ -56,31 +188,133 @@ export default function Landing() {
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/* --------------------------  Botón reutilizable  -------------------------- */
-/* -------------------------------------------------------------------------- */
-function CTA({
+/* ========================================================================== */
+/* ==========================  INTERNAL COMPONENTS  ========================= */
+/* ========================================================================== */
+
+function PrimaryButton({
   href,
-  variant,
   children,
 }: {
   href: string;
-  variant: "primary" | "outline";
   children: React.ReactNode;
 }) {
-  const baseClasses =
-    "inline-flex items-center justify-center px-7 py-3.5 md:px-8 md:py-4 rounded-xl text-base md:text-lg font-semibold transition-all duration-200 ease-in-out transform focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-sm hover:shadow-md"; // Ajustado padding, rounded, font-size, añadido focus y hover suave
-
-  const variantClasses =
-    variant === "primary"
-      ? "bg-blue-600 text-white hover:bg-blue-500 focus:ring-blue-500" // Azul más brillante en hover
-      : "border-2 border-blue-500 text-blue-600 hover:bg-blue-500 hover:text-white focus:ring-blue-500"; // Borde más grueso, hover fill
-
   return (
-    <Link href={href} className={`${baseClasses} ${variantClasses} group hover:-translate-y-0.5`}> {/* Efecto hover de elevación */}
-      {children}
-      {/* Podríamos añadir una flecha en hover para el botón primario, estilo Apple */}
-      {variant === "primary" && <ArrowRight size={20} className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300"/>}
+    <Link href={href} className="group">
+      <motion.span
+        className="
+          inline-flex items-center justify-center gap-2.5
+          px-6 py-3.5 rounded-xl
+          text-base font-semibold text-white
+          bg-[var(--foreground)] dark:bg-white dark:text-[var(--background)]
+          shadow-lg shadow-black/10 dark:shadow-white/10
+          transition-all duration-200
+        "
+        whileHover={{ scale: 1.02, y: -1 }}
+        whileTap={{ scale: 0.98 }}
+      >
+        {children}
+      </motion.span>
     </Link>
+  );
+}
+
+function SecondaryButton({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link href={href} className="group">
+      <motion.span
+        className="
+          inline-flex items-center justify-center gap-2.5
+          px-6 py-3.5 rounded-xl
+          text-base font-semibold
+          text-[var(--foreground)] dark:text-white
+          bg-[var(--surface)] dark:bg-white/[0.05]
+          border border-[var(--surface-border)] dark:border-white/[0.1]
+          shadow-sm
+          transition-all duration-200
+          hover:bg-[var(--surface-hover)] dark:hover:bg-white/[0.08]
+          hover:border-[var(--foreground-muted)] dark:hover:border-white/[0.15]
+        "
+        whileHover={{ scale: 1.02, y: -1 }}
+        whileTap={{ scale: 0.98 }}
+      >
+        {children}
+      </motion.span>
+    </Link>
+  );
+}
+
+function FeatureCard({
+  href,
+  icon,
+  title,
+  description,
+  gradient,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  gradient: string;
+}) {
+  return (
+    <Link href={href} className="group block h-full">
+      <motion.div
+        className="
+          relative h-full p-5 rounded-xl
+          bg-[var(--surface)] dark:bg-[var(--surface)]/50
+          border border-[var(--surface-border)] dark:border-white/[0.06]
+          transition-all duration-200
+          hover:border-[var(--foreground-muted)] dark:hover:border-white/[0.12]
+        "
+        whileHover={{ y: -1 }}
+      >
+        {/* Icon + Title */}
+        <div className="flex items-center gap-3 mb-3">
+          <div className={`
+            inline-flex items-center justify-center
+            w-9 h-9 rounded-lg
+            bg-gradient-to-br ${gradient}
+            text-white
+          `}>
+            {icon}
+          </div>
+          <h3 className="text-base font-medium text-[var(--foreground)] flex items-center gap-2">
+            {title}
+            <ArrowRight className="
+              w-4 h-4 opacity-0 -translate-x-1
+              group-hover:opacity-60 group-hover:translate-x-0
+              transition-all duration-200
+            " />
+          </h3>
+        </div>
+
+        {/* Description */}
+        <p className="text-sm text-[var(--foreground-secondary)] leading-relaxed">
+          {description}
+        </p>
+      </motion.div>
+    </Link>
+  );
+}
+
+function SmallFeature({
+  icon,
+  title,
+}: {
+  icon: React.ReactNode;
+  title: string;
+}) {
+  return (
+    <div className="flex items-center gap-2 px-3 py-1.5 text-sm text-[var(--foreground-secondary)]">
+      <span className="text-[var(--foreground-muted)]">{icon}</span>
+      <span>{title}</span>
+    </div>
   );
 }

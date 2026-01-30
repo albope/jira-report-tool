@@ -1,11 +1,12 @@
 // src/app/release-notes/page.tsx
 "use client";
 
-import React, { useState } from "react"; // Eliminado useEffect si no se usa aquí
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import HeaderNav from "@/components/HeaderNav";
+import FooterNav from "@/components/FooterNav";
+import { Sparkles, ChevronLeft, ChevronRight, Tag } from "lucide-react";
 
-// ... (interfaces ChangeType, ChangeItem, ReleaseItem y constante ALL_RELEASES sin cambios)...
-// Definimos los tipos de cambio posibles
 type ChangeType = "feat" | "impr" | "fix" | "style";
 
 interface ChangeItem {
@@ -13,15 +14,13 @@ interface ChangeItem {
   type: ChangeType;
 }
 
-/** Estructura de cada versión en el Release Notes */
 interface ReleaseItem {
   version: string;
   date: string;
   changes: ChangeItem[];
-  isMajor?: boolean; // Para destacar versiones mayores
+  isMajor?: boolean;
 }
 
-/** Array con todas las versiones, de más reciente a más antigua */
 const ALL_RELEASES: ReleaseItem[] = [
   {
     version: "1.6.0",
@@ -34,7 +33,7 @@ const ALL_RELEASES: ReleaseItem[] = [
   {
     version: "1.5.0",
     date: "30 Abril 2025",
-    isMajor: false, // Mantengo tu cambio a false
+    isMajor: false,
     changes: [
       { text: "Se añade la nueva funcionalidad 'Crear un nuevo JIRA' accesible desde la página de inicio y el menú de ayuda.", type: "feat" },
       { text: "El formulario de creación de JIRA permite definir proyecto, herramienta, descripción del error para generar un título estandarizado.", type: "feat" },
@@ -93,7 +92,7 @@ const ALL_RELEASES: ReleaseItem[] = [
     date: "27 Marzo 2025",
     changes: [
       { text: "Se añade la nueva sección Datos de Prueba tras la Batería de Pruebas.", type: "feat" },
-      { text: "La sección “Datos de Prueba” se incluye automáticamente en el reporte Markdown y en la exportación a Word.", type: "impr" },
+      { text: "La sección 'Datos de Prueba' se incluye automáticamente en el reporte Markdown y en la exportación a Word.", type: "impr" },
       { text: "Validación lógica: Pruebas Exitosas/Fallidas no pueden superar el Total de Pruebas.", type: "fix" },
       { text: "Refactor del componente de paso 2 para validación inteligente y mayor control de cambios.", type: "impr" }
     ],
@@ -101,7 +100,7 @@ const ALL_RELEASES: ReleaseItem[] = [
   {
     version: "1.0.0",
     date: "13 Marzo 2025",
-    isMajor: true, 
+    isMajor: true,
     changes: [
       { text: "Primera versión inicial del Generador de Reportes JIRA.", type: "feat" },
       { text: "Se añade el formulario de pasos (Paso 1, Paso 2 y Paso 3) con capacidad de generar reportes en Markdown y exportar a Word.", type: "feat" },
@@ -111,14 +110,13 @@ const ALL_RELEASES: ReleaseItem[] = [
   },
 ];
 
-
 const ITEMS_PER_PAGE = 5;
 
-const changeTypeStyles: Record<ChangeType, { label: string;bgColor: string; textColor: string }> = {
-  feat: { label: "Nuevo", bgColor: "bg-green-100", textColor: "text-green-700" },
-  impr: { label: "Mejora", bgColor: "bg-blue-100", textColor: "text-blue-700" },
-  fix: { label: "Corrección", bgColor: "bg-yellow-100", textColor: "text-yellow-700" },
-  style: { label: "Estilo/UX", bgColor: "bg-purple-100", textColor: "text-purple-700" },
+const changeTypeStyles: Record<ChangeType, { label: string; bg: string; text: string; darkBg: string }> = {
+  feat: { label: "Nuevo", bg: "bg-[var(--success-soft)]", text: "text-[var(--success)]", darkBg: "dark:bg-[var(--success)]/10" },
+  impr: { label: "Mejora", bg: "bg-[var(--primary-soft)]", text: "text-[var(--primary)]", darkBg: "dark:bg-[var(--primary)]/10" },
+  fix: { label: "Corrección", bg: "bg-[var(--warning-soft)]", text: "text-[var(--warning)]", darkBg: "dark:bg-[var(--warning)]/10" },
+  style: { label: "Estilo/UX", bg: "bg-purple-100 dark:bg-purple-500/10", text: "text-purple-700 dark:text-purple-400", darkBg: "" },
 };
 
 export default function ReleaseNotesPage() {
@@ -126,9 +124,7 @@ export default function ReleaseNotesPage() {
   const [selectedTypeFilter, setSelectedTypeFilter] = useState<ChangeType | "all">("all");
 
   const filteredReleases = ALL_RELEASES.filter(release => {
-    if (selectedTypeFilter === "all") {
-      return true;
-    }
+    if (selectedTypeFilter === "all") return true;
     return release.changes.some(change => change.type === selectedTypeFilter);
   });
 
@@ -137,101 +133,233 @@ export default function ReleaseNotesPage() {
   const currentReleases = filteredReleases.slice(startIndex, endIndex);
   const totalPages = Math.ceil(filteredReleases.length / ITEMS_PER_PAGE);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setPage(1);
   }, [selectedTypeFilter]);
 
   return (
     <>
       <HeaderNav />
-      <main className="pt-20 p-4 md:p-8 min-h-screen bg-gray-50">
-        <div className="max-w-3xl mx-auto bg-gradient-to-br from-white via-blue-50 to-white shadow-lg rounded-lg p-6 md:p-8 space-y-8 relative z-10">
-          <h1 className="text-3xl font-bold text-gray-800 text-center md:text-left">
-            Generador de Reportes JIRA — Release Notes
-          </h1>
-
-          <div className="flex flex-wrap justify-center md:justify-start gap-2 pb-4 border-b border-gray-200">
-            <button
-              onClick={() => setSelectedTypeFilter("all")}
-              className={`px-3 py-1 text-sm rounded-full transition-colors ${selectedTypeFilter === "all" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+      <main className="pt-24 pb-20 px-4 sm:px-6 min-h-screen bg-[var(--background)]">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-3xl mx-auto space-y-8"
+        >
+          {/* Header */}
+          <div className="text-center space-y-4">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 500, delay: 0.2 }}
+              className="
+                mx-auto w-16 h-16 rounded-2xl
+                bg-gradient-to-br from-[var(--primary)] to-purple-600
+                flex items-center justify-center
+                shadow-lg shadow-[var(--primary-glow)]
+              "
             >
-              Todos
-            </button>
+              <Tag className="w-8 h-8 text-white" />
+            </motion.div>
+            <h1 className="text-3xl sm:text-4xl font-bold text-[var(--foreground)]">
+              Release Notes
+            </h1>
+            <p className="text-[var(--foreground-secondary)]">
+              Generador de Reportes JIRA — Historial de versiones
+            </p>
+          </div>
+
+          {/* Filter Chips */}
+          <div className="
+            flex flex-wrap justify-center gap-2 p-4
+            bg-[var(--surface)] dark:bg-[var(--surface)]/80
+            border border-[var(--surface-border)] dark:border-white/[0.06]
+            rounded-2xl shadow-lg
+          ">
+            <FilterChip
+              label="Todos"
+              active={selectedTypeFilter === "all"}
+              onClick={() => setSelectedTypeFilter("all")}
+            />
             {Object.entries(changeTypeStyles).map(([type, style]) => (
-              <button
+              <FilterChip
                 key={type}
+                label={style.label}
+                active={selectedTypeFilter === type}
                 onClick={() => setSelectedTypeFilter(type as ChangeType)}
-                className={`px-3 py-1 text-sm rounded-full transition-colors ${selectedTypeFilter === type ? `${style.bgColor} ${style.textColor} font-semibold ring-2 ring-offset-1 ${style.textColor.replace('text-', 'ring-')}` : `bg-gray-200 text-gray-700 hover:bg-gray-300`}`}
-              >
-                {style.label}
-              </button>
+                colorClass={style.text}
+              />
             ))}
           </div>
 
-          {currentReleases.length === 0 && (
-            <p className="text-gray-600 text-center py-8">
-              No hay notas de versión que coincidan con el filtro seleccionado.
-            </p>
-          )}
+          {/* Release List */}
+          <div className="space-y-6">
+            <AnimatePresence mode="wait">
+              {currentReleases.length === 0 ? (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-center text-[var(--foreground-tertiary)] py-12"
+                >
+                  No hay notas de versión que coincidan con el filtro seleccionado.
+                </motion.p>
+              ) : (
+                currentReleases.map((release, index) => {
+                  const isLatest = filteredReleases[0]?.version === release.version && page === 1;
+                  const isHighlighted = release.isMajor || isLatest;
 
-          {currentReleases.map((release) => { // 'index' eliminado de aquí
-            const isHighlighted = release.isMajor || (filteredReleases.length > 0 && filteredReleases[0].version === release.version && page === 1 && startIndex === 0);
-            return (
-            <section
-              key={release.version} // 'key' sigue siendo release.version
-              className={`space-y-3 p-4 rounded-lg transition-all duration-300 ease-in-out ${isHighlighted ? 'bg-blue-50 border-2 border-blue-500 shadow-md' : 'border border-gray-200 hover:shadow-sm'}`}
-            >
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
-                <h2 className={`text-2xl font-semibold ${isHighlighted ? 'text-blue-700' : 'text-gray-800'}`}>
-                  Versión {release.version}
-                  {isHighlighted && release.isMajor && <span className="ml-2 text-xs uppercase font-bold tracking-wider bg-blue-600 text-white px-2 py-0.5 rounded-full align-middle">Destacado</span>}
-                  {isHighlighted && !release.isMajor && (filteredReleases.length > 0 && filteredReleases[0].version === release.version) && <span className="ml-2 text-xs uppercase font-bold tracking-wider bg-green-500 text-white px-2 py-0.5 rounded-full align-middle">Más Reciente</span>}
-                </h2>
-                <p className={`text-sm ${isHighlighted ? 'text-blue-600' : 'text-gray-500'} mt-1 sm:mt-0`}>
-                  Última actualización: {release.date}
-                </p>
-              </div>
-              <ul className="list-none pl-0 space-y-2">
-                {release.changes
-                  .filter(change => selectedTypeFilter === "all" || change.type === selectedTypeFilter)
-                  .map((change, idx) => ( // 'idx' se usa para la key interna, está bien
-                  <li key={idx} className="flex items-start text-gray-700 leading-relaxed">
-                    <span
-                      className={`mr-2 mt-1 px-1.5 py-0.5 text-xs font-semibold rounded-full ${changeTypeStyles[change.type].bgColor} ${changeTypeStyles[change.type].textColor}`}
+                  return (
+                    <motion.section
+                      key={release.version}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className={`
+                        p-6 rounded-2xl
+                        bg-[var(--surface)] dark:bg-[var(--surface)]/80
+                        border
+                        ${isHighlighted
+                          ? "border-[var(--primary)]/50 shadow-lg shadow-[var(--primary-glow)]"
+                          : "border-[var(--surface-border)] dark:border-white/[0.06]"
+                        }
+                        transition-all duration-300
+                        hover:shadow-lg
+                      `}
                     >
-                      {changeTypeStyles[change.type].label}
-                    </span>
-                    <span>{change.text}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          );
-        })}
+                      {/* Version Header */}
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
+                        <div className="flex items-center gap-3">
+                          <h2 className={`text-xl font-bold ${isHighlighted ? "text-[var(--primary)]" : "text-[var(--foreground)]"}`}>
+                            Versión {release.version}
+                          </h2>
+                          {release.isMajor && (
+                            <span className="
+                              px-2 py-0.5 text-xs font-semibold uppercase
+                              bg-[var(--primary)] text-white rounded-full
+                              flex items-center gap-1
+                            ">
+                              <Sparkles size={12} /> Destacado
+                            </span>
+                          )}
+                          {isLatest && !release.isMajor && (
+                            <span className="
+                              px-2 py-0.5 text-xs font-semibold uppercase
+                              bg-[var(--success)] text-white rounded-full
+                            ">
+                              Más Reciente
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-[var(--foreground-tertiary)]">
+                          {release.date}
+                        </p>
+                      </div>
 
+                      {/* Changes List */}
+                      <ul className="space-y-3">
+                        {release.changes
+                          .filter(change => selectedTypeFilter === "all" || change.type === selectedTypeFilter)
+                          .map((change, idx) => (
+                            <li key={idx} className="flex items-start gap-3">
+                              <span className={`
+                                mt-0.5 px-2 py-0.5 text-xs font-semibold rounded-full
+                                ${changeTypeStyles[change.type].bg}
+                                ${changeTypeStyles[change.type].darkBg}
+                                ${changeTypeStyles[change.type].text}
+                              `}>
+                                {changeTypeStyles[change.type].label}
+                              </span>
+                              <span className="text-sm text-[var(--foreground-secondary)] leading-relaxed">
+                                {change.text}
+                              </span>
+                            </li>
+                          ))}
+                      </ul>
+                    </motion.section>
+                  );
+                })
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex justify-center items-center space-x-4 mt-8 pt-6 border-t border-gray-200">
+            <div className="
+              flex justify-center items-center gap-4 pt-6
+              border-t border-[var(--surface-border)]
+            ">
               <button
                 onClick={() => setPage((prev) => Math.max(1, prev - 1))}
                 disabled={page === 1}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
+                className="
+                  inline-flex items-center gap-2 px-4 py-2
+                  bg-[var(--primary)] text-white rounded-xl
+                  font-medium text-sm
+                  hover:bg-[var(--primary-hover)]
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                  transition-colors
+                "
               >
+                <ChevronLeft size={18} />
                 Anterior
               </button>
-              <span className="text-gray-700">
+              <span className="text-sm text-[var(--foreground-secondary)]">
                 Página {page} de {totalPages}
               </span>
               <button
                 onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
                 disabled={page === totalPages}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
+                className="
+                  inline-flex items-center gap-2 px-4 py-2
+                  bg-[var(--primary)] text-white rounded-xl
+                  font-medium text-sm
+                  hover:bg-[var(--primary-hover)]
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                  transition-colors
+                "
               >
                 Siguiente
+                <ChevronRight size={18} />
               </button>
             </div>
           )}
-        </div>
+        </motion.div>
       </main>
+      <FooterNav />
     </>
+  );
+}
+
+function FilterChip({
+  label,
+  active,
+  onClick,
+  colorClass,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  colorClass?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        px-4 py-2 text-sm font-medium rounded-xl
+        transition-all duration-200
+        ${active
+          ? "bg-[var(--primary)] text-white shadow-md shadow-[var(--primary-glow)]"
+          : `
+            bg-[var(--surface-hover)] dark:bg-white/[0.05]
+            ${colorClass || "text-[var(--foreground-secondary)]"}
+            hover:bg-[var(--surface-active)] dark:hover:bg-white/[0.08]
+            border border-[var(--surface-border)] dark:border-white/[0.06]
+          `
+        }
+      `}
+    >
+      {label}
+    </button>
   );
 }

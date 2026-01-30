@@ -65,7 +65,8 @@ export interface FormData {
 
 function formatStepsCell(steps: string): string {
   const lines = steps.split(/\r?\n/).filter((l) => l.trim());
-  return lines.map((l) => `- ${l.replace(/\|/g, '\\|')}`).join(" \\n ");
+  // Usar <br> para saltos de línea en celdas de tabla markdown
+  return lines.map((l) => `• ${l.replace(/\|/g, '\\|')}`).join("<br>");
 }
 
 export default function formatReport(

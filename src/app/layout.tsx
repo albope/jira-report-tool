@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
+import { Providers } from "@/components/Providers";
+import { ThemeScript } from "@/components/ui/ThemeScript";
 
 export const metadata: Metadata = {
   title: "[EID] Generador Reportes JIRA",
@@ -13,9 +15,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
+      <head>
+        <ThemeScript />
+      </head>
       <body className="antialiased min-h-screen flex flex-col">
-        {children}
+        <Providers>
+          {children}
+        </Providers>
         <Analytics />
       </body>
     </html>

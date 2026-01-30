@@ -2,23 +2,19 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image"; // Asegúrate que Image de next/image esté importado
+import Image from "next/image";
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import HeaderNav from "@/components/HeaderNav";
-import { Search, AlertTriangle, CheckCircle, Info, ArrowUpCircle, ExternalLink } from 'lucide-react';
-
-/* ... (resto de tus imports y código inicial de HelpPage) ... */
+import FooterNav from "@/components/FooterNav";
+import { Search, AlertTriangle, CheckCircle, Info, ArrowUpCircle, ExternalLink, HelpCircle, FileText } from 'lucide-react';
 
 export default function HelpPage() {
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   const handleScroll = () => {
-    if (window.scrollY > 300) {
-      setShowScrollTop(true);
-    } else {
-      setShowScrollTop(false);
-    }
+    setShowScrollTop(window.scrollY > 300);
   };
 
   const scrollToTop = () => {
@@ -34,37 +30,65 @@ export default function HelpPage() {
     <>
       <HeaderNav />
 
-      <main className="pt-24 pb-20 px-4 sm:px-6 min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto space-y-16">
-
-          {/* Hero + CTA rápidas */}
-          <section className="text-center space-y-8">
-            <h1 className="text-5xl font-bold text-gray-900 tracking-tight">
+      <main className="pt-24 pb-20 px-4 sm:px-6 min-h-screen bg-[var(--background)]">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-4xl mx-auto space-y-12"
+        >
+          {/* Hero Section */}
+          <section className="text-center space-y-6">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 500, delay: 0.2 }}
+              className="
+                mx-auto w-16 h-16 rounded-2xl
+                bg-gradient-to-br from-[var(--primary)] to-purple-600
+                flex items-center justify-center
+                shadow-lg shadow-[var(--primary-glow)]
+              "
+            >
+              <HelpCircle className="w-8 h-8 text-white" />
+            </motion.div>
+            <h1 className="text-4xl sm:text-5xl font-bold text-[var(--foreground)] tracking-tight">
               Centro de Ayuda
             </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg text-[var(--foreground-secondary)] max-w-2xl mx-auto">
               Encuentra guías, respuestas y consejos para sacar el máximo provecho a nuestra herramienta.
             </p>
-            <div className="grid gap-8 sm:grid-cols-2">
+
+            {/* Quick Start Cards */}
+            <div className="grid gap-6 sm:grid-cols-2 pt-4">
               <QuickStartCard
                 title="Crear un JIRA"
                 desc="Aprende a generar tickets JIRA estructurados y completos desde cero."
                 href="/create-jira"
-                icon={<Info size={28} className="text-blue-500" />}
+                icon={<Info size={24} className="text-[var(--primary)]" />}
               />
               <QuickStartCard
-                title="Generar Reporte de Pruebas"
+                title="Generar Reporte"
                 desc="Descubre cómo crear reportes detallados a partir del contenido de un JIRA existente."
                 href="/generate-report"
-                icon={<CheckCircle size={28} className="text-green-500" />}
+                icon={<FileText size={24} className="text-[var(--success)]" />}
               />
             </div>
           </section>
 
-          {/* Tabla de contenidos */}
-          <nav aria-label="Tabla de contenidos" className="p-6 bg-white rounded-xl shadow-lg">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
-              <Search size={24} className="mr-3 text-blue-600"/>
+          {/* Table of Contents */}
+          <nav
+            aria-label="Tabla de contenidos"
+            className="
+              p-6 rounded-2xl
+              bg-[var(--surface)] dark:bg-[var(--surface)]/80
+              border border-[var(--surface-border)] dark:border-white/[0.06]
+              shadow-lg dark:shadow-2xl
+              backdrop-blur-xl
+            "
+          >
+            <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4 flex items-center">
+              <Search size={20} className="mr-3 text-[var(--primary)]"/>
               Índice Detallado
             </h2>
             <ul className="space-y-2">
@@ -74,8 +98,16 @@ export default function HelpPage() {
                 { href: "#faq", label: "C. Preguntas Frecuentes (FAQ)" },
               ].map(item => (
                 <li key={item.href}>
-                  <Link href={item.href} className="text-blue-600 hover:text-blue-800 hover:underline text-lg py-1 flex items-center transition-colors">
-                     <ExternalLink size={18} className="mr-2 opacity-70"/>
+                  <Link
+                    href={item.href}
+                    className="
+                      text-[var(--primary)] hover:text-[var(--primary-hover)]
+                      text-base py-2 flex items-center
+                      transition-colors rounded-lg px-3
+                      hover:bg-[var(--surface-hover)] dark:hover:bg-white/[0.05]
+                    "
+                  >
+                    <ExternalLink size={16} className="mr-2 opacity-70"/>
                     {item.label}
                   </Link>
                 </li>
@@ -85,7 +117,7 @@ export default function HelpPage() {
 
           {/* A. CREAR UN JIRA */}
           <HelpSection id="jira-guide" title="A. Crear un JIRA desde cero">
-            <p className="text-gray-700 text-lg">
+            <p className="text-[var(--foreground-secondary)] text-base">
               Usa este formulario cuando la incidencia aún no existe en JIRA y
               necesitas documentarla completamente.
             </p>
@@ -99,8 +131,7 @@ export default function HelpPage() {
                 campos: <em>PROYECTO – Herramienta – Descripción</em>.
               </Tip>
             </SubStep>
-            {/* ... más SubSteps para Crear un JIRA ... */}
-             <SubStep number={2} title="Detalle del problema">
+            <SubStep number={2} title="Detalle del problema">
               <FieldBullet name="Descripción del problema" note="Detallar el problema/error identificado de forma detallada." />
               <FieldBullet name="Pasos para reproducir" note="Describir los pasos llevados a cabo para reproducir el error." />
               <FieldBullet name="Resultado esperado" note="Describir lo que se esperaría si el comportamiento del aplicativo fuese correcto." />
@@ -108,7 +139,6 @@ export default function HelpPage() {
               <FieldBullet name="Impacto del error" note="Selecciona Crítico / Alto / …" />
               <ImageShow src="/help/jira-problem.png" alt="Paso 2 – Detalle" onImageClick={setLightboxImage} />
             </SubStep>
-
             <SubStep number={3} title="Entorno de pruebas">
               <FieldBullet name="Servidor de pruebas" note="Nombre del servidor donde se han realizado las pruebas." />
               <FieldBullet name="IP Cliente" note="IP del servidor donde se han realizado las pruebas." />
@@ -119,16 +149,14 @@ export default function HelpPage() {
                 Haz clic en «✕» en el formulario de creación para ocultar un campo de entorno que no aplique a tu caso.
               </Tip>
             </SubStep>
-
             <SubStep number={4} title="Versiones y campos extra">
               <FieldBullet name="Versiones de aplicativos/componentes" note="Añade tantas como necesites." />
               <FieldBullet name="Campos personalizados" note="Introduce el campo y contenido que desees para el entorno." />
             </SubStep>
-
             <SubStep number={5} title="Finalizar">
-              <p className="text-gray-700">
-                Usa <strong>Copiar contenido del JIRA</strong> para enviar el
-                texto a JIRA, o <strong>Reiniciar formulario</strong> si deseas
+              <p className="text-[var(--foreground-secondary)]">
+                Usa <strong className="text-[var(--foreground)]">Copiar contenido del JIRA</strong> para enviar el
+                texto a JIRA, o <strong className="text-[var(--foreground)]">Reiniciar formulario</strong> si deseas
                 empezar de nuevo.
               </p>
               <Tip type="success">
@@ -140,13 +168,13 @@ export default function HelpPage() {
 
           {/* B. REPORTE DE PRUEBAS */}
           <HelpSection id="report-guide" title="B. Reporte de pruebas (JIRA existente)">
-            <p className="text-gray-700 text-lg">
+            <p className="text-[var(--foreground-secondary)] text-base">
               Empléalo cuando el ticket ya existe en JIRA y quieres documentar
               las pruebas realizadas.
             </p>
             <SubStep number={1} title="Pegar contenido del JIRA">
-              <p className="text-gray-700">
-                Copia todo el cuerpo del ticket y pégalo en el cuadro <em>Paso 1</em>. También puedes introducir el código del JIRA para obtener el título automáticamente. {/* Cambio aquí */}
+              <p className="text-[var(--foreground-secondary)]">
+                Copia todo el cuerpo del ticket y pégalo en el cuadro <em>Paso 1</em>. También puedes introducir el código del JIRA para obtener el título automáticamente.
               </p>
               <ImageShow src="/help/report-paste.png" alt="Reporte Paso 1" onImageClick={setLightboxImage} />
             </SubStep>
@@ -162,10 +190,10 @@ export default function HelpPage() {
               </Tip>
             </SubStep>
             <SubStep number={3} title="Generar y exportar">
-              <p className="text-gray-700">
-                Verifica el Markdown y usa el botón <strong>Copiar y Exportar a Word</strong>. Esto te proporcionará:
+              <p className="text-[var(--foreground-secondary)]">
+                Verifica el Markdown y usa el botón <strong className="text-[var(--foreground)]">Copiar y Exportar a Word</strong>. Esto te proporcionará:
               </p>
-              <ul className="list-disc list-inside ml-4 text-gray-700 space-y-1">
+              <ul className="list-disc list-inside ml-4 text-[var(--foreground-secondary)] space-y-1 mt-2">
                 <li>El contenido en formato Markdown copiado a tu portapapeles, listo para pegar como comentario en JIRA.</li>
                 <li>Un archivo `.docx` (Word) descargado, que puedes adjuntar al ticket de JIRA como evidencia formal.</li>
               </ul>
@@ -177,114 +205,146 @@ export default function HelpPage() {
           <HelpSection id="faq" title="C. Preguntas Frecuentes (FAQ)">
             <FAQItem question="¿Cuándo debo usar Crear un JIRA y cuándo Generar un reporte?">
               <p>
-                <strong>Crear un JIRA:</strong> Utiliza esta opción cuando la incidencia aún no existe en JIRA y necesitas documentarla desde cero, incluyendo todos los detalles técnicos, pasos para reproducir, impacto y entorno de pruebas. Es ideal para reportar nuevos bugs o proponer nuevas tareas.
+                <strong className="text-[var(--foreground)]">Crear un JIRA:</strong> Utiliza esta opción cuando la incidencia aún no existe en JIRA y necesitas documentarla desde cero, incluyendo todos los detalles técnicos, pasos para reproducir, impacto y entorno de pruebas. Es ideal para reportar nuevos bugs o proponer nuevas tareas.
               </p>
               <p className="mt-2">
-                <strong>Generar un reporte:</strong> Usa esta opción cuando el JIRA ya está creado (por ti o por otra persona) y necesitas añadir un comentario formal sobre las pruebas realizadas, validar funcionalidades, documentar la evolución de un error, o adjuntar un informe de pruebas completo. Esta opción es clave para la trazabilidad y auditorías.
+                <strong className="text-[var(--foreground)]">Generar un reporte:</strong> Usa esta opción cuando el JIRA ya está creado (por ti o por otra persona) y necesitas añadir un comentario formal sobre las pruebas realizadas, validar funcionalidades, documentar la evolución de un error, o adjuntar un informe de pruebas completo. Esta opción es clave para la trazabilidad y auditorías.
               </p>
             </FAQItem>
             <FAQItem question="¿Cómo puedo asegurarme de que mi reporte sea claro y completo?">
               <ul className="list-disc list-inside space-y-1">
-                <li>Incluye siempre <strong>pasos detallados</strong> para reproducir el error.</li>
-                <li>Añade <strong>versiones exactas</strong> de los componentes para evitar ambigüedades.</li>
-                <li>Describe tanto el <strong>resultado esperado</strong> como el <strong>resultado real</strong> de forma concisa.</li>
-                <li>Usa <strong>capturas y logs</strong> en la sección de Evidencias para aportar contexto visual y técnico.</li>
-                <li>Verifica que el impacto esté correctamente clasificado (<strong>Crítico</strong>, <strong>Alto</strong>, <strong>Medio</strong>, <strong>Bajo</strong>, <strong>Visual</strong>, <strong>Mejora</strong>).</li>
+                <li>Incluye siempre <strong className="text-[var(--foreground)]">pasos detallados</strong> para reproducir el error.</li>
+                <li>Añade <strong className="text-[var(--foreground)]">versiones exactas</strong> de los componentes para evitar ambigüedades.</li>
+                <li>Describe tanto el <strong className="text-[var(--foreground)]">resultado esperado</strong> como el <strong className="text-[var(--foreground)]">resultado real</strong> de forma concisa.</li>
+                <li>Usa <strong className="text-[var(--foreground)]">capturas y logs</strong> en la sección de Evidencias para aportar contexto visual y técnico.</li>
+                <li>Verifica que el impacto esté correctamente clasificado (<strong className="text-[var(--foreground)]">Crítico</strong>, <strong className="text-[var(--foreground)]">Alto</strong>, <strong className="text-[var(--foreground)]">Medio</strong>, <strong className="text-[var(--foreground)]">Bajo</strong>, <strong className="text-[var(--foreground)]">Visual</strong>, <strong className="text-[var(--foreground)]">Mejora</strong>).</li>
                 <li>Si generas un reporte sobre un JIRA existente, asegúrate de que tu reporte añade valor y actualiza el estado de las pruebas.</li>
               </ul>
             </FAQItem>
             <FAQItem question="¿Puedo personalizar los campos del entorno en los reportes?">
               <p>
-                ¡Sí! Tanto en la creación de un nuevo JIRA como en la generación de reportes sobre JIRAs existentes, puedes añadir &quot;Campos Personalizados del Entorno&quot;. Esto te permite incluir cualquier información específica de tu entorno que no esté cubierta por los campos estándar (ej. &quot;Versión del Driver X&quot;, &quot;Configuración Específica Y&quot;). Estos campos aparecerán en la sección &quot;Entorno de Pruebas&quot; de tu reporte. {/* Cambio aquí */}
+                ¡Sí! Tanto en la creación de un nuevo JIRA como en la generación de reportes sobre JIRAs existentes, puedes añadir &quot;Campos Personalizados del Entorno&quot;. Esto te permite incluir cualquier información específica de tu entorno que no esté cubierta por los campos estándar (ej. &quot;Versión del Driver X&quot;, &quot;Configuración Específica Y&quot;). Estos campos aparecerán en la sección &quot;Entorno de Pruebas&quot; de tu reporte.
               </p>
             </FAQItem>
             <FAQItem question="¿Qué hago si la obtención automática del título del JIRA falla?">
-                <p>
-                    Si al introducir el código del JIRA en el <em>Paso 1</em> del generador de reportes la herramienta no puede obtener el título automáticamente (por ejemplo, debido a problemas de conexión, permisos, o si el JIRA no existe), no te preocupes. {/* Cambio aquí */}
-                </p>
-                <p className="mt-2">
-                    La aplicación te mostrará un mensaje de error y habilitará un área de texto para que puedas pegar manualmente el contenido completo de tu JIRA. Aunque el título no se cargue, podrás continuar con el proceso de generación del reporte introduciendo los datos manualmente.
-                </p>
+              <p>
+                Si al introducir el código del JIRA en el <em>Paso 1</em> del generador de reportes la herramienta no puede obtener el título automáticamente (por ejemplo, debido a problemas de conexión, permisos, o si el JIRA no existe), no te preocupes.
+              </p>
+              <p className="mt-2">
+                La aplicación te mostrará un mensaje de error y habilitará un área de texto para que puedas pegar manualmente el contenido completo de tu JIRA. Aunque el título no se cargue, podrás continuar con el proceso de generación del reporte introduciendo los datos manualmente.
+              </p>
             </FAQItem>
           </HelpSection>
 
-          {/* Footer contactos */}
-          <div className="text-center text-sm text-gray-500 pt-12 border-t border-gray-200">
-            ¿Necesitas ayuda adicional o tienes alguna sugerencia? Usa el botón flotante “Feedback + Bugs”
+          {/* Footer */}
+          <div className="text-center text-sm text-[var(--foreground-tertiary)] pt-8 border-t border-[var(--surface-border)]">
+            ¿Necesitas ayuda adicional o tienes alguna sugerencia? Usa el botón flotante &quot;Feedback + Bugs&quot;
             o escribe a&nbsp;
-            <a href="mailto:abort.etraid@grupoetra.com" className="text-blue-600 hover:underline">
+            <a href="mailto:abort.etraid@grupoetra.com" className="text-[var(--primary)] hover:text-[var(--primary-hover)] hover:underline transition-colors">
               abort.etraid@grupoetra.com
             </a>.
           </div>
-        </div>
+        </motion.div>
       </main>
 
-      {/* Lightbox Modal para Imágenes */}
-      {lightboxImage && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[100] p-4"
-          onClick={() => setLightboxImage(null)}
-        >
-          <Image // Usando next/image aquí también
-            src={lightboxImage}
-            alt="Vista ampliada"
-            width={1200}
-            height={800}
-            style={{ objectFit: 'contain', maxWidth: '90vw', maxHeight: '90vh' }} // objectFit en style para next/image
-            className="rounded-lg shadow-2xl" // Clases Tailwind para estética
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      )}
-      
-      {/* Botón Volver Arriba */}
-      {showScrollTop && (
-        <button
-          onClick={scrollToTop}
-          className="fixed bottom-6 right-6 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-opacity duration-300 z-50"
-          title="Volver arriba"
-        >
-          <ArrowUpCircle size={24} />
-        </button>
-      )}
+      <FooterNav />
+
+      {/* Lightbox Modal */}
+      <AnimatePresence>
+        {lightboxImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
+            onClick={() => setLightboxImage(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+            >
+              <Image
+                src={lightboxImage}
+                alt="Vista ampliada"
+                width={1200}
+                height={800}
+                style={{ objectFit: 'contain', maxWidth: '90vw', maxHeight: '90vh' }}
+                className="rounded-xl shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Scroll to Top Button */}
+      <AnimatePresence>
+        {showScrollTop && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            onClick={scrollToTop}
+            className="
+              fixed bottom-6 right-6
+              bg-[var(--primary)] text-white
+              p-3 rounded-full
+              shadow-lg shadow-[var(--primary-glow)]
+              hover:bg-[var(--primary-hover)]
+              transition-colors z-50
+            "
+            title="Volver arriba"
+          >
+            <ArrowUpCircle size={24} />
+          </motion.button>
+        )}
+      </AnimatePresence>
     </>
   );
 }
 
-/* Sub-componentes (QuickStartCard, HelpSection, SubStep, FieldBullet, Tip, ImageShow, FAQItem) ... */
-// (Asegúrate que las definiciones de estos subcomponentes estén aquí como en tu código original
-// o importados si están en archivos separados. He modificado ImageShow y FAQItem abajo
-// y añadido las definiciones de Tip, FieldBullet, etc., tal como estaban en tu código original para que sea completo)
-
+/* Sub-components */
 
 function QuickStartCard({
   title,
   desc,
   href,
-  icon, 
+  icon,
 }: {
   title: string;
   desc: string;
   href: string;
-  icon: React.ReactNode; 
+  icon: React.ReactNode;
 }) {
   return (
     <Link
       href={href}
       className="
         flex flex-col items-center text-center
-        bg-white hover:bg-blue-50
-        border border-gray-200 hover:border-blue-300
-        rounded-xl p-8 shadow-md hover:shadow-lg 
-        transition-all duration-300 transform hover:-translate-y-1
+        bg-[var(--surface)] dark:bg-[var(--surface)]/80
+        hover:bg-[var(--surface-hover)] dark:hover:bg-white/[0.05]
+        border border-[var(--surface-border)] dark:border-white/[0.06]
+        hover:border-[var(--primary)]/30
+        rounded-2xl p-6
+        shadow-lg dark:shadow-2xl
+        hover:shadow-xl hover:shadow-[var(--primary-glow)]
+        transition-all duration-300
+        group
       "
     >
-      <div className="mb-4 p-3 bg-blue-100 rounded-full">{icon}</div>
-      <h3 className="text-2xl font-semibold text-gray-800 mb-2">{title}</h3>
-      <p className="text-gray-600 text-base flex-1 mb-4">{desc}</p>
-      <span className="mt-auto inline-flex items-center text-blue-600 font-semibold group">
+      <div className="
+        mb-4 p-3 rounded-xl
+        bg-[var(--primary-soft)] dark:bg-[var(--primary)]/10
+        group-hover:scale-110 transition-transform
+      ">
+        {icon}
+      </div>
+      <h3 className="text-xl font-semibold text-[var(--foreground)] mb-2">{title}</h3>
+      <p className="text-[var(--foreground-secondary)] text-sm flex-1 mb-4">{desc}</p>
+      <span className="mt-auto inline-flex items-center text-[var(--primary)] font-medium text-sm group-hover:text-[var(--primary-hover)]">
         Abrir Guía
-        <ExternalLink size={18} className="ml-2 group-hover:translate-x-1 transition-transform"/>
+        <ExternalLink size={16} className="ml-2 group-hover:translate-x-1 transition-transform"/>
       </span>
     </Link>
   );
@@ -300,8 +360,17 @@ function HelpSection({
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className="space-y-8 p-6 bg-white rounded-xl shadow-lg">
-      <h2 className="text-3xl font-bold text-gray-800 border-b pb-4 mb-6">
+    <section
+      id={id}
+      className="
+        space-y-6 p-6 sm:p-8
+        bg-[var(--surface)] dark:bg-[var(--surface)]/80
+        border border-[var(--surface-border)] dark:border-white/[0.06]
+        rounded-2xl shadow-lg dark:shadow-2xl
+        backdrop-blur-xl
+      "
+    >
+      <h2 className="text-2xl font-bold text-[var(--foreground)] border-b border-[var(--surface-border)] pb-4">
         {title}
       </h2>
       <div className="space-y-6">
@@ -321,12 +390,17 @@ function SubStep({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-4 p-4 border-l-4 border-blue-500 bg-blue-50 rounded-r-lg">
-      <h3 className="text-2xl font-semibold text-blue-700">
+    <div className="
+      space-y-4 p-4
+      border-l-4 border-[var(--primary)]
+      bg-[var(--primary-soft)] dark:bg-[var(--primary)]/5
+      rounded-r-xl
+    ">
+      <h3 className="text-xl font-semibold text-[var(--primary)]">
         Paso {number}. {title}
       </h3>
-      <div className="prose prose-sm sm:prose max-w-none text-gray-700">
-         {children}
+      <div className="space-y-3">
+        {children}
       </div>
     </div>
   );
@@ -334,13 +408,13 @@ function SubStep({
 
 function FieldBullet({ name, note }: { name: string; note?: string }) {
   return (
-    <p className="flex items-start text-gray-700 text-base my-2">
-      <span className="mt-1 mr-3 text-blue-600">
-        <CheckCircle size={18}/>
+    <p className="flex items-start text-[var(--foreground-secondary)] text-sm">
+      <span className="mt-0.5 mr-3 text-[var(--success)]">
+        <CheckCircle size={16}/>
       </span>
       <span>
-        <strong className="font-semibold text-gray-800">{name}</strong>
-        {note && <span className="text-gray-600"> — {note}</span>}
+        <strong className="font-medium text-[var(--foreground)]">{name}</strong>
+        {note && <span className="text-[var(--foreground-tertiary)]"> — {note}</span>}
       </span>
     </p>
   );
@@ -348,17 +422,38 @@ function FieldBullet({ name, note }: { name: string; note?: string }) {
 
 type TipType = "info" | "warning" | "success" | "danger";
 
-const tipStyles: Record<TipType, { icon: React.ReactNode; border: string; bg: string; text: string }> = {
-  info: { icon: <Info size={20} />, border: "border-blue-500", bg: "bg-blue-50", text: "text-blue-700" },
-  warning: { icon: <AlertTriangle size={20} />, border: "border-yellow-500", bg: "bg-yellow-50", text: "text-yellow-700" },
-  success: { icon: <CheckCircle size={20} />, border: "border-green-500", bg: "bg-green-50", text: "text-green-700" },
-  danger: { icon: <AlertTriangle size={20} />, border: "border-red-500", bg: "bg-red-50", text: "text-red-700" },
-};
-
 function Tip({ children, type = "info" }: { children: React.ReactNode; type?: TipType }) {
-  const style = tipStyles[type];
+  const styles = {
+    info: {
+      icon: <Info size={18} />,
+      border: "border-[var(--primary)]",
+      bg: "bg-[var(--primary-soft)] dark:bg-[var(--primary)]/10",
+      text: "text-[var(--primary)]"
+    },
+    warning: {
+      icon: <AlertTriangle size={18} />,
+      border: "border-[var(--warning)]",
+      bg: "bg-[var(--warning-soft)] dark:bg-[var(--warning)]/10",
+      text: "text-[var(--warning)]"
+    },
+    success: {
+      icon: <CheckCircle size={18} />,
+      border: "border-[var(--success)]",
+      bg: "bg-[var(--success-soft)] dark:bg-[var(--success)]/10",
+      text: "text-[var(--success)]"
+    },
+    danger: {
+      icon: <AlertTriangle size={18} />,
+      border: "border-[var(--error)]",
+      bg: "bg-[var(--error-soft)] dark:bg-[var(--error)]/10",
+      text: "text-[var(--error)]"
+    },
+  };
+
+  const style = styles[type];
+
   return (
-    <div className={`border-l-4 ${style.border} ${style.bg} p-4 rounded-md my-4 shadow-sm flex items-start`}>
+    <div className={`border-l-4 ${style.border} ${style.bg} p-4 rounded-r-xl my-4 flex items-start`}>
       <div className={`mr-3 flex-shrink-0 ${style.text}`}>{style.icon}</div>
       <div className={`text-sm ${style.text}`}>
         {children}
@@ -373,26 +468,45 @@ function ImageShow({ src, alt, onImageClick }: { src: string; alt: string; onIma
       <Image
         src={src}
         alt={alt}
-        width={800} 
+        width={800}
         height={450}
-        className="rounded-lg border-2 border-gray-200 shadow-md hover:shadow-xl transition-shadow cursor-pointer mx-auto"
+        className="
+          rounded-xl
+          border-2 border-[var(--surface-border)]
+          shadow-lg hover:shadow-xl
+          transition-shadow cursor-pointer mx-auto
+          hover:border-[var(--primary)]/30
+        "
         onClick={() => onImageClick(src)}
       />
-      <p className="text-xs text-gray-500 mt-2 italic">{alt} (Haz clic para ampliar)</p>
+      <p className="text-xs text-[var(--foreground-tertiary)] mt-2 italic">{alt} (Haz clic para ampliar)</p>
     </div>
   );
 }
 
 function FAQItem({ question, children }: { question: string; children: React.ReactNode }) {
   return (
-    <details className="group bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-      <summary className="font-semibold text-lg text-gray-800 cursor-pointer list-none flex justify-between items-center group-hover:text-blue-600">
+    <details className="
+      group
+      bg-[var(--surface-hover)] dark:bg-white/[0.03]
+      p-4 rounded-xl
+      border border-[var(--surface-border)] dark:border-white/[0.06]
+      hover:border-[var(--primary)]/30
+      transition-colors
+    ">
+      <summary className="
+        font-semibold text-base text-[var(--foreground)]
+        cursor-pointer list-none
+        flex justify-between items-center
+        group-hover:text-[var(--primary)]
+        transition-colors
+      ">
         {question}
-        <span className="text-blue-500 transform transition-transform duration-300 group-open:rotate-180">
-          <svg fill="none" height="24" shapeRendering="geometricPrecision" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+        <span className="text-[var(--primary)] transform transition-transform duration-300 group-open:rotate-180">
+          <svg fill="none" height="20" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="20"><path d="M6 9l6 6 6-6"></path></svg>
         </span>
       </summary>
-      <div className="mt-3 pt-3 border-t border-gray-200 text-gray-700 text-base space-y-2">
+      <div className="mt-3 pt-3 border-t border-[var(--surface-border)] text-[var(--foreground-secondary)] text-sm space-y-2">
         {children}
       </div>
     </details>
