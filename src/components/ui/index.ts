@@ -7,3 +7,4 @@ export * from "./Skeleton";
 export * from "./AutoSaveIndicator";
 export * from "./AnimatedContainer";
 export * from "./ConfirmDialog";
+export * from "./KeyboardShortcutsHelp";

@@ -3,7 +3,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Trash2, FileCheck, ArrowRight } from "lucide-react";
+import { Trash2, FileCheck } from "lucide-react";
 
 interface FormActionsProps {
   onReset: () => void;
@@ -105,14 +105,6 @@ export const FormActions: React.FC<FormActionsProps> = ({
           <>
             <FileCheck size={18} />
             Generar Reporte
-            <ArrowRight
-              size={16}
-              className="
-                opacity-60 -ml-0.5
-                group-hover:opacity-100 group-hover:translate-x-0.5
-                transition-all duration-200
-              "
-            />
           </>
         )}
       </motion.button>

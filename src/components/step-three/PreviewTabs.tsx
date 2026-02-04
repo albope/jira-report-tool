@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { FileText, FileCode, FileType, Clipboard } from "lucide-react";
+import { FileText, Clipboard } from "lucide-react";
 import type { PreviewFormat } from "./types";
 
 interface PreviewTabsProps {
@@ -13,8 +13,6 @@ interface PreviewTabsProps {
 const formats: { id: PreviewFormat; label: string; icon: React.ReactNode }[] = [
   { id: "jira", label: "JIRA", icon: <Clipboard className="w-4 h-4" /> },
   { id: "word", label: "Word", icon: <FileText className="w-4 h-4" /> },
-  { id: "html", label: "HTML", icon: <FileCode className="w-4 h-4" /> },
-  { id: "pdf", label: "PDF", icon: <FileType className="w-4 h-4" /> },
 ];
 
 /**

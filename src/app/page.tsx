@@ -4,15 +4,8 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import HeaderNav from "@/components/HeaderNav";
 import FooterNav from "@/components/FooterNav";
-import { GridPattern, GradientBlob } from "@/components/effects";
-import {
-  FilePlus2,
-  ClipboardList,
-  ArrowRight,
-  FileText,
-  Copy,
-  Download,
-} from "lucide-react";
+import { GridPattern, MorphingMesh } from "@/components/effects";
+import { FilePlus2, ClipboardList } from "lucide-react";
 
 /**
  * Landing Page Premium — Inspirada en Linear, Vercel, Stripe
@@ -27,22 +20,29 @@ export default function Landing() {
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <GridPattern fadeIntensity="strong" />
 
-        {/* Gradient Orbs */}
+        {/* Morphing Gradient Mesh - Dark Mode */}
         <div className="dark:block hidden">
-          <GradientBlob
-            position="top-right"
-            colors={["#3B82F6", "#8B5CF6", "#EC4899"]}
-            size="lg"
-          />
-          <GradientBlob
-            position="bottom-left"
-            colors={["#8B5CF6", "#3B82F6", "#06B6D4"]}
-            size="md"
+          <MorphingMesh
+            colors={["#3B82F6", "#8B5CF6", "#EC4899", "#06B6D4", "#6366F1", "#10B981"]}
+            pointCount={6}
+            blur={70}
+            opacity={0.7}
+            followMouse={true}
+            variant="dark"
           />
         </div>
 
-        {/* Light mode subtle gradient */}
-        <div className="dark:hidden absolute inset-0 bg-gradient-to-b from-blue-50/50 via-transparent to-purple-50/30" />
+        {/* Morphing Gradient Mesh - Light Mode */}
+        <div className="dark:hidden block">
+          <MorphingMesh
+            colors={["#3B82F6", "#8B5CF6", "#EC4899", "#06B6D4", "#6366F1"]}
+            pointCount={5}
+            blur={90}
+            opacity={0.5}
+            followMouse={true}
+            variant="light"
+          />
+        </div>
       </div>
 
       <main className="relative min-h-screen flex flex-col">
@@ -151,34 +151,6 @@ export default function Landing() {
               </motion.div>
             </div>
 
-            {/* Funcionalidades rápidas */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="mt-6"
-            >
-              <div className="
-                flex flex-wrap justify-center gap-4
-                p-4 rounded-xl
-                bg-[var(--surface)]/50 dark:bg-[var(--surface)]/30
-                border border-[var(--surface-border)] dark:border-white/[0.04]
-              ">
-                <SmallFeature
-                  icon={<FileText className="w-4 h-4" />}
-                  title="Formato estructurado"
-                />
-                <SmallFeature
-                  icon={<Copy className="w-4 h-4" />}
-                  title="Copiar al portapapeles"
-                />
-                <SmallFeature
-                  icon={<Download className="w-4 h-4" />}
-                  title="Exportar"
-                />
-              </div>
-            </motion.div>
           </div>
         </section>
       </main>
@@ -285,13 +257,8 @@ function FeatureCard({
           `}>
             {icon}
           </div>
-          <h3 className="text-base font-medium text-[var(--foreground)] flex items-center gap-2">
+          <h3 className="text-base font-medium text-[var(--foreground)]">
             {title}
-            <ArrowRight className="
-              w-4 h-4 opacity-0 -translate-x-1
-              group-hover:opacity-60 group-hover:translate-x-0
-              transition-all duration-200
-            " />
           </h3>
         </div>
 
@@ -304,17 +271,3 @@ function FeatureCard({
   );
 }
 
-function SmallFeature({
-  icon,
-  title,
-}: {
-  icon: React.ReactNode;
-  title: string;
-}) {
-  return (
-    <div className="flex items-center gap-2 px-3 py-1.5 text-sm text-[var(--foreground-secondary)]">
-      <span className="text-[var(--foreground-muted)]">{icon}</span>
-      <span>{title}</span>
-    </div>
-  );
-}

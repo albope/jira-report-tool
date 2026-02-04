@@ -6,3 +6,4 @@ export * from "./PreviewTabs";
 export * from "./PreviewContent";
 export * from "./ExportMenu";
 export * from "./TemplateSelector";
+export * from "./PublishToJiraButton";

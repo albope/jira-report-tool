@@ -12,10 +12,10 @@ import {
   Globe,
   CheckCircle2,
   ArrowRight,
-  Sparkles,
+  ClipboardList,
   Info,
 } from "lucide-react";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Tabs } from "@/components/ui/Tabs";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { useJira } from "@/contexts/JiraContext";
@@ -26,6 +26,7 @@ interface StepOnePasteProps {
   jiraContent: string;
   setJiraContent: (value: string) => void;
   onParse: (jiraKey?: string) => void;
+  initialJiraKey?: string;
 }
 
 type LoadMode = "api" | "paste";
@@ -34,23 +35,58 @@ export default function StepOnePaste({
   jiraContent,
   setJiraContent,
   onParse,
+  initialJiraKey,
 }: StepOnePasteProps) {
   const router = useRouter();
   const { isConfigured: userJiraConfigured } = useJira();
   const [loadMode, setLoadMode] = useState<LoadMode>("api");
-  const [jiraKey, setJiraKey] = useState("");
+  const [jiraKey, setJiraKey] = useState(() => {
+    if (initialJiraKey) return initialJiraKey;
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('stepOneJiraKey') || "";
+    }
+    return "";
+  });
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [fetchedJiraTitle, setFetchedJiraTitle] = useState<string | null>(null);
+  const [fetchedJiraTitle, setFetchedJiraTitle] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const savedTitle = sessionStorage.getItem('stepOneFetchedJiraTitle');
+      const savedKey = sessionStorage.getItem('stepOneJiraKey');
+      // Solo restaurar si el key guardado coincide con el jiraKey actual
+      // Esto evita mostrar un título de una sesión anterior que no corresponde
+      const currentKey = initialJiraKey || sessionStorage.getItem('stepOneJiraKey') || "";
+      if (savedTitle && savedKey && savedKey === currentKey) {
+        return savedTitle;
+      }
+    }
+    return null;
+  });
   const [jiraConfigured, setJiraConfigured] = useState<boolean | null>(null);
   const [isConfigError, setIsConfigError] = useState(false);
 
+  // Ref para trackear el key que corresponde al título actual
+  // Esto evita mostrar un título que no corresponde al jiraKey actual
+  const titleKeyRef = useRef<string | null>(
+    typeof window !== 'undefined'
+      ? sessionStorage.getItem('stepOneJiraKey')
+      : null
+  );
+
   // Handler para cuando se selecciona un issue desde JiraSearchInput
   const handleJiraSelect = (issue: JiraIssue) => {
+    // Actualizar estado
     setJiraKey(issue.key);
     setFetchedJiraTitle(issue.summary);
     setJiraContent(issue.summary);
     setFetchError(null);
+    // Actualizar el ref para que el título corresponda al key
+    titleKeyRef.current = issue.key;
+    // Guardar inmediatamente en sessionStorage para evitar valores antiguos
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('stepOneJiraKey', issue.key);
+      sessionStorage.setItem('stepOneFetchedJiraTitle', issue.summary);
+    }
   };
 
   // Real-time validation
@@ -72,6 +108,26 @@ export default function StepOnePaste({
       },
     };
   }, [jiraKey, jiraContent]);
+
+  // Sincronizar jiraKey con initialJiraKey cuando cambie (al volver al paso 1 o reset)
+  useEffect(() => {
+    // Siempre sincronizar con initialJiraKey, incluso si está vacío (reset)
+    setJiraKey(initialJiraKey || "");
+
+    if (initialJiraKey) {
+      // Restaurar el título desde sessionStorage si corresponde al mismo key
+      const savedTitle = sessionStorage.getItem('stepOneFetchedJiraTitle');
+      const savedKey = sessionStorage.getItem('stepOneJiraKey');
+      if (savedTitle && savedKey === initialJiraKey) {
+        setFetchedJiraTitle(savedTitle);
+        titleKeyRef.current = initialJiraKey;
+      }
+    } else {
+      // Si initialJiraKey está vacío (reset), limpiar también el título
+      setFetchedJiraTitle(null);
+      titleKeyRef.current = null;
+    }
+  }, [initialJiraKey]);
 
   // Check if JIRA is configured
   useEffect(() => {
@@ -97,6 +153,32 @@ export default function StepOnePaste({
       setJiraContent(fetchedJiraTitle);
     }
   }, [fetchedJiraTitle, setJiraContent]);
+
+  // Persist jiraKey and fetchedJiraTitle to sessionStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (jiraKey) {
+        sessionStorage.setItem('stepOneJiraKey', jiraKey);
+      } else {
+        sessionStorage.removeItem('stepOneJiraKey');
+      }
+      if (fetchedJiraTitle) {
+        sessionStorage.setItem('stepOneFetchedJiraTitle', fetchedJiraTitle);
+      } else {
+        sessionStorage.removeItem('stepOneFetchedJiraTitle');
+      }
+    }
+  }, [jiraKey, fetchedJiraTitle]);
+
+  // Limpiar fetchedJiraTitle si jiraKey cambia a un valor que no corresponde
+  // Esto evita mostrar un título antiguo cuando el usuario escribe manualmente
+  useEffect(() => {
+    // Si hay un título y el jiraKey actual es diferente al key del título, limpiar
+    if (fetchedJiraTitle && titleKeyRef.current && jiraKey !== titleKeyRef.current) {
+      setFetchedJiraTitle(null);
+      titleKeyRef.current = null;
+    }
+  }, [jiraKey, fetchedJiraTitle]);
 
   const handleFetchSummary = async () => {
     if (!jiraKey.trim()) {
@@ -140,10 +222,14 @@ export default function StepOnePaste({
       const data = await res.json();
       if (data.summary) {
         setFetchedJiraTitle(data.summary);
+        // Actualizar el ref con el key que corresponde al título
+        const effectiveKey = data.key || jiraKey.trim();
+        titleKeyRef.current = effectiveKey;
         if (data.key) setJiraKey(data.key);
       } else {
         setFetchError("No se encontró un título para este JIRA.");
         setFetchedJiraTitle(null);
+        titleKeyRef.current = null;
       }
     } catch (err: unknown) {
       console.error("Error en fetchSummary:", err);
@@ -217,15 +303,15 @@ export default function StepOnePaste({
         <div className="flex items-start gap-4">
           <div className="
             w-12 h-12 rounded-xl
-            bg-gradient-to-br from-blue-600 to-violet-600
+            bg-[var(--primary)] dark:bg-[var(--primary)]
             flex items-center justify-center flex-shrink-0
-            shadow-lg
+            shadow-sm
           ">
-            <Sparkles className="w-6 h-6 text-white" />
+            <ClipboardList className="w-6 h-6 text-white" strokeWidth={1.75} />
           </div>
 
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)]">
+            <h1 className="text-2xl sm:text-3xl font-semibold text-[var(--foreground)] tracking-tight">
               Generador de Reportes
             </h1>
             <div className="flex items-center gap-2 mt-1">

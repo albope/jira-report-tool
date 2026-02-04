@@ -9,7 +9,7 @@ import { saveAs } from "file-saver";
 import { Copy, Trash2, XCircle, Download } from "lucide-react";
 import "tippy.js/dist/tippy.css";
 
-import { StyledInput, StyledTextarea, StyledSelect } from "./StyledFormComponents";
+import { StyledInput, StyledTextarea, StyledStepsTextarea, StyledSelect } from "./StyledFormComponents";
 import type { BatteryTest, FormData } from "./types";
 
 const readFileAsBase64 = (file: File): Promise<string> =>
@@ -176,11 +176,10 @@ export const BatteryTestCaseCard: React.FC<BatteryTestCaseCardProps> = ({
         value={test.description}
         onChange={(e) => onTestChange(index, "description", e.target.value)}
       />
-      <StyledTextarea
+      <StyledStepsTextarea
         label="Pasos para Reproducir"
         id={`test-steps-${index}`}
         rows={4}
-        placeholder="1. Ir a...\n2. Hacer clic en...\n3. Verificar que..."
         value={test.steps}
         onChange={(e) => onTestChange(index, "steps", e.target.value)}
       />

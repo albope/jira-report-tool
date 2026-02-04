@@ -254,12 +254,12 @@ const title = `${project.trim().toUpperCase()} - ${tool.trim()} - ${errorDesc.tr
         </div>
       )}
 
-      <div className="max-w-3xl mx-auto space-y-8 bg-white p-6 rounded shadow">
+      <div className="max-w-3xl mx-auto space-y-8 bg-[var(--surface)] p-6 rounded shadow">
         {/* Cabecera */}
         <div className="flex items-start justify-between mb-6">
           <div>
             <h2 className="text-2xl font-bold">Crear un nuevo JIRA</h2>
-            <p className="text-gray-600 text-sm mt-1">
+            <p className="text-[var(--foreground-secondary)] text-sm mt-1">
               Completa los campos para crear un JIRA detallado, desde la
               descripción del problema hasta las versiones del sistema.
             </p>
@@ -268,7 +268,7 @@ const title = `${project.trim().toUpperCase()} - ${tool.trim()} - ${errorDesc.tr
           <button
             onClick={() => router.push("/")}
             title="Volver al inicio"
-            className="inline-flex items-center justify-center px-2.5 py-1.5 rounded-full border border-gray-300 text-gray-600 hover:bg-blue-600 hover:text-white transition-colors duration-150 transform -translate-y-4"
+            className="inline-flex items-center justify-center px-2.5 py-1.5 rounded-full border border-[var(--surface-border)] text-[var(--foreground-secondary)] hover:bg-[var(--primary)] hover:text-white transition-colors duration-150 transform -translate-y-4"
           >
             <Home className="h-5 w-5" />
           </button>
@@ -276,10 +276,10 @@ const title = `${project.trim().toUpperCase()} - ${tool.trim()} - ${errorDesc.tr
 
         {/* ---------- Sección Título del JIRA ---------- */}
         <section className="space-y-2">
-          <h3 className="text-xl font-semibold text-gray-900">
+          <h3 className="text-xl font-semibold text-[var(--foreground)]">
             Configura el título del JIRA
           </h3>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-[var(--foreground-secondary)]">
             Introduce los datos clave para generar automáticamente el título del
             ticket.
           </p>
@@ -349,7 +349,7 @@ const title = `${project.trim().toUpperCase()} - ${tool.trim()} - ${errorDesc.tr
                             </span>
                             <textarea
                               rows={2}
-                              className="flex-1 border p-2 rounded text-sm"
+                              className="flex-1 border border-[var(--surface-border)] bg-[var(--background)] text-[var(--foreground)] p-2 rounded text-sm"
                               placeholder={`Paso ${i + 1}`}
                               value={s}
                               onChange={(e) => changeStep(i, e.target.value)}
@@ -401,7 +401,7 @@ const title = `${project.trim().toUpperCase()} - ${tool.trim()} - ${errorDesc.tr
             </label>
             <select
               id="impact"
-              className="border p-2 rounded w-full bg-white"
+              className="border border-[var(--surface-border)] p-2 rounded w-full bg-[var(--background)] text-[var(--foreground)]"
               value={impact}
               onChange={(e) => setImpact(e.target.value)}
             >
@@ -481,7 +481,7 @@ const title = `${project.trim().toUpperCase()} - ${tool.trim()} - ${errorDesc.tr
                   entorno: false,
                 })
               }
-              className="text-sm text-gray-600 mt-3 underline"
+              className="text-sm text-[var(--foreground-secondary)] mt-3 underline"
             >
               Mostrar todos los campos
             </button>
@@ -496,7 +496,7 @@ const title = `${project.trim().toUpperCase()} - ${tool.trim()} - ${errorDesc.tr
                 checked={isApp}
                 onChange={(e) => setIsApp(e.target.checked)}
               />
-              <span className="ml-2 text-gray-700">
+              <span className="ml-2 text-[var(--foreground-secondary)]">
                 ¿Es validación de una APP Móvil/Escritorio?
               </span>
             </label>
@@ -504,8 +504,8 @@ const title = `${project.trim().toUpperCase()} - ${tool.trim()} - ${errorDesc.tr
 
           {/* Detalles APP */}
           {isApp && (
-            <div className="mt-4 border p-3 rounded space-y-3 bg-blue-50 border-blue-200">
-              <h4 className="font-semibold text-blue-800">Detalles de la APP</h4>
+            <div className="mt-4 border p-3 rounded space-y-3 bg-[var(--primary)]/10 border-[var(--primary)]/30">
+              <h4 className="font-semibold text-[var(--primary)]">Detalles de la APP</h4>
 
               <AppField
                 id="endpoint"
@@ -551,7 +551,7 @@ const title = `${project.trim().toUpperCase()} - ${tool.trim()} - ${errorDesc.tr
           {customFields.map((f, i) => (
             <div key={i} className="flex gap-2">
               <input
-                className="border p-2 rounded w-1/2 text-sm"
+                className="border border-[var(--surface-border)] bg-[var(--background)] text-[var(--foreground)] p-2 rounded w-1/2 text-sm"
                 placeholder="Nombre"
                 value={f.label}
                 onChange={(e) => {
@@ -561,7 +561,7 @@ const title = `${project.trim().toUpperCase()} - ${tool.trim()} - ${errorDesc.tr
                 }}
               />
               <input
-                className="border p-2 rounded w-1/2 text-sm"
+                className="border border-[var(--surface-border)] bg-[var(--background)] text-[var(--foreground)] p-2 rounded w-1/2 text-sm"
                 placeholder="Valor"
                 value={f.value}
                 onChange={(e) => {
@@ -592,7 +592,7 @@ const title = `${project.trim().toUpperCase()} - ${tool.trim()} - ${errorDesc.tr
 
         {/* ---------- Versiones de aplicativos/componentes ---------- */}
         <section className="mt-6 space-y-3">
-          <label className="block font-medium text-black-700">
+          <label className="block font-medium text-[var(--foreground)]">
             Versiones de Aplicativos/Componentes
           </label>
           {versions.map((v, i) => (
@@ -600,7 +600,7 @@ const title = `${project.trim().toUpperCase()} - ${tool.trim()} - ${errorDesc.tr
               <input
                 type="text"
                 aria-label={`Nombre aplicativo ${i + 1}`}
-                className="border p-2 rounded flex-grow"
+                className="border border-[var(--surface-border)] bg-[var(--background)] text-[var(--foreground)] p-2 rounded flex-grow"
                 placeholder="Nombre aplicativo"
                 value={v.appName}
                 onChange={(e) =>
@@ -610,7 +610,7 @@ const title = `${project.trim().toUpperCase()} - ${tool.trim()} - ${errorDesc.tr
               <input
                 type="text"
                 aria-label={`Versión aplicativo ${i + 1}`}
-                className="border p-2 rounded flex-grow"
+                className="border border-[var(--surface-border)] bg-[var(--background)] text-[var(--foreground)] p-2 rounded flex-grow"
                 placeholder="Versión"
                 value={v.appVersion}
                 onChange={(e) =>
@@ -638,7 +638,7 @@ const title = `${project.trim().toUpperCase()} - ${tool.trim()} - ${errorDesc.tr
 
         {/* ---------- Evidencias ---------- */}
         <section className="mt-6 space-y-3">
-          <label className="block font-medium text-black-700">
+          <label className="block font-medium text-[var(--foreground)]">
             Evidencias
           </label>
           <input
@@ -726,7 +726,7 @@ function Field({
       </label>
       <input
         id={id}
-        className="border p-2 rounded w-full text-sm pr-8"
+        className="border border-[var(--surface-border)] bg-[var(--background)] text-[var(--foreground)] p-2 rounded w-full text-sm pr-8"
         value={value}
         onChange={(e) => setValue(e.target.value)}
       />
@@ -767,7 +767,7 @@ function DbSelect({
 
       <select
         id="db"
-        className="border p-2 rounded w-full pr-8 text-sm bg-white appearance-none"
+        className="border border-[var(--surface-border)] p-2 rounded w-full pr-8 text-sm bg-[var(--background)] text-[var(--foreground)] appearance-none"
         value={value}
         onChange={(e) => setValue(e.target.value)}
       >
@@ -818,7 +818,7 @@ function EnvSelect({
 
       <select
         id="entorno"
-        className="border p-2 rounded w-full pr-8 text-sm bg-white appearance-none"
+        className="border border-[var(--surface-border)] p-2 rounded w-full pr-8 text-sm bg-[var(--background)] text-[var(--foreground)] appearance-none"
         value={value}
         onChange={(e) => setValue(e.target.value)}
       >
@@ -858,7 +858,7 @@ function Input({
     <div>
       <label className="block font-medium">{label}</label>
       <input
-        className="border p-2 rounded w-full"
+        className="border border-[var(--surface-border)] bg-[var(--background)] text-[var(--foreground)] p-2 rounded w-full"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
@@ -884,7 +884,7 @@ function TextArea({
     <div>
       <label className="block font-medium">{label}</label>
       <textarea
-        className="border p-2 rounded w-full"
+        className="border border-[var(--surface-border)] bg-[var(--background)] text-[var(--foreground)] p-2 rounded w-full"
         rows={rows}
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -916,7 +916,7 @@ function AppField({
       <input
         id={id}
         type="text"
-        className="border p-2 rounded w-full text-sm"
+        className="border border-[var(--surface-border)] bg-[var(--background)] text-[var(--foreground)] p-2 rounded w-full text-sm"
         placeholder={placeholder}
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -944,7 +944,7 @@ function AppTextArea({
       <textarea
         id={id}
         rows={2}
-        className="w-full border p-2 rounded text-sm"
+        className="w-full border border-[var(--surface-border)] bg-[var(--background)] text-[var(--foreground)] p-2 rounded text-sm"
         placeholder="Escribe aquí…"
         value={value}
         onChange={(e) => setValue(e.target.value)}

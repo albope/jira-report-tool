@@ -152,7 +152,7 @@ describe('formatReport', () => {
       expect(result).toContain('Successful login');
     });
 
-    it('should format steps as list items', () => {
+    it('should format steps as numbered list for JIRA', () => {
       const result = formatReport(
         createParsedData(),
         createFormData({
@@ -172,9 +172,34 @@ describe('formatReport', () => {
         'jira'
       );
 
-      expect(result).toContain('- Step one');
-      expect(result).toContain('- Step two');
-      expect(result).toContain('- Step three');
+      // Para JIRA: formato numerado inline separado por ║
+      expect(result).toContain('1. Step one');
+      expect(result).toContain('2. Step two');
+      expect(result).toContain('3. Step three');
+    });
+
+    it('should format steps with bullet points and <br> for DOCX', () => {
+      const result = formatReport(
+        createParsedData(),
+        createFormData({
+          batteryTests: [
+            {
+              id: 'TC-001',
+              description: 'Test',
+              steps: 'Step one\nStep two\nStep three',
+              expectedResult: 'OK',
+              obtainedResult: 'OK',
+              testVersion: '1.0',
+              testStatus: 'Exitoso',
+            },
+          ],
+        }),
+        createHiddenFields(),
+        'docx'
+      );
+
+      // Para DOCX: usa bullets y <br> para saltos de línea
+      expect(result).toContain('• Step one<br>• Step two<br>• Step three');
     });
 
     it('should show placeholder when no tests', () => {

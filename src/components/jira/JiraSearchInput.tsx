@@ -46,6 +46,11 @@ export const JiraSearchInput: React.FC<JiraSearchInputProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Sincronizar con initialValue cuando cambie (ej: al volver al paso 1 o reset)
+  useEffect(() => {
+    setInputValue(initialValue);
+  }, [initialValue]);
+
   // Cerrar dropdown al hacer click fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

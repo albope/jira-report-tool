@@ -7,10 +7,14 @@ import {
   Document,
   Packer,
   Footer,
+  Header,
   Paragraph,
   TextRun,
   PageNumber,
   AlignmentType,
+  convertInchesToTwip,
+  TabStopType,
+  TabStopPosition,
 } from "docx";
 import { markdownToDocx } from "@/utils/markdownToDocx";
 import formatReport, { FormData, HiddenFields } from "@/utils/formatReport";
@@ -21,12 +25,16 @@ import {
   ArrowLeft,
   RotateCcw,
   AlertCircle,
-  Info,
   Sparkles,
   FileCheck,
+  Save,
+  Check,
+  Loader2,
+  FilePlus2,
 } from "lucide-react";
 
-import { PreviewTabs, PreviewContent, ExportMenu } from "./step-three";
+import { PreviewTabs, PreviewContent, ExportMenu, PublishToJiraButton } from "./step-three";
+import { Button } from "@/components/ui/Button";
 import type { PreviewFormat } from "./step-three/types";
 import type { ExportFormat } from "./step-three/ExportMenu";
 
@@ -37,11 +45,14 @@ interface ReportOutputProps {
   onReset: () => void;
   onGoBackToStep2: () => void;
   jiraCode?: string;
+  onSaveToHistory?: () => Promise<void>;
+  isSaving?: boolean;
+  lastSaved?: Date | null;
 }
 
 type StatusMessageType = {
   message: string;
-  type: "success" | "error" | "info";
+  type: "success" | "error";
 } | null;
 
 export default function ReportOutput({
@@ -51,6 +62,9 @@ export default function ReportOutput({
   onReset,
   onGoBackToStep2,
   jiraCode,
+  onSaveToHistory,
+  isSaving = false,
+  lastSaved,
 }: ReportOutputProps) {
   const [previewFormat, setPreviewFormat] = useState<PreviewFormat>("jira");
   const [isExporting, setIsExporting] = useState(false);
@@ -58,11 +72,22 @@ export default function ReportOutput({
   const [lastExportSuccess, setLastExportSuccess] = useState<ExportFormat | null>(null);
   const [statusMessage, setStatusMessage] = useState<StatusMessageType>(null);
   const [reportContent, setReportContent] = useState<string>("");
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+  const [completedAction, setCompletedAction] = useState<"jira" | "export" | null>(null);
+
+  // Mostrar feedback de guardado exitoso
+  useEffect(() => {
+    if (lastSaved && !isSaving) {
+      setShowSaveSuccess(true);
+      const timer = setTimeout(() => setShowSaveSuccess(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [lastSaved, isSaving]);
 
   // Generar el contenido del reporte
   useEffect(() => {
     if (parsedData) {
-      const format = previewFormat === "word" || previewFormat === "pdf" ? "docx" : "jira";
+      const format = previewFormat === "word" ? "docx" : "jira";
       setReportContent(formatReport(parsedData, formData, hiddenFields, format));
     }
   }, [parsedData, formData, hiddenFields, previewFormat]);
@@ -99,85 +124,126 @@ export default function ReportOutput({
       setLastExportSuccess(null);
 
       try {
-        switch (format) {
-          case "clipboard": {
-            const reportForJira = formatReport(parsedData, formData, hiddenFields, "jira");
-            await navigator.clipboard.writeText(reportForJira);
-            setStatusMessage({
-              message: "Reporte copiado al portapapeles (formato JIRA)",
-              type: "success",
-            });
-            setLastExportSuccess("clipboard");
-            break;
-          }
+        // Solo exportación a Word
+        const reportForDocx = formatReport(parsedData, formData, hiddenFields, "docx");
+        const docElements = markdownToDocx(reportForDocx);
 
-          case "docx": {
-            const reportForDocx = formatReport(parsedData, formData, hiddenFields, "docx");
-            const docElements = markdownToDocx(reportForDocx);
-            const doc = new Document({
-              sections: [
-                {
-                  properties: {},
-                  footers: {
-                    default: new Footer({
+        // Fecha formateada para el documento
+        const formattedDate = formData.date || new Date().toISOString().split("T")[0];
+        const reportTitle = `Reporte de Pruebas - ${jiraCode || "Sin código"}`;
+
+        const doc = new Document({
+          // Metadata del documento
+          creator: formData.tester || "JIRA Report Tool",
+          title: reportTitle,
+          description: `Reporte de pruebas para ${jiraCode || "ticket"} generado el ${formattedDate}`,
+          keywords: "pruebas, QA, reporte, JIRA",
+          lastModifiedBy: formData.tester || "JIRA Report Tool",
+
+          sections: [
+            {
+              properties: {
+                // Márgenes personalizados (en twips: 1 inch = 1440 twips)
+                page: {
+                  margin: {
+                    top: convertInchesToTwip(1),
+                    right: convertInchesToTwip(1),
+                    bottom: convertInchesToTwip(1),
+                    left: convertInchesToTwip(1),
+                  },
+                },
+              },
+              headers: {
+                default: new Header({
+                  children: [
+                    new Paragraph({
+                      tabStops: [
+                        {
+                          type: TabStopType.RIGHT,
+                          position: TabStopPosition.MAX,
+                        },
+                      ],
                       children: [
-                        new Paragraph({
-                          alignment: AlignmentType.CENTER,
-                          children: [
-                            new TextRun({ children: [PageNumber.CURRENT] }),
-                            new TextRun({ children: [" / ", PageNumber.TOTAL_PAGES] }),
-                          ],
+                        new TextRun({
+                          text: jiraCode || "Reporte de Pruebas",
+                          bold: true,
+                          size: 20, // 10pt
+                          color: "666666",
+                        }),
+                        new TextRun({
+                          text: "\t", // Tab para alinear a la derecha
+                        }),
+                        new TextRun({
+                          text: formattedDate,
+                          size: 20,
+                          color: "666666",
+                        }),
+                      ],
+                      border: {
+                        bottom: {
+                          color: "CCCCCC",
+                          space: 1,
+                          size: 6,
+                          style: "single" as const,
+                        },
+                      },
+                      spacing: { after: 200 },
+                    }),
+                  ],
+                }),
+              },
+              footers: {
+                default: new Footer({
+                  children: [
+                    new Paragraph({
+                      alignment: AlignmentType.CENTER,
+                      border: {
+                        top: {
+                          color: "CCCCCC",
+                          space: 1,
+                          size: 6,
+                          style: "single" as const,
+                        },
+                      },
+                      spacing: { before: 200 },
+                      children: [
+                        new TextRun({
+                          text: "Página ",
+                          size: 18,
+                          color: "666666",
+                        }),
+                        new TextRun({
+                          children: [PageNumber.CURRENT],
+                          size: 18,
+                          color: "666666",
+                        }),
+                        new TextRun({
+                          text: " de ",
+                          size: 18,
+                          color: "666666",
+                        }),
+                        new TextRun({
+                          children: [PageNumber.TOTAL_PAGES],
+                          size: 18,
+                          color: "666666",
                         }),
                       ],
                     }),
-                  },
-                  children: docElements,
-                },
-              ],
-            });
-            const blob = await Packer.toBlob(doc);
-            saveAs(blob, getFilename("docx"));
-            setStatusMessage({
-              message: "Documento Word exportado correctamente",
-              type: "success",
-            });
-            setLastExportSuccess("docx");
-            break;
-          }
-
-          case "html": {
-            const reportForHtml = formatReport(parsedData, formData, hiddenFields, "jira");
-            const htmlContent = generateHtmlDocument(reportForHtml, formData.jiraCode);
-            const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
-            saveAs(blob, getFilename("html"));
-            setStatusMessage({
-              message: "Archivo HTML exportado correctamente",
-              type: "success",
-            });
-            setLastExportSuccess("html");
-            break;
-          }
-
-          case "pdf": {
-            // Para PDF, generamos una página HTML y la abrimos para imprimir
-            const reportForPdf = formatReport(parsedData, formData, hiddenFields, "docx");
-            const htmlForPrint = generatePrintableHtml(reportForPdf, formData.jiraCode);
-            const printWindow = window.open("", "_blank");
-            if (printWindow) {
-              printWindow.document.write(htmlForPrint);
-              printWindow.document.close();
-              printWindow.onload = () => {
-                printWindow.print();
-              };
-            }
-            setStatusMessage({
-              message: "Ventana de impresión abierta. Selecciona 'Guardar como PDF'",
-              type: "info",
-            });
-            setLastExportSuccess("pdf");
-            break;
-          }
-        }
+                  ],
+                }),
+              },
+              children: docElements,
+            },
+          ],
+        });
+        const blob = await Packer.toBlob(doc);
+        saveAs(blob, getFilename("docx"));
+        setStatusMessage({
+          message: "Documento Word exportado correctamente",
+          type: "success",
+        });
+        setLastExportSuccess("docx");
+        setCompletedAction("export");
       } catch (error) {
         console.error("Error during export:", error);
         setStatusMessage({
@@ -189,8 +255,12 @@ export default function ReportOutput({
         setExportingFormat(null);
       }
     },
-    [parsedData, formData, hiddenFields, getFilename]
+    [parsedData, formData, hiddenFields, getFilename, jiraCode]
   );
+
+  const handleJiraPublishSuccess = useCallback(() => {
+    setCompletedAction("jira");
+  }, []);
 
   if (!parsedData) {
     return (
@@ -270,12 +340,71 @@ export default function ReportOutput({
               activeFormat={previewFormat}
               onFormatChange={setPreviewFormat}
             />
-            <ExportMenu
-              onExport={handleExport}
-              isExporting={isExporting}
-              exportingFormat={exportingFormat}
-              lastExportSuccess={lastExportSuccess}
-            />
+            <div className="flex items-center gap-3">
+              {/* Botón para guardar en historial */}
+              {onSaveToHistory && (
+                <Button
+                  variant="secondary"
+                  size="md"
+                  onClick={onSaveToHistory}
+                  disabled={isSaving}
+                  className="relative"
+                >
+                  <AnimatePresence mode="wait">
+                    {isSaving ? (
+                      <motion.span
+                        key="saving"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        className="flex items-center gap-2"
+                      >
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Guardando...</span>
+                      </motion.span>
+                    ) : showSaveSuccess ? (
+                      <motion.span
+                        key="success"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        className="flex items-center gap-2 text-[var(--success)]"
+                      >
+                        <Check className="w-4 h-4" />
+                        <span>Guardado</span>
+                      </motion.span>
+                    ) : (
+                      <motion.span
+                        key="idle"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        className="flex items-center gap-2"
+                      >
+                        <Save className="w-4 h-4" />
+                        <span>Guardar</span>
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </Button>
+              )}
+              {/* Botón para publicar en JIRA */}
+              {jiraCode && (
+                <PublishToJiraButton
+                  jiraCode={jiraCode}
+                  reportContent={formatReport(parsedData, formData, hiddenFields, "jira")}
+                  variant="secondary"
+                  size="md"
+                  onSuccess={handleJiraPublishSuccess}
+                />
+              )}
+              <ExportMenu
+                onExport={handleExport}
+                isExporting={isExporting}
+                exportingFormat={exportingFormat}
+                lastExportSuccess={lastExportSuccess}
+              />
+            </div>
           </div>
 
           {/* Status message */}
@@ -289,22 +418,54 @@ export default function ReportOutput({
                   flex items-center gap-3 p-4 rounded-xl
                   ${statusMessage.type === "success"
                     ? "bg-[var(--success-soft)] border border-[var(--success)]/30 text-[var(--success-soft-foreground)]"
-                    : ""
-                  }
-                  ${statusMessage.type === "error"
-                    ? "bg-[var(--error-soft)] border border-[var(--error)]/30 text-[var(--error-soft-foreground)]"
-                    : ""
-                  }
-                  ${statusMessage.type === "info"
-                    ? "bg-[var(--primary-soft)] border border-[var(--primary)]/30 text-[var(--primary)]"
-                    : ""
+                    : "bg-[var(--error-soft)] border border-[var(--error)]/30 text-[var(--error-soft-foreground)]"
                   }
                 `}
               >
                 {statusMessage.type === "success" && <CheckCircle className="w-5 h-5 flex-shrink-0" />}
                 {statusMessage.type === "error" && <AlertCircle className="w-5 h-5 flex-shrink-0" />}
-                {statusMessage.type === "info" && <Info className="w-5 h-5 flex-shrink-0" />}
                 <span className="text-sm font-medium">{statusMessage.message}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Banner de acción completada con botón Nuevo Reporte */}
+          <AnimatePresence>
+            {completedAction && (
+              <motion.div
+                initial={{ opacity: 0, y: -10, height: 0 }}
+                animate={{ opacity: 1, y: 0, height: "auto" }}
+                exit={{ opacity: 0, y: -10, height: 0 }}
+                className="
+                  flex flex-col sm:flex-row items-center justify-between gap-4 p-5 rounded-xl
+                  bg-gradient-to-r from-[var(--success)]/10 via-[var(--success)]/5 to-transparent
+                  border border-[var(--success)]/30
+                "
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-[var(--success)]/20">
+                    <CheckCircle className="w-5 h-5 text-[var(--success)]" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-[var(--foreground)]">
+                      {completedAction === "jira"
+                        ? "¡Reporte publicado en JIRA!"
+                        : "¡Documento exportado!"}
+                    </p>
+                    <p className="text-sm text-[var(--foreground-secondary)]">
+                      ¿Listo para crear un nuevo reporte?
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={onReset}
+                  className="whitespace-nowrap shadow-lg shadow-[var(--primary)]/25"
+                >
+                  <FilePlus2 className="w-5 h-5 mr-2" />
+                  Nuevo Reporte
+                </Button>
               </motion.div>
             )}
           </AnimatePresence>
@@ -378,165 +539,4 @@ export default function ReportOutput({
       </div>
     </motion.div>
   );
-}
-
-/**
- * Genera un documento HTML completo para exportación.
- */
-function generateHtmlDocument(markdownContent: string, jiraCode: string): string {
-  // Convertir markdown básico a HTML (simplificado)
-  const htmlBody = markdownContent
-    // Headers
-    .replace(/^### (.*$)/gim, "<h3>$1</h3>")
-    .replace(/^## (.*$)/gim, "<h2>$1</h2>")
-    .replace(/^# (.*$)/gim, "<h1>$1</h1>")
-    // Bold
-    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-    // Italic
-    .replace(/\*(.*?)\*/g, "<em>$1</em>")
-    // Line breaks
-    .replace(/\n/g, "<br>\n")
-    // Emojis section headers
-    .replace(/📌/g, "&#128204;")
-    .replace(/🖥️/g, "&#128421;")
-    .replace(/✅/g, "&#9989;")
-    .replace(/💾/g, "&#128190;")
-    .replace(/📎/g, "&#128206;")
-    .replace(/📝/g, "&#128221;")
-    .replace(/📊/g, "&#128202;")
-    .replace(/🛠️/g, "&#128736;")
-    .replace(/📱/g, "&#128241;");
-
-  return `<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reporte de Pruebas - ${jiraCode}</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      line-height: 1.6;
-      color: #1a1a1a;
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 2rem;
-      background: #f5f5f7;
-    }
-    .container {
-      background: white;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    }
-    h1, h2, h3 { margin: 1.5rem 0 1rem; color: #1a1a1a; }
-    h1 { font-size: 1.75rem; border-bottom: 2px solid #3b82f6; padding-bottom: 0.5rem; }
-    h2 { font-size: 1.25rem; color: #374151; }
-    h3 { font-size: 1rem; color: #6b7280; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 1rem 0;
-      font-size: 0.875rem;
-    }
-    th, td {
-      border: 1px solid #e5e7eb;
-      padding: 0.75rem;
-      text-align: left;
-    }
-    th {
-      background: #f9fafb;
-      font-weight: 600;
-      color: #374151;
-    }
-    tr:nth-child(even) { background: #f9fafb; }
-    pre, code {
-      background: #1a1a2e;
-      color: #e5e5e5;
-      padding: 1rem;
-      border-radius: 8px;
-      overflow-x: auto;
-      font-family: 'Fira Code', monospace;
-      font-size: 0.875rem;
-    }
-    .footer {
-      margin-top: 2rem;
-      padding-top: 1rem;
-      border-top: 1px solid #e5e7eb;
-      text-align: center;
-      color: #6b7280;
-      font-size: 0.75rem;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    ${htmlBody}
-    <div class="footer">
-      Generado automáticamente por JIRA Report Tool
-    </div>
-  </div>
-</body>
-</html>`;
-}
-
-/**
- * Genera HTML para impresión/PDF.
- */
-function generatePrintableHtml(markdownContent: string, jiraCode: string): string {
-  const htmlBody = markdownContent
-    .replace(/^### (.*$)/gim, "<h3>$1</h3>")
-    .replace(/^## (.*$)/gim, "<h2>$1</h2>")
-    .replace(/^# (.*$)/gim, "<h1>$1</h1>")
-    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*(.*?)\*/g, "<em>$1</em>")
-    .replace(/\n/g, "<br>\n")
-    .replace(/📌/g, "&#128204;")
-    .replace(/🖥️/g, "&#128421;")
-    .replace(/✅/g, "&#9989;")
-    .replace(/💾/g, "&#128190;")
-    .replace(/📎/g, "&#128206;")
-    .replace(/📝/g, "&#128221;")
-    .replace(/📊/g, "&#128202;")
-    .replace(/🛠️/g, "&#128736;")
-    .replace(/📱/g, "&#128241;");
-
-  return `<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Reporte de Pruebas - ${jiraCode}</title>
-  <style>
-    @page {
-      size: A4;
-      margin: 2cm;
-    }
-    body {
-      font-family: 'Helvetica Neue', Arial, sans-serif;
-      line-height: 1.5;
-      color: #000;
-      font-size: 11pt;
-    }
-    h1 { font-size: 16pt; margin-bottom: 0.5cm; border-bottom: 1pt solid #000; }
-    h2 { font-size: 13pt; margin-top: 0.5cm; }
-    h3 { font-size: 11pt; }
-    table { width: 100%; border-collapse: collapse; margin: 0.5cm 0; }
-    th, td { border: 1pt solid #ccc; padding: 4pt 6pt; font-size: 9pt; }
-    th { background: #f0f0f0; font-weight: bold; }
-    pre, code {
-      font-family: 'Courier New', monospace;
-      background: #f5f5f5;
-      padding: 8pt;
-      font-size: 9pt;
-    }
-    @media print {
-      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    }
-  </style>
-</head>
-<body>
-  ${htmlBody}
-</body>
-</html>`;
 }

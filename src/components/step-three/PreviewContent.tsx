@@ -2,7 +2,7 @@
 
 import ReactMarkdown from "react-markdown";
 import { motion } from "framer-motion";
-import { AlertCircle, FileImage, Code, Eye } from "lucide-react";
+import { AlertCircle, FileImage } from "lucide-react";
 import type { PreviewFormat } from "./types";
 
 interface PreviewContentProps {
@@ -106,133 +106,48 @@ export function PreviewContent({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        className={`prose prose-sm sm:prose-base max-w-none ${className}`}
-      >
-        <ReactMarkdown components={markdownComponents}>{content}</ReactMarkdown>
-      </motion.div>
-    );
-  }
-
-  if (format === "word") {
-    return (
-      <motion.div
-        key="word"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
         className={className}
       >
-        {/* Simula un documento Word con estilo de página */}
-        <div
-          className="
-            bg-white dark:bg-gray-100 shadow-xl rounded-sm mx-auto
-            p-8 sm:p-12 max-w-[21cm] min-h-[29.7cm]
-            border border-[var(--surface-border)]
-          "
-          style={{ fontFamily: "Times New Roman, serif" }}
-        >
-          <div className="prose prose-sm max-w-none text-gray-900">
-            <ReactMarkdown components={markdownComponents}>{content}</ReactMarkdown>
-          </div>
-        </div>
-      </motion.div>
-    );
-  }
-
-  if (format === "html") {
-    return (
-      <motion.div
-        key="html"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        className={className}
-      >
-        <div className="flex items-center gap-2 mb-4 text-[var(--foreground-secondary)]">
-          <Code className="w-4 h-4" />
-          <span className="text-sm font-medium">Código HTML</span>
-        </div>
         <div
           className="
             p-4 rounded-xl
-            bg-[#1a1a2e] text-gray-100
-            font-mono text-sm
-            overflow-x-auto max-h-[60vh]
+            bg-[var(--surface-hover)]
+            font-mono text-sm leading-relaxed
+            overflow-x-auto max-h-[55vh]
             border border-[var(--surface-border)]
+            custom-scrollbar
           "
         >
-          <pre className="whitespace-pre-wrap break-words">
-            {generateHtmlPreview(content)}
-          </pre>
+          <pre className="whitespace-pre-wrap break-words text-[var(--foreground)]">{content}</pre>
         </div>
       </motion.div>
     );
   }
 
-  if (format === "pdf") {
-    return (
-      <motion.div
-        key="pdf"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        className={className}
+  // format === "word"
+  return (
+    <motion.div
+      key="word"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      className={className}
+    >
+      {/* Simula un documento Word con estilo de página */}
+      <div
+        className="
+          bg-white dark:bg-gray-100 shadow-xl rounded-sm mx-auto
+          p-8 sm:p-12 max-w-[21cm] min-h-[29.7cm]
+          border border-[var(--surface-border)]
+        "
+        style={{ fontFamily: "Times New Roman, serif" }}
       >
-        {/* Simula una página PDF */}
-        <div className="flex items-center gap-2 mb-4 text-[var(--foreground-secondary)]">
-          <Eye className="w-4 h-4" />
-          <span className="text-sm font-medium">Vista previa PDF</span>
+        <div className="prose prose-sm max-w-none text-gray-900">
+          <ReactMarkdown components={markdownComponents}>{content}</ReactMarkdown>
         </div>
-        <div
-          className="
-            bg-white shadow-2xl mx-auto
-            p-8 sm:p-10 max-w-[21cm]
-            border border-gray-300
-          "
-          style={{
-            fontFamily: "Helvetica, Arial, sans-serif",
-            minHeight: "29.7cm",
-          }}
-        >
-          <div className="prose prose-sm max-w-none text-gray-800">
-            <ReactMarkdown components={markdownComponents}>{content}</ReactMarkdown>
-          </div>
-        </div>
-      </motion.div>
-    );
-  }
-
-  return null;
-}
-
-/**
- * Genera una vista previa del HTML que se exportaría.
- */
-function generateHtmlPreview(markdownContent: string): string {
-  // Una representación simplificada del HTML
-  const htmlTemplate = `<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reporte de Pruebas</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    th { background-color: #f5f5f5; font-weight: 600; }
-    pre { background: #f5f5f5; padding: 1rem; border-radius: 4px; overflow-x: auto; }
-  </style>
-</head>
-<body>
-  <main>
-    <!-- Contenido generado desde Markdown -->
-    ${markdownContent.substring(0, 500)}...
-  </main>
-</body>
-</html>`;
-
-  return htmlTemplate;
+      </div>
+    </motion.div>
+  );
 }
 
 export default PreviewContent;

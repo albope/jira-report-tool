@@ -219,6 +219,123 @@ export const StyledTextarea = forwardRef<HTMLTextAreaElement, StyledTextareaProp
 StyledTextarea.displayName = "StyledTextarea";
 
 // ============================================
+// STYLED STEPS TEXTAREA (with line numbers)
+// ============================================
+
+interface StyledStepsTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  label: string;
+  id: string;
+  required?: boolean;
+  error?: boolean | string;
+  hint?: string;
+}
+
+export const StyledStepsTextarea = forwardRef<HTMLTextAreaElement, StyledStepsTextareaProps>(
+  ({ label, id, required, error, hint, className, value, onChange, rows = 4, ...props }, ref) => {
+    const hasError = Boolean(error);
+    const errorMessage = typeof error === "string" ? error : null;
+    const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+    const lineNumbersRef = React.useRef<HTMLDivElement>(null);
+
+    // Combine refs
+    React.useImperativeHandle(ref, () => textareaRef.current!);
+
+    // Calculate line numbers based on content
+    const lines = typeof value === "string" ? value.split("\n") : [""];
+    const lineCount = Math.max(lines.length, rows || 4);
+
+    // Sync scroll between line numbers and textarea
+    const handleScroll = () => {
+      if (lineNumbersRef.current && textareaRef.current) {
+        lineNumbersRef.current.scrollTop = textareaRef.current.scrollTop;
+      }
+    };
+
+    return (
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <label htmlFor={id} className={labelClasses}>
+            {label}
+            {required && <span className="text-[var(--error)] ml-1">*</span>}
+          </label>
+          <span className="text-xs text-[var(--primary)] font-medium">
+            ✨ Numeración automática
+          </span>
+        </div>
+
+        <div className="relative flex rounded-xl overflow-hidden border border-[var(--input-border)] dark:border-white/[0.08] focus-within:border-[var(--primary)] dark:focus-within:border-[var(--primary)] focus-within:ring-2 focus-within:ring-[var(--input-ring)] transition-all duration-200">
+          {/* Line Numbers Column */}
+          <div
+            ref={lineNumbersRef}
+            className="
+              flex-shrink-0 w-10
+              bg-[var(--surface-hover)] dark:bg-white/[0.03]
+              border-r border-[var(--input-border)] dark:border-white/[0.08]
+              overflow-hidden select-none
+              py-3
+            "
+            aria-hidden="true"
+          >
+            {Array.from({ length: lineCount }, (_, i) => (
+              <div
+                key={i}
+                className={`
+                  text-xs text-right pr-2 leading-[1.625rem]
+                  ${i < lines.length && lines[i].trim()
+                    ? "text-[var(--primary)] font-semibold"
+                    : "text-[var(--foreground-muted)]"
+                  }
+                `}
+              >
+                {i + 1}.
+              </div>
+            ))}
+          </div>
+
+          {/* Textarea */}
+          <textarea
+            ref={textareaRef}
+            id={id}
+            value={value}
+            onChange={onChange}
+            onScroll={handleScroll}
+            rows={rows}
+            {...props}
+            className={`
+              flex-1
+              px-3 py-3
+              bg-[var(--input-bg)] dark:bg-[var(--surface)]
+              text-[var(--foreground)] text-sm
+              placeholder:text-[var(--input-placeholder)]
+              resize-none
+              focus:outline-none
+              leading-[1.625rem]
+              ${hasError ? "text-[var(--error)]" : ""}
+              ${className || ""}
+            `}
+            placeholder="Escribe un paso por línea..."
+          />
+        </div>
+
+        {/* Hint or Error Message */}
+        <motion.p
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`
+            text-xs mt-1.5
+            ${hasError ? "text-[var(--error)]" : "text-[var(--foreground-muted)]"}
+          `}
+        >
+          {errorMessage || hint || "💡 Cada línea se convertirá en un paso numerado en el reporte"}
+        </motion.p>
+      </div>
+    );
+  }
+);
+
+StyledStepsTextarea.displayName = "StyledStepsTextarea";
+
+// ============================================
 // STYLED SELECT
 // ============================================
 

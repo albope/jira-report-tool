@@ -1,7 +1,7 @@
 // src/components/GenerateReportWorkflow.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import StepOnePaste from "@/components/StepOnePaste";
@@ -13,6 +13,8 @@ import { useToast } from "@/components/ui/Toast";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { AutoSaveIndicator } from "@/components/ui/AutoSaveIndicator";
 import { PageLoadingSkeleton } from "@/components/ui/Skeleton";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { useReportHistoryAPI as useReportHistory } from "@/hooks/useReportHistoryAPI";
 
 // INTERFACES
 interface HiddenFields {
@@ -132,6 +134,8 @@ export default function GenerateReportWorkflow() {
   const searchParams = useSearchParams();
   const toast = useToast();
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   const [step, setStep] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -204,6 +208,55 @@ export default function GenerateReportWorkflow() {
     debounceMs: 2000,
     enabled: step === 2,
   });
+
+  // Report history hook for saving
+  const { saveCurrentReport } = useReportHistory();
+
+  // Keyboard shortcut handlers
+  const handleSaveToHistory = useCallback(async () => {
+    if (step >= 2 && parsedData && formData.jiraCode) {
+      setIsSaving(true);
+      try {
+        const id = await saveCurrentReport({ parsedData, formData, hiddenFields });
+        if (id) {
+          setLastSaved(new Date());
+          toast.success("Reporte guardado", "Se ha guardado en el historial.");
+        } else {
+          toast.error("Error al guardar", "No se pudo guardar el reporte. Verifica tu conexión.");
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "No se pudo guardar el reporte.";
+        toast.error("Error al guardar", errorMessage);
+      } finally {
+        setIsSaving(false);
+      }
+    } else {
+      toast.warning("No se puede guardar", "Completa al menos el paso 2 antes de guardar.");
+    }
+  }, [step, parsedData, formData, hiddenFields, saveCurrentReport, toast]);
+
+  const handleNextStep = useCallback(() => {
+    if (step === 1 && jiraContent.trim()) {
+      // If in step 1 with content, parse and go to step 2
+      const result = parseJiraContent(jiraContent);
+      setParsedData(result);
+      setJiraCodeLocked(false);
+      toast.success("Contenido procesado", "Puedes continuar completando el formulario.");
+      setStep(2);
+      router.push(`/generate-report?step=2`, { scroll: false });
+    } else if (step === 2 && parsedData) {
+      // If in step 2, go to step 3 (generate report)
+      toast.info("Generando reporte", "Tu reporte está listo para visualizar.");
+      setStep(3);
+      router.push(`/generate-report?step=3`, { scroll: false });
+    }
+  }, [step, jiraContent, parsedData, router, toast]);
+
+  // Register keyboard shortcuts
+  useKeyboardShortcuts([
+    { key: "s", ctrl: true, handler: handleSaveToHistory },
+    { key: "Enter", ctrl: true, handler: handleNextStep },
+  ]);
 
   // Initialize loading
   useEffect(() => {
@@ -292,6 +345,8 @@ export default function GenerateReportWorkflow() {
       sessionStorage.removeItem('generateReportJiraCodeLocked');
       sessionStorage.removeItem('generateReportJiraContent');
       sessionStorage.removeItem('generateReportParsedData');
+      sessionStorage.removeItem('stepOneJiraKey');
+      sessionStorage.removeItem('stepOneFetchedJiraTitle');
       localStorage.removeItem('jira-report-autosave');
     }
     setFormData(defaultFormData);
@@ -395,6 +450,7 @@ export default function GenerateReportWorkflow() {
               jiraContent={jiraContent}
               setJiraContent={setJiraContent}
               onParse={handleParseJira}
+              initialJiraKey={formData.jiraCode}
             />
           </motion.div>
         )}
@@ -458,6 +514,9 @@ export default function GenerateReportWorkflow() {
               onReset={handleReset}
               onGoBackToStep2={goBackToStep2}
               jiraCode={formData.jiraCode}
+              onSaveToHistory={handleSaveToHistory}
+              isSaving={isSaving}
+              lastSaved={lastSaved}
             />
           </motion.div>
         )}

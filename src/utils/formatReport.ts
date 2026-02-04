@@ -63,10 +63,42 @@ export interface FormData {
 // --- Fin Interfaces ---
 
 
-function formatStepsCell(steps: string): string {
+function formatStepsCell(steps: string, targetOutput: 'jira' | 'docx'): string {
   const lines = steps.split(/\r?\n/).filter((l) => l.trim());
-  // Usar <br> para saltos de línea en celdas de tabla markdown
+
+  if (targetOutput === 'jira') {
+    // Para JIRA: usar formato numerado inline separado por " | " que es más legible
+    // y no causa problemas de parsing en tablas
+    return lines.map((l, i) => `${i + 1}. ${l.replace(/\|/g, '/')}`).join(" ║ ");
+  }
+
+  // Para DOCX: usar <br> para saltos de línea que el convertidor puede manejar
   return lines.map((l) => `• ${l.replace(/\|/g, '\\|')}`).join("<br>");
+}
+
+// Helper para formatear texto en negrita según el formato de salida
+function bold(text: string, targetOutput: 'jira' | 'docx'): string {
+  return targetOutput === 'jira' ? `*${text}*` : `**${text}**`;
+}
+
+// Helper para crear tablas en formato JIRA wiki o Markdown
+function createTable(
+  headers: string[],
+  rows: string[][],
+  targetOutput: 'jira' | 'docx'
+): string {
+  if (targetOutput === 'jira') {
+    // JIRA Wiki format: ||Header1||Header2|| y |Cell1|Cell2|
+    const headerRow = '||' + headers.join('||') + '||';
+    const dataRows = rows.map(row => '|' + row.join('|') + '|').join('\n');
+    return headerRow + '\n' + dataRows;
+  } else {
+    // Markdown format
+    const headerRow = '| ' + headers.join(' | ') + ' |';
+    const separator = '| ' + headers.map(() => '---').join(' | ') + ' |';
+    const dataRows = rows.map(row => '| ' + row.join(' | ') + ' |').join('\n');
+    return headerRow + '\n' + separator + '\n' + dataRows;
+  }
 }
 
 export default function formatReport(
@@ -76,35 +108,32 @@ export default function formatReport(
   targetOutput: 'jira' | 'docx' // <--- NUEVO PARÁMETRO
 ): string {
   const finalDate = formData.date || new Date().toISOString().split("T")[0];
+  const b = (text: string) => bold(text, targetOutput);
 
-  // --- Versiones (sin cambios) ---
-  let versionTable = "";
-  formData.versions.forEach((v) => {
-    const appName = v.appName.trim().replace(/\|/g, '\\|');
-    const appVersion = v.appVersion.trim().replace(/\|/g, '\\|');
-    versionTable += `| ${appName} | ${appVersion} |\n`;
-  });
-  if (!versionTable) {
-    versionTable = "| (No hay versiones) | (N/A) |\n";
-  }
+  // --- Versiones ---
+  const versionHeaders = [b('Aplicativo'), b('Versión')];
+  const versionRows: string[][] = formData.versions.length > 0
+    ? formData.versions.map(v => [
+        v.appName.trim().replace(/\|/g, '/'),
+        v.appVersion.trim().replace(/\|/g, '/')
+      ])
+    : [['(No hay versiones)', '(N/A)']];
+  const versionTable = createTable(versionHeaders, versionRows, targetOutput);
 
-  // --- Batería de Pruebas (sin cambios) ---
-  let batteryTable = `| ID Prueba | Descripción | Pasos | Resultado Esperado | Resultado Obtenido | Versión | Estado |\n`;
-  batteryTable += `| --------- | ----------- | ----- | ------------------ | ------------------ | ------- | ------ |\n`;
-  if (formData.batteryTests.length) {
-    formData.batteryTests.forEach((bt) => {
-      const id = bt.id.trim().replace(/\|/g, '\\|');
-      const description = bt.description.replace(/\|/g, '\\|');
-      const stepsFormatted = formatStepsCell(bt.steps);
-      const expectedResult = bt.expectedResult.replace(/\|/g, '\\|');
-      const obtainedResult = bt.obtainedResult.replace(/\|/g, '\\|');
-      const testVersion = bt.testVersion.replace(/\|/g, '\\|');
-      const testStatus = bt.testStatus.replace(/\|/g, '\\|');
-      batteryTable += `| ${id} | ${description} | ${stepsFormatted} | ${expectedResult} | ${obtainedResult} | ${testVersion} | ${testStatus} |\n`;
-    });
-  } else {
-    batteryTable += "| (Sin pruebas) | - | - | - | - | - | - |\n";
-  }
+  // --- Batería de Pruebas ---
+  const batteryHeaders = ['ID', 'Descripción', 'Pasos', 'Resultado Esperado', 'Resultado Obtenido', 'Versión', 'Estado'];
+  const batteryRows: string[][] = formData.batteryTests.length > 0
+    ? formData.batteryTests.map(bt => [
+        bt.id.trim().replace(/\|/g, '/'),
+        bt.description.replace(/\|/g, '/'),
+        formatStepsCell(bt.steps, targetOutput),
+        bt.expectedResult.replace(/\|/g, '/'),
+        bt.obtainedResult.replace(/\|/g, '/'),
+        bt.testVersion.replace(/\|/g, '/'),
+        bt.testStatus.replace(/\|/g, '/')
+      ])
+    : [['(Sin pruebas)', '-', '-', '-', '-', '-', '-']];
+  const batteryTable = createTable(batteryHeaders, batteryRows, targetOutput);
 
   // --- Datos de Prueba (sin cambios) ---
   const datosDePrueba = formData.datosDePrueba?.trim() || "(Sin datos de prueba)";
@@ -118,8 +147,11 @@ export default function formatReport(
       const imagePlaceholders = testCasesWithImages.map(t => {
         const cleanId = t.id.trim();
         const numImages = t.images!.length;
-        const imageNoun = numImages === 1 ? "imagen" : "imágenes";
-        return `* Para el caso de prueba **${cleanId}**: Se han adjuntado ${numImages} ${imageNoun}. Por favor, consúltelas en el documento Word adjunto o en el comentario aparte.`;
+        const isSingular = numImages === 1;
+        const imageNoun = isSingular ? "imagen" : "imágenes";
+        const verb = isSingular ? "Se ha adjuntado" : "Se han adjuntado";
+        const consult = isSingular ? "consúltela" : "consúltelas";
+        return `* Para el caso de prueba ${b(cleanId)}: ${verb} ${numImages} ${imageNoun}. Por favor, ${consult} en el documento Word adjunto o en el comentario aparte.`;
       }).join("\n");
       evidenciaSection = imagePlaceholders;
       if (!evidenciaSection) { // En caso de que el map no produzca nada (aunque filter ya lo asegura)
@@ -141,37 +173,47 @@ export default function formatReport(
   }
 
 
-  // --- Logs Relevantes (sin cambios) ---
+  // --- Logs Relevantes ---
   let logsSection = "";
   if (formData.logsRelevantes && formData.logsRelevantes.trim()) {
-    logsSection = "```log\n" + formData.logsRelevantes.trim() + "\n```";
+    if (targetOutput === 'jira') {
+      // JIRA usa {code} para bloques de código
+      logsSection = "{code:title=Logs}\n" + formData.logsRelevantes.trim() + "\n{code}";
+    } else {
+      // Markdown usa triple backticks
+      logsSection = "```log\n" + formData.logsRelevantes.trim() + "\n```";
+    }
   } else {
     logsSection = "(No se adjuntaron logs)";
   }
 
-  // --- Resumen de Resultados (sin cambios) ---
-  let summaryTable = `| **Total de Pruebas** | **Pruebas Exitosas** | **Pruebas Fallidas** | **Observaciones** |\n`;
-  summaryTable += `| -------------------- | -------------------- | -------------------- | ----------------- |\n`;
-  const observations = formData.summary.observations.replace(/\|/g, '\\|') || "(N/A)";
-  summaryTable += `| ${formData.summary.totalTests || "0"} | ${formData.summary.successfulTests || "0"} | ${formData.summary.failedTests || "0"} | ${observations} |\n`;
+  // --- Resumen de Resultados ---
+  const summaryHeaders = [b('Total de Pruebas'), b('Pruebas Exitosas'), b('Pruebas Fallidas'), b('Observaciones')];
+  const observations = formData.summary.observations.replace(/\|/g, '/') || "(N/A)";
+  const summaryRows = [[
+    formData.summary.totalTests || "0",
+    formData.summary.successfulTests || "0",
+    formData.summary.failedTests || "0",
+    observations
+  ]];
+  const summaryTable = createTable(summaryHeaders, summaryRows, targetOutput);
 
-  // --- Incidencias (sin cambios) ---
+  // --- Incidencias ---
   let incidSection = "";
   if (formData.hasIncidences && formData.incidences.length) {
-    incidSection += `| **ID Prueba** | **Descripción** | **Impacto** | **Estado** |\n`;
-    incidSection += `| ------------- | --------------- | ----------- | ---------- |\n`;
-    formData.incidences.forEach((inc) => {
-      const id = inc.id.trim().replace(/\|/g, '\\|');
-      const description = inc.description.replace(/\|/g, '\\|');
-      const impact = inc.impact.replace(/\|/g, '\\|');
-      const status = inc.status.replace(/\|/g, '\\|');
-      incidSection += `| ${id} | ${description} | ${impact} | ${status} |\n`;
-    });
+    const incidHeaders = [b('ID Prueba'), b('Descripción'), b('Impacto'), b('Estado')];
+    const incidRows = formData.incidences.map(inc => [
+      inc.id.trim().replace(/\|/g, '/'),
+      inc.description.replace(/\|/g, '/'),
+      inc.impact.replace(/\|/g, '/'),
+      inc.status.replace(/\|/g, '/')
+    ]);
+    incidSection = createTable(incidHeaders, incidRows, targetOutput);
   } else {
     incidSection = "No se detectaron incidencias durante las pruebas.";
   }
 
-  // --- Entorno de Pruebas (sin cambios) ---
+  // --- Entorno de Pruebas ---
   const entornoPairs: [string, string][] = [];
   if (!hiddenFields.serverPruebas && formData.serverPruebas.trim()) { entornoPairs.push(["Servidor de Pruebas", formData.serverPruebas]); }
   if (!hiddenFields.ipMaquina && formData.ipMaquina.trim()) { entornoPairs.push(["IP Máquina", formData.ipMaquina]); }
@@ -180,74 +222,65 @@ export default function formatReport(
   if (!hiddenFields.maquetaUtilizada && formData.maquetaUtilizada.trim()) { entornoPairs.push(["Maqueta Utilizada", formData.maquetaUtilizada]); }
   if (!hiddenFields.ambiente && formData.ambiente.trim()) { entornoPairs.push(["Ambiente", formData.ambiente]); }
   formData.customEnvFields.forEach((f) => { if (f.label.trim() && f.value.trim()) { entornoPairs.push([f.label.trim(), f.value.trim()]); } });
-  const entornoList = entornoPairs.map(([k, v]) => `**${k}:** ${v}`).join("\n");
+  const entornoList = entornoPairs.map(([k, v]) => `${b(k + ':')} ${v}`).join("\n");
 
-  // --- Sección APP (sin cambios) ---
-  const appSection = formData.isApp ? `
-📱 **Validación de Aplicación**
+  // --- Sección APP ---
+  let appSection = "";
+  if (formData.isApp) {
+    const appHeaders = [b('Campo'), b('Detalle')];
+    const appRows = [
+      ['Endpoint', formData.endpoint?.replace(/\|/g, '/') || "(N/A)"],
+      ['Sistema Operativo / Versión', formData.sistemaOperativo?.replace(/\|/g, '/') || "(N/A)"],
+      ['Dispositivo de Pruebas', formData.dispositivoPruebas?.replace(/\|/g, '/') || "(N/A)"],
+      ['Precondiciones', formData.precondiciones?.replace(/\|/g, '/') || "(N/A)"],
+      ['Idioma', formData.idioma?.replace(/\|/g, '/') || "(N/A)"]
+    ];
+    const appTable = createTable(appHeaders, appRows, targetOutput);
+    appSection = `📱 ${b('Validación de Aplicación')}\n\n${appTable}`;
+  }
 
-| **Campo** | **Detalle** |
-|---|---|
-| Endpoint | ${formData.endpoint?.replace(/\|/g, '\\|') || "(N/A)"} |
-| Sistema Operativo / Versión | ${formData.sistemaOperativo?.replace(/\|/g, '\\|') || "(N/A)"} |
-| Dispositivo de Pruebas | ${formData.dispositivoPruebas?.replace(/\|/g, '\\|') || "(N/A)"} |
-| Precondiciones | ${formData.precondiciones?.replace(/\|/g, '\\|') || "(N/A)"} |
-| Idioma | ${formData.idioma?.replace(/\|/g, '\\|') || "(N/A)"} |
-` : "";
-
-  // --- Montaje final (sin cambios en la estructura general) ---
+  // --- Montaje final ---
   return `
-📌 **Información General**
-**Título:** ${parsed.title}
-**Código de JIRA:** ${formData.jiraCode}
-**Fecha de Prueba:** ${finalDate}
-**Tester:** ${formData.tester}
-**Estado de la Prueba:** ${formData.testStatus}
+📌 ${b('Información General')}
+${b('Título:')} ${parsed.title}
+${b('Código de JIRA:')} ${formData.jiraCode}
+${b('Fecha de Prueba:')} ${finalDate}
+${b('Tester:')} ${formData.tester}
+${b('Estado de la Prueba:')} ${formData.testStatus}
 
+📌 ${b('Versiones del Sistema')}
 
-📌 **Versiones del Sistema**
+${versionTable}
 
-| **Aplicativo** | **Versión** |
-|---|---|
-${versionTable.trim()}
-
-
-🖥️ **Entorno de Pruebas**
+🖥️ ${b('Entorno de Pruebas')}
 
 ${entornoList.trim() ? entornoList : "(No se especificó entorno)"}
+${appSection ? '\n' + appSection + '\n' : ''}
+✅ ${b('Batería de Pruebas')}
 
-${appSection.trim() ? '\n' + appSection.trim() + '\n' : ''}
-✅ **Batería de Pruebas**
+${batteryTable}
 
-${batteryTable.trim()}
-
-
-💾 **Datos de Prueba**
+💾 ${b('Datos de Prueba')}
 
 ${datosDePrueba}
 
-
-📎 **Evidencias**
+📎 ${b('Evidencias')}
 
 ${evidenciaSection.trim()}
 
-
-📝 **Logs Relevantes**
+📝 ${b('Logs Relevantes')}
 
 ${logsSection}
 
+📊 ${b('Resumen de Resultados')}
 
-📊 **Resumen de Resultados**
+${summaryTable}
 
-${summaryTable.trim()}
+🛠️ ${b('Incidencias Detectadas')}
 
+${incidSection}
 
-🛠️ **Incidencias Detectadas**
-
-${incidSection.includes('|') ? '\n' + incidSection.trim() : incidSection}
-
-
-📌 **Conclusiones**
+📌 ${b('Conclusiones')}
 
 ${formData.conclusion.trim() || "(Sin conclusiones)"}
 `;

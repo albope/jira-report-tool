@@ -60,6 +60,77 @@ function incrementCaseId(originalId: string): string {
   return prefix + nextNum;
 }
 
+// Datos de ejemplo para testing
+const getTestData = (): Partial<FormData> => ({
+  jiraCode: "JIRA-12345",
+  date: new Date().toISOString().split("T")[0],
+  tester: "QA Tester",
+  testStatus: "Exitoso",
+  versions: [
+    { appName: "Frontend", appVersion: "2.5.1" },
+    { appName: "Backend API", appVersion: "1.8.0" },
+  ],
+  serverPruebas: "srv-qa-01.empresa.local",
+  ipMaquina: "192.168.1.100",
+  navegador: "Chrome 120.0.6099.130",
+  baseDatos: "PostgreSQL 15.2 - qa_database",
+  maquetaUtilizada: "Maqueta v3.2 - Producción",
+  ambiente: "QA",
+  isApp: false,
+  endpoint: "https://api.qa.empresa.com/v1",
+  sistemaOperativo: "Windows 11 Pro",
+  dispositivoPruebas: "Desktop - Intel i7, 16GB RAM",
+  precondiciones: "Usuario autenticado con rol de administrador. Datos de prueba cargados en la base de datos.",
+  idioma: "Español (ES)",
+  batteryTests: [
+    {
+      id: "PR-001",
+      description: "Verificar login con credenciales válidas",
+      steps: "Navegar a la página de login\nIngresar usuario: admin@test.com\nIngresar contraseña válida\nClick en botón 'Iniciar sesión'",
+      expectedResult: "El usuario es redirigido al dashboard principal y se muestra mensaje de bienvenida",
+      obtainedResult: "El usuario fue redirigido correctamente al dashboard. Se mostró el mensaje 'Bienvenido, Admin'",
+      testVersion: "1.0",
+      testStatus: "Exitoso",
+      images: [],
+    },
+    {
+      id: "PR-002",
+      description: "Verificar validación de campos obligatorios en formulario",
+      steps: "Navegar al formulario de registro\nDejar todos los campos vacíos\nClick en botón 'Guardar'",
+      expectedResult: "Se muestran mensajes de error en todos los campos obligatorios",
+      obtainedResult: "Se mostraron correctamente los mensajes de validación en los campos: nombre, email y teléfono",
+      testVersion: "1.0",
+      testStatus: "Exitoso",
+      images: [],
+    },
+    {
+      id: "PR-003",
+      description: "Verificar exportación de datos a Excel",
+      steps: "Navegar a la sección de reportes\nSeleccionar rango de fechas\nClick en 'Exportar a Excel'",
+      expectedResult: "Se descarga un archivo .xlsx con los datos del período seleccionado",
+      obtainedResult: "El archivo se descargó correctamente con todos los datos esperados",
+      testVersion: "1.0",
+      testStatus: "Exitoso",
+      images: [],
+    },
+  ],
+  summary: {
+    totalTests: "3",
+    successfulTests: "3",
+    failedTests: "0",
+    observations: "Todas las pruebas ejecutadas pasaron satisfactoriamente. El sistema responde correctamente bajo condiciones normales de uso.",
+  },
+  hasIncidences: false,
+  incidences: [],
+  conclusion: "Las pruebas funcionales del módulo de autenticación y exportación se completaron exitosamente. El sistema cumple con los criterios de aceptación definidos y está listo para pasar al siguiente ambiente.",
+  datosDePrueba: "- Usuario de prueba: admin@test.com / Test123!\n- ID de cliente: CLT-001\n- Rango de fechas: 01/01/2024 - 31/01/2024",
+  logsRelevantes: "[2024-01-15 10:30:45] INFO: Login successful for user admin@test.com\n[2024-01-15 10:31:02] INFO: Export request initiated\n[2024-01-15 10:31:15] INFO: Export completed successfully",
+  customEnvFields: [
+    { label: "Rama de código", value: "feature/JIRA-12345" },
+    { label: "Build number", value: "#2847" },
+  ],
+});
+
 export default function StepTwoForm({
   parsedData,
   formData,
@@ -72,6 +143,49 @@ export default function StepTwoForm({
   jiraCodeLocked = false,
 }: StepTwoFormProps) {
   const [forceUnlock, setForceUnlock] = useState(false);
+  const [showDevButton, setShowDevButton] = useState(false);
+  const clickCountRef = useRef(0);
+  const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Triple-click handler para mostrar botón de dev
+  const handleTitleClick = () => {
+    clickCountRef.current += 1;
+
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+    }
+
+    clickTimerRef.current = setTimeout(() => {
+      clickCountRef.current = 0;
+    }, 500);
+
+    if (clickCountRef.current >= 3) {
+      setShowDevButton((prev) => !prev);
+      clickCountRef.current = 0;
+    }
+  };
+
+  // Keyboard shortcut: Ctrl+Shift+D
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === "D") {
+        e.preventDefault();
+        setShowDevButton((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Rellenar con datos de prueba
+  const fillWithTestData = () => {
+    const testData = getTestData();
+    setFormData((prev) => ({
+      ...prev,
+      ...testData,
+    }));
+    toast.success("Datos de prueba cargados", "Se han rellenado todos los campos con datos de ejemplo.");
+  };
   const [summaryValidationError, setSummaryValidationError] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState("general");
   const [showValidation, setShowValidation] = useState(false);
@@ -422,7 +536,10 @@ export default function StepTwoForm({
                 </div>
 
                 <div>
-                  <h2 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)]">
+                  <h2
+                    className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] cursor-default select-none"
+                    onClick={handleTitleClick}
+                  >
                     Datos del Reporte
                   </h2>
                   <div className="flex items-center gap-2 mt-1">
@@ -436,6 +553,23 @@ export default function StepTwoForm({
                     <span className="text-sm text-[var(--foreground-tertiary)]">
                       Completa la información
                     </span>
+                    {/* Dev button - hidden by default */}
+                    {showDevButton && (
+                      <motion.button
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        onClick={fillWithTestData}
+                        className="
+                          ml-2 px-2 py-1 rounded-md
+                          bg-amber-500/20 text-amber-600 dark:text-amber-400
+                          text-xs font-medium
+                          hover:bg-amber-500/30 transition-colors
+                          border border-amber-500/30
+                        "
+                      >
+                        🧪 Rellenar datos de prueba
+                      </motion.button>
+                    )}
                   </div>
                 </div>
               </div>

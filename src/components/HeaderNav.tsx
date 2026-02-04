@@ -5,6 +5,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FileText, Menu, X } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { JiraConfigButton } from "@/components/settings";
 
 export default function HeaderNav() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -25,8 +26,9 @@ export default function HeaderNav() {
 
   const navLinks = [
     { href: "/", label: "Inicio" },
+    { href: "/dashboard", label: "Dashboard" },
+    { href: "/history", label: "Historial" },
     { href: "/help", label: "Ayuda" },
-    { href: "/release-notes", label: "Release Notes" },
   ];
 
   return (
@@ -71,6 +73,9 @@ export default function HeaderNav() {
 
         {/* Controles de la derecha */}
         <div className="flex items-center gap-2">
+          {/* JIRA Config Button */}
+          <JiraConfigButton size="md" />
+
           {/* Theme Toggle */}
           <ThemeToggle variant="dropdown" size="md" />
 

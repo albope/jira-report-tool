@@ -91,11 +91,11 @@ async function handleComment(req: NextRequest, method: "POST" | "PUT") {
 
     if (method === "PUT" && commentId) {
       // Actualizar comentario existente
-      url = `https://${domain}/rest/api/3/issue/${issueKey}/comment/${commentId}`;
+      url = `https://${domain}/rest/api/2/issue/${issueKey}/comment/${commentId}`;
       httpMethod = "PUT";
     } else {
       // Crear nuevo comentario
-      url = `https://${domain}/rest/api/3/issue/${issueKey}/comment`;
+      url = `https://${domain}/rest/api/2/issue/${issueKey}/comment`;
       httpMethod = "POST";
     }
 
