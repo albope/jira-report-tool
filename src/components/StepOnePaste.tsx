@@ -18,6 +18,9 @@ import {
 import { useState, useEffect, useMemo } from "react";
 import { Tabs } from "@/components/ui/Tabs";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+import { useJira } from "@/contexts/JiraContext";
+import { JiraSearchInput } from "@/components/jira/JiraSearchInput";
+import type { JiraIssue } from "@/types/jira";
 
 interface StepOnePasteProps {
   jiraContent: string;
@@ -33,6 +36,7 @@ export default function StepOnePaste({
   onParse,
 }: StepOnePasteProps) {
   const router = useRouter();
+  const { isConfigured: userJiraConfigured } = useJira();
   const [loadMode, setLoadMode] = useState<LoadMode>("api");
   const [jiraKey, setJiraKey] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,6 +44,14 @@ export default function StepOnePaste({
   const [fetchedJiraTitle, setFetchedJiraTitle] = useState<string | null>(null);
   const [jiraConfigured, setJiraConfigured] = useState<boolean | null>(null);
   const [isConfigError, setIsConfigError] = useState(false);
+
+  // Handler para cuando se selecciona un issue desde JiraSearchInput
+  const handleJiraSelect = (issue: JiraIssue) => {
+    setJiraKey(issue.key);
+    setFetchedJiraTitle(issue.summary);
+    setJiraContent(issue.summary);
+    setFetchError(null);
+  };
 
   // Real-time validation
   const validation = useMemo(() => {
@@ -263,8 +275,8 @@ export default function StepOnePaste({
               transition={{ duration: 0.2 }}
               className="space-y-5"
             >
-              {/* Warning if JIRA not configured */}
-              {jiraConfigured === false && (
+              {/* Warning if JIRA not configured at all */}
+              {!userJiraConfigured && jiraConfigured === false && (
                 <motion.div
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -279,99 +291,116 @@ export default function StepOnePaste({
                       API de JIRA no configurada
                     </p>
                     <p className="text-xs text-[var(--foreground-tertiary)] mt-1">
-                      Configura las variables JIRA_TOKEN, JIRA_EMAIL y JIRA_DOMAIN para habilitar la búsqueda automática.
+                      Configura tus credenciales JIRA en el botón de ajustes del header para habilitar la búsqueda con autocompletado.
                     </p>
                   </div>
                 </motion.div>
               )}
 
-              {/* JIRA Key Input */}
-              <div>
-                <label
-                  htmlFor="jiraKeyInput"
-                  className="block text-sm font-medium text-[var(--foreground-secondary)] mb-2"
-                >
-                  Código del JIRA
-                </label>
-                <div className="flex items-stretch gap-3">
-                  <div className="relative flex-grow">
-                    <input
-                      id="jiraKeyInput"
-                      type="text"
-                      placeholder="Ej: PROYECTO-1234"
-                      value={jiraKey}
-                      onChange={(e) => {
-                        const newKey = e.target.value.toUpperCase();
-                        setJiraKey(newKey);
-                        if (fetchError) setFetchError(null);
-                        if (fetchedJiraTitle) {
-                          setFetchedJiraTitle(null);
-                          setJiraContent("");
-                        }
-                      }}
-                      className={`
-                        w-full rounded-xl px-4 py-3
-                        bg-[var(--input-bg)] dark:bg-[var(--surface)]
-                        border text-[var(--foreground)] text-sm
-                        placeholder:text-[var(--input-placeholder)]
-                        transition-all duration-200
-                        focus:outline-none focus:ring-2 focus:ring-[var(--input-ring)]
-                        dark:focus:shadow-[0_0_0_1px_var(--primary),var(--shadow-glow)]
-                        ${!validation.jiraKey.isValid
-                          ? "border-[var(--warning)] focus:border-[var(--warning)]"
-                          : "border-[var(--input-border)] dark:border-white/[0.08] focus:border-[var(--primary)]"
-                        }
-                      `}
-                    />
-                    {/* Validation Indicator */}
-                    {jiraKey && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        {validation.jiraKey.isValid ? (
-                          <CheckCircle2 className="w-5 h-5 text-[var(--success)]" />
-                        ) : (
-                          <AlertTriangle className="w-5 h-5 text-[var(--warning)]" />
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Search Button */}
-                  <motion.button
-                    onClick={handleFetchSummary}
-                    disabled={loading || !jiraKey.trim() || !validation.jiraKey.isValid}
-                    className="
-                      inline-flex items-center justify-center gap-2
-                      bg-[var(--foreground)] dark:bg-white
-                      text-white dark:text-[var(--background)]
-                      px-5 py-3 rounded-xl
-                      font-medium text-sm
-                      shadow-sm hover:shadow-md
-                      transition-all duration-200
-                      disabled:opacity-50 disabled:cursor-not-allowed
-                      disabled:shadow-none
-                    "
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    {loading ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <Search className="h-5 w-5" />
-                    )}
-                    <span className="hidden sm:inline">
-                      {loading ? "Buscando..." : "Buscar"}
-                    </span>
-                  </motion.button>
-                </div>
-                {validation.jiraKey.message && (
-                  <p className="text-xs text-[var(--warning)] mt-2">
-                    {validation.jiraKey.message}
+              {/* JIRA Search Input - Con autocompletado cuando usuario tiene credenciales */}
+              {userJiraConfigured ? (
+                <div>
+                  <label className="block text-sm font-medium text-[var(--foreground-secondary)] mb-2">
+                    Buscar Issue en JIRA
+                  </label>
+                  <JiraSearchInput
+                    onSelect={handleJiraSelect}
+                    placeholder="Buscar por código (PROJ-123) o texto..."
+                    initialValue={jiraKey}
+                  />
+                  <p className="text-xs text-[var(--foreground-muted)] mt-2">
+                    Escribe al menos 2 caracteres para ver sugerencias
                   </p>
-                )}
-              </div>
+                </div>
+              ) : (
+                /* JIRA Key Input - Sin autocompletado (usa solo env vars del servidor) */
+                <div>
+                  <label
+                    htmlFor="jiraKeyInput"
+                    className="block text-sm font-medium text-[var(--foreground-secondary)] mb-2"
+                  >
+                    Código del JIRA
+                  </label>
+                  <div className="flex items-stretch gap-3">
+                    <div className="relative flex-grow">
+                      <input
+                        id="jiraKeyInput"
+                        type="text"
+                        placeholder="Ej: PROYECTO-1234"
+                        value={jiraKey}
+                        onChange={(e) => {
+                          const newKey = e.target.value.toUpperCase();
+                          setJiraKey(newKey);
+                          if (fetchError) setFetchError(null);
+                          if (fetchedJiraTitle) {
+                            setFetchedJiraTitle(null);
+                            setJiraContent("");
+                          }
+                        }}
+                        className={`
+                          w-full rounded-xl px-4 py-3
+                          bg-[var(--input-bg)] dark:bg-[var(--surface)]
+                          border text-[var(--foreground)] text-sm
+                          placeholder:text-[var(--input-placeholder)]
+                          transition-all duration-200
+                          focus:outline-none focus:ring-2 focus:ring-[var(--input-ring)]
+                          dark:focus:shadow-[0_0_0_1px_var(--primary),var(--shadow-glow)]
+                          ${!validation.jiraKey.isValid
+                            ? "border-[var(--warning)] focus:border-[var(--warning)]"
+                            : "border-[var(--input-border)] dark:border-white/[0.08] focus:border-[var(--primary)]"
+                          }
+                        `}
+                      />
+                      {/* Validation Indicator */}
+                      {jiraKey && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          {validation.jiraKey.isValid ? (
+                            <CheckCircle2 className="w-5 h-5 text-[var(--success)]" />
+                          ) : (
+                            <AlertTriangle className="w-5 h-5 text-[var(--warning)]" />
+                          )}
+                        </div>
+                      )}
+                    </div>
 
-              {/* Loading Progress */}
-              {loading && (
+                    {/* Search Button */}
+                    <motion.button
+                      onClick={handleFetchSummary}
+                      disabled={loading || !jiraKey.trim() || !validation.jiraKey.isValid}
+                      className="
+                        inline-flex items-center justify-center gap-2
+                        bg-[var(--foreground)] dark:bg-white
+                        text-white dark:text-[var(--background)]
+                        px-5 py-3 rounded-xl
+                        font-medium text-sm
+                        shadow-sm hover:shadow-md
+                        transition-all duration-200
+                        disabled:opacity-50 disabled:cursor-not-allowed
+                        disabled:shadow-none
+                      "
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      {loading ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Search className="h-5 w-5" />
+                      )}
+                      <span className="hidden sm:inline">
+                        {loading ? "Buscando..." : "Buscar"}
+                      </span>
+                    </motion.button>
+                  </div>
+                  {validation.jiraKey.message && (
+                    <p className="text-xs text-[var(--warning)] mt-2">
+                      {validation.jiraKey.message}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Loading Progress - Solo para modo sin autocompletado */}
+              {!userJiraConfigured && loading && (
                 <div className="py-2">
                   <ProgressBar variant="gradient" size="sm" />
                   <p className="text-sm text-[var(--foreground-tertiary)] mt-2 text-center">
@@ -380,8 +409,8 @@ export default function StepOnePaste({
                 </div>
               )}
 
-              {/* Error or Config Warning */}
-              {fetchError && !loading && (
+              {/* Error or Config Warning - Solo para modo sin autocompletado */}
+              {!userJiraConfigured && fetchError && !loading && (
                 <motion.div
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
